@@ -13,12 +13,16 @@ export default defineConfig({
         tsconfigPath: "tsconfig.app.json",
       },
       oxlint: {
-        lintCommand: "oxlint",
+        lintCommand: "oxlint src",
         watchPath: ["src"],
       },
     }),
   ],
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
+  },
+  server: {
+    host: true,
+    port: 5173,
   },
 })
