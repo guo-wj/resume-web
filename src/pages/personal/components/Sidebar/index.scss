@@ -1,0 +1,86 @@
+@use 'variables' as *;
+
+.sidebar-root {
+  flex: 0 0 264px;
+  background: $pc-sidebar-bg;
+  border-right: 1px solid $pc-border;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 30px 24px 18px;
+}
+
+.sidebar-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.sidebar-nav {
+  padding: 2px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-navBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  transition: all 0.15s;
+}
+
+.sidebar-navBtnActive {
+  font-weight: 700;
+  color: $pc-primary;
+}
+
+.sidebar-navBtnInactive {
+  font-weight: 600;
+  color: #4a4360;
+}
+
+.sidebar-navIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sidebar-navIconActive {
+  color: $pc-primary;
+}
+
+.sidebar-navIconInactive {
+  color: $pc-text-soft;
+}
+
+.sidebar-navLabel {
+  flex: 1;
+  text-align: left;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+}
+
+.sidebar-backBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $pc-text-soft;
+  padding: 11px 12px;
+  width: 100%;
+}

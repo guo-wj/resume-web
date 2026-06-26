@@ -1,4 +1,7 @@
+// @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
+import { PersonalCenter } from "@/pages/personal"
+import { CONSOLE_DEFAULT_ROUTE, CONSOLE_GROUP_TITLE, consoleNavForSidebar } from "@/config/routes"
 const { useState, useEffect, useRef, useMemo, createContext, useContext } = React
 
 /* ============ Mock data + helpers ============ */
@@ -2000,17 +2003,7 @@ function NotifyView() {
 window.SettingsPage = SettingsPage;
 
 /* ============ App shell ============ */
-const NAV = [
-{ id: 'overview', label: '概览', icon: 'grid' },
-{ id: 'membership', label: '我的会员', icon: 'crown', subs: [['current', '当前订阅'], ['plans', '套餐订阅'], ['renewal', '续费管理']] },
-{ id: 'credits', label: '积分中心', icon: 'coins', subs: [['balance', '余额与明细'], ['buy', '购买积分'], ['auto', '自动充值']] },
-{ id: 'orders', label: '订单与发票', icon: 'receipt', badge: 1, subs: [['list', '订单记录'], ['invoice', '发票管理'], ['refund', '退款申请']] },
-{ id: 'stats', label: '消耗统计', icon: 'chart', subs: [['overview', '概览'], ['detail', '明细']] },
-{ id: 'promo', label: '优惠与活动', icon: 'gift', subs: [['coupons', '优惠券'], ['redeem', '兑换码']] },
-{ id: 'settings', label: '账户设置', icon: 'settings', subs: [['profile', '个人资料'], ['security', '登录与安全'], ['notify', '通知偏好']] }];
-
-
-const GROUP_TITLE = { overview: '概览', membership: '我的会员', credits: '积分中心', orders: '订单与发票', stats: '消耗统计', promo: '优惠与活动', settings: '账户设置' };
+const NAV = consoleNavForSidebar()
 
 function Sidebar({ route, go }) {
   const [group, sub] = route.split('.');
@@ -2082,7 +2075,7 @@ function NotifDropdown({ onClose }) {
 
 }
 
-function UserDropdown({ theme, setTheme, go, onClose }) {
+function UserDropdown({ theme, setTheme, go, onClose, onOpenPersonal }) {
   useEffect(() => {
     const h = () => onClose();
     setTimeout(() => window.addEventListener('click', h), 0);
@@ -2096,7 +2089,7 @@ function UserDropdown({ theme, setTheme, go, onClose }) {
         <div style={{ minWidth: 0 }}><div style={{ fontWeight: 700, fontSize: 13.5 }}>{ACCOUNT.name}</div><div className="t3" style={{ fontSize: 11.5 }}>{ACCOUNT.email}</div></div>
       </div>
       <div className="divider" style={{ margin: '2px 0 6px' }} />
-      <button className="sb-item" style={{ fontSize: 13 }} onClick={() => {go('settings.profile');onClose();}}><Icon name="user" size={16} className="sb-ico" />账户信息</button>
+      <button className="sb-item" style={{ fontSize: 13 }} onClick={() => {onOpenPersonal();onClose();}}><Icon name="user" size={16} className="sb-ico" />个人中心</button>
       <button className="sb-item" style={{ fontSize: 13 }} onClick={() => {go('membership.current');onClose();}}><Icon name="crown" size={16} className="sb-ico" />我的会员</button>
       <div className="between sb-item" style={{ cursor: 'default' }}>
         <span className="row" style={{ gap: 10 }}><Icon name={theme === 'dark' ? 'moon' : 'sun'} size={16} className="sb-ico" />外观</span>
@@ -2111,7 +2104,7 @@ function UserDropdown({ theme, setTheme, go, onClose }) {
 
 }
 
-function Topbar({ route, theme, setTheme, go }) {
+function Topbar({ route, theme, setTheme, go, onOpenPersonal }) {
   const [notif, setNotif] = useState(false);
   const [user, setUser] = useState(false);
   const [g, s] = route.split('.');
@@ -2121,7 +2114,7 @@ function Topbar({ route, theme, setTheme, go }) {
       <button className="tb-back" onClick={() => go('overview')}><Icon name="back" size={15} />返回工作台</button>
       <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
       <div className="breadcrumb" style={{ margin: 0 }}>
-        <span></span><Icon name="chevron" size={12} /><b>{GROUP_TITLE[g]}</b>{sub && <><Icon name="chevron" size={12} /><b>{sub}</b></>}
+        <span></span><Icon name="chevron" size={12} /><b>{CONSOLE_GROUP_TITLE[g]}</b>{sub && <><Icon name="chevron" size={12} /><b>{sub}</b></>}
       </div>
       <div className="tb-spacer" />
       <div style={{ position: 'relative' }}>
@@ -2134,18 +2127,19 @@ function Topbar({ route, theme, setTheme, go }) {
           <div><div className="tb-uname">{ACCOUNT.name}</div><div className="tb-uplan">{ACCOUNT.tierName}</div></div>
           <Icon name="chevronDown" size={14} className="t3" />
         </button>
-        {user && <UserDropdown theme={theme} setTheme={setTheme} go={go} onClose={() => setUser(false)} />}
+        {user && <UserDropdown theme={theme} setTheme={setTheme} go={go} onClose={() => setUser(false)} onOpenPersonal={onOpenPersonal} />}
       </div>
     </header>);
 
 }
 
 function App() {
-  const [route, setRoute] = useState(() => location.hash.replace('#', '') || 'overview');
+  const [route, setRoute] = useState(() => location.hash.replace('#', '') || CONSOLE_DEFAULT_ROUTE);
   const [theme, setTheme] = useState(() => localStorage.getItem('jl-theme') || 'light');
   const [sub, setSub] = useState({ ...SUBSCRIPTION });
   const [balance, setBalance] = useState(CREDITS.total);
   const [checkout, setCheckout] = useState(null);
+  const [personalOpen, setPersonalOpen] = useState(false);
   const toast = useToast();
 
   useEffect(() => {document.documentElement.setAttribute('data-theme', theme);localStorage.setItem('jl-theme', theme);}, [theme]);
@@ -2204,7 +2198,7 @@ function App() {
     <div className="app">
       <Sidebar route={route} go={go} />
       <div className="main">
-        <Topbar route={route} theme={theme} setTheme={setTheme} go={go} />
+        <Topbar route={route} theme={theme} setTheme={setTheme} go={go} onOpenPersonal={() => setPersonalOpen(true)} />
         <div className="content">
           {g === 'overview' && <OverviewPage go={go} />}
           {g === 'membership' && <MembershipPage sub={liveSub} view={s || 'current'} go={go} onUpgrade={onUpgrade} onToggleRenew={onToggleRenew} />}
@@ -2216,6 +2210,7 @@ function App() {
         </div>
       </div>
       {checkout && <CheckoutFlow order={checkout} onClose={() => setCheckout(null)} onDone={onCheckoutDone} />}
+      {personalOpen && <PersonalCenter onClose={() => setPersonalOpen(false)} />}
     </div>);
 
 }

@@ -1,0 +1,227 @@
+@use 'variables' as *;
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  background: rgba(22, 17, 45, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: modalFadeIn 0.2s ease both;
+}
+
+.modal-dialog {
+  background: $pc-white;
+  border-radius: 22px;
+  box-shadow: 0 40px 90px -30px rgba(40, 24, 90, 0.6);
+  animation: modalPopIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  overflow: hidden;
+}
+
+.modal-dialogNarrow {
+  width: min(420px, 100%);
+}
+
+.modal-dialogWide {
+  width: min(520px, 100%);
+}
+
+.modal-body {
+  padding: 28px;
+}
+
+.modal-bodyCenter {
+  padding: 28px;
+  text-align: center;
+}
+
+.modal-bodyScroll {
+  padding: 26px 28px;
+  max-height: 84vh;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 9px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d8d2ec;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-desc {
+  font-size: 13.5px;
+  color: $pc-text-soft;
+  margin: 7px 0 0;
+}
+
+.modal-error {
+  font-size: 12.5px;
+  color: $pc-danger;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.modal-qrGrid {
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+  grid-template-rows: repeat(21, 1fr);
+  width: 100%;
+  height: 100%;
+}
+
+.modal-qrCell {
+  width: 100%;
+  height: 100%;
+}
+
+.modal-qrCellOn {
+  background: $pc-text;
+}
+
+.modal-qrCellOff {
+  background: transparent;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.modal-cancelBtn {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: #6b6483;
+  background: #f2effb;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.modal-confirmBtn {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 800;
+  color: $pc-white;
+  background: $pc-primary;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.modal-pwInputWrap {
+  background: $pc-bg-input;
+  border: 1.5px solid #ece7f7;
+  border-radius: 13px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+}
+
+.modal-pwInput {
+  flex: 1;
+  font-size: 15px;
+  padding: 14px 0;
+}
+
+.modal-invInputRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.modal-invInputLabel {
+  font-size: 14px;
+  font-weight: 700;
+  flex: 0 0 72px;
+}
+
+.modal-invInputField {
+  flex: 1;
+  background: $pc-bg-input;
+  border: 1.5px solid #ece7f7;
+  border-radius: 12px;
+  padding: 0 16px;
+}
+
+.modal-invInput {
+  width: 100%;
+  font-size: 14.5px;
+  padding: 13px 0;
+}
+
+.modal-radioRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.modal-radioOptions {
+  display: flex;
+  gap: 22px;
+}
+
+.modal-radioBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modal-radioBtnOn {
+  color: $pc-text;
+}
+
+.modal-radioBtnOff {
+  color: #6b6483;
+}
+
+.modal-radioDot {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  border: 2px solid #c9c0e0;
+  background: $pc-white;
+}
+
+.modal-radioDotOn {
+  border-color: $pc-primary;
+  background: radial-gradient(circle, $pc-primary 0 4px, $pc-white 5px);
+}

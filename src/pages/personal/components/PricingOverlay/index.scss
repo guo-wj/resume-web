@@ -1,0 +1,338 @@
+@use 'variables' as *;
+
+.pricingOverlay-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: $pc-bg;
+  overflow-y: auto;
+  animation: pcFadeIn 0.25s ease both;
+}
+
+.pricingOverlay-closeBtn {
+  position: absolute;
+  top: 24px;
+  right: 26px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $pc-chip-bg;
+  color: #6b6483;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.pricingOverlay-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 54px 40px 60px;
+  animation: pcSlideUp 0.4s ease both;
+}
+
+.pricingOverlay-hero {
+  text-align: center;
+}
+
+.pricingOverlay-heroTitle {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin: 0;
+}
+
+.pricingOverlay-heroDesc {
+  font-size: 15px;
+  color: $pc-text-muted;
+  margin: 12px 0 0;
+}
+
+.pricingOverlay-cycleWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.pricingOverlay-cycleToggle {
+  display: flex;
+  background: #efeafe;
+  border-radius: 13px;
+  padding: 4px;
+}
+
+.pricingOverlay-cycleBtn {
+  position: relative;
+  z-index: 1;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 9px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.pricingOverlay-cycleBtnOn {
+  background: $pc-white;
+  color: $pc-primary;
+  box-shadow: 0 3px 8px -4px rgba(40, 24, 90, 0.3);
+}
+
+.pricingOverlay-cycleBtnOff {
+  color: $pc-text-soft;
+}
+
+.pricingOverlay-saveBadge {
+  font-size: 10px;
+  background: #cbf35e;
+  color: #3e5a0e;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 3px;
+}
+
+.pricingOverlay-plansGrid {
+  margin-top: 34px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.pricingOverlay-plansLoading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  color: $pc-text-soft;
+  font-size: 14px;
+}
+
+.pricingOverlay-planCard {
+  position: relative;
+  background: $pc-white;
+  border: 1.5px solid $pc-border;
+  border-radius: 20px;
+  padding: 26px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricingOverlay-planCardHighlight {
+  border-color: $pc-primary;
+  box-shadow: 0 22px 50px -26px rgba(109, 93, 246, 0.6);
+}
+
+.pricingOverlay-recommendBadge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #cbf35e;
+  color: #3e5a0e;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+.pricingOverlay-planName {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.pricingOverlay-planPriceRow {
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.pricingOverlay-planPrice {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+}
+
+.pricingOverlay-planUnit {
+  font-size: 14px;
+  color: $pc-text-soft;
+}
+
+.pricingOverlay-planSave {
+  font-size: 12.5px;
+  margin-top: 6px;
+  min-height: 18px;
+}
+
+.pricingOverlay-planBtn {
+  width: 100%;
+  margin-top: 18px;
+  font-size: 14px;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.pricingOverlay-planBtnUp {
+  background: $pc-primary;
+  color: $pc-white;
+  font-weight: 800;
+}
+
+.pricingOverlay-planBtnCurrent {
+  background: #f2effb;
+  color: #6b6483;
+  font-weight: 700;
+  cursor: default;
+}
+
+.pricingOverlay-planBtnDisabled {
+  background: #f6f4fb;
+  color: #c0bad0;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.pricingOverlay-dailyCredits {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  background: #f6f4ff;
+  border-radius: 10px;
+  padding: 10px 13px;
+}
+
+.pricingOverlay-dailyCreditsText {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a4360;
+}
+
+.pricingOverlay-features {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.pricingOverlay-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13.5px;
+  color: #4a4360;
+  line-height: 1.45;
+}
+
+.pricingOverlay-featureCheck {
+  color: $pc-primary;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.pricingOverlay-faqSection {
+  margin-top: 64px;
+}
+
+.pricingOverlay-faqTitle {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  margin: 0 0 8px;
+}
+
+.pricingOverlay-faqDesc {
+  text-align: center;
+  font-size: 14px;
+  color: $pc-text-soft;
+  margin: 0 0 28px;
+}
+
+.pricingOverlay-faqList {
+  max-width: 760px;
+  margin: 0 auto;
+  border-top: 1px solid $pc-border;
+}
+
+.pricingOverlay-faqItem {
+  border-bottom: 1px solid $pc-border;
+}
+
+.pricingOverlay-faqQuestion {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 6px;
+  text-align: left;
+}
+
+.pricingOverlay-faqQuestionText {
+  font-size: 16px;
+  font-weight: 700;
+  color: $pc-text;
+}
+
+.pricingOverlay-faqChevron {
+  flex: 0 0 auto;
+  display: flex;
+  transition: transform 0.25s;
+}
+
+.pricingOverlay-faqChevronOpen {
+  transform: rotate(180deg);
+}
+
+.pricingOverlay-faqAnswer {
+  padding: 0 6px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: pcFadeIn 0.25s ease both;
+}
+
+.pricingOverlay-faqPara {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: #6b6483;
+}
+
+.pricingOverlay-faqParaLabel {
+  font-weight: 700;
+  color: $pc-text;
+}
+
+.pricingOverlay-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 44px;
+}
+
+.pricingOverlay-footerLink {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: $pc-primary;
+}
+
+.pricingOverlay-footerLinkMuted {
+  font-size: 13.5px;
+  color: $pc-text-soft;
+}
+
+.pricingOverlay-footerDivider {
+  width: 1px;
+  height: 14px;
+  background: #d8d2ec;
+}
+
+.pricingOverlay-cancelLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

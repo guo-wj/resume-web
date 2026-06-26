@@ -1,0 +1,247 @@
+@use 'variables' as *;
+
+.subscriptionTab-root {
+  animation: pcFadeUp 0.4s ease both;
+}
+
+.subscriptionTab-pageTitle {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin: 0;
+}
+
+.subscriptionTab-pageDesc {
+  font-size: 15px;
+  color: $pc-text-muted;
+  margin: 10px 0 0;
+}
+
+.subscriptionTab-planCard {
+  margin-top: 12px;
+  background: linear-gradient(135deg, $pc-primary, #8b6ffb);
+  border-radius: 18px;
+  padding: 22px 24px;
+  color: $pc-white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.subscriptionTab-planGlow {
+  position: absolute;
+  top: -30px;
+  right: -10px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(203, 243, 94, 0.28);
+}
+
+.subscriptionTab-planContent {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.subscriptionTab-planHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subscriptionTab-planName {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.subscriptionTab-planBadge {
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.subscriptionTab-planRenew {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 6px;
+}
+
+.subscriptionTab-upgradeBtn {
+  position: relative;
+  z-index: 1;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: $pc-primary;
+  background: $pc-white;
+  padding: 10px 18px;
+  border-radius: 11px;
+  flex: 0 0 auto;
+}
+
+.subscriptionTab-usageCard {
+  margin-top: 12px;
+  background: $pc-white;
+  border: 1px solid $pc-border;
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.subscriptionTab-usageHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.subscriptionTab-usageLabel {
+  font-size: 14px;
+  color: $pc-text-muted;
+  font-weight: 500;
+}
+
+.subscriptionTab-usageTotal {
+  font-size: 14px;
+  color: $pc-text-muted;
+  font-weight: 500;
+}
+
+.subscriptionTab-usageTotalBold {
+  font-size: 20px;
+  color: $pc-text;
+  font-weight: 700;
+}
+
+.subscriptionTab-usageBar {
+  margin-top: 14px;
+  display: flex;
+  height: 18px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f0ecfb;
+  gap: 2px;
+}
+
+.subscriptionTab-usageBarSegment {
+  height: 100%;
+  transform-origin: left;
+  animation: pcGrow 0.5s ease both;
+}
+
+.subscriptionTab-usageBarRemainder {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+}
+
+.subscriptionTab-legendGrid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px 24px;
+}
+
+.subscriptionTab-detailCard {
+  margin-top: 16px;
+  background: $pc-white;
+  border: 1px solid $pc-border;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.subscriptionTab-detailHead {
+  display: flex;
+  padding: 14px 20px;
+  background: $pc-bg;
+  font-size: 13px;
+  font-weight: 500;
+  color: $pc-text-soft;
+}
+
+.subscriptionTab-detailColName {
+  flex: 1;
+  min-width: 0;
+}
+
+.subscriptionTab-detailColStatus {
+  flex: 0 0 90px;
+}
+
+.subscriptionTab-detailColAmount {
+  flex: 0 0 90px;
+  text-align: right;
+}
+
+.subscriptionTab-detailColDate {
+  flex: 0 0 138px;
+  text-align: right;
+}
+
+.subscriptionTab-detailLoading {
+  padding: 24px 20px;
+  font-size: 14px;
+  color: $pc-text-soft;
+}
+
+.subscriptionTab-detailRow {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f4f0fb;
+}
+
+.subscriptionTab-detailRowLast {
+  border-bottom: none;
+}
+
+.subscriptionTab-detailName {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: $pc-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.subscriptionTab-detailStatus {
+  flex: 0 0 90px;
+}
+
+.subscriptionTab-statusBadge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.subscriptionTab-statusGot {
+  color: $pc-success;
+  background: #eefad2;
+}
+
+.subscriptionTab-statusUsed {
+  color: $pc-primary;
+  background: #efeafe;
+}
+
+.subscriptionTab-detailAmount {
+  flex: 0 0 90px;
+  text-align: right;
+  font-size: 14px;
+  color: $pc-text;
+}
+
+.subscriptionTab-detailDate {
+  flex: 0 0 138px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 500;
+  color: $pc-text-soft;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

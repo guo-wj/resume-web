@@ -1,0 +1,139 @@
+@use 'variables' as *;
+
+.billsTab-root {
+  animation: pcFadeUp 0.4s ease both;
+}
+
+.billsTab-pageTitle {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin: 0;
+}
+
+.billsTab-pageDesc {
+  font-size: 15px;
+  color: $pc-text-muted;
+  margin: 10px 0 0;
+}
+
+.billsTab-table {
+  margin-top: 26px;
+  background: $pc-white;
+  border: 1px solid $pc-border;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.billsTab-tableHead {
+  display: flex;
+  padding: 14px 20px;
+  background: $pc-bg;
+  font-size: 13px;
+  font-weight: 700;
+  color: $pc-text-soft;
+}
+
+.billsTab-colDate {
+  flex: 0 0 150px;
+}
+
+.billsTab-colCategory {
+  flex: 1;
+  min-width: 0;
+}
+
+.billsTab-colAmount {
+  flex: 0 0 76px;
+}
+
+.billsTab-colStatus {
+  flex: 0 0 78px;
+}
+
+.billsTab-colInvoice {
+  flex: 0 0 88px;
+  text-align: right;
+}
+
+.billsTab-loading {
+  padding: 24px 20px;
+  font-size: 14px;
+  color: $pc-text-soft;
+}
+
+.billsTab-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f4f0fb;
+}
+
+.billsTab-rowLast {
+  border-bottom: none;
+}
+
+.billsTab-cellDate {
+  flex: 0 0 150px;
+  font-size: 14px;
+  color: $pc-text;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.billsTab-cellCategory {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: $pc-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.billsTab-cellAmount {
+  flex: 0 0 76px;
+  font-size: 14px;
+  color: $pc-text;
+  white-space: nowrap;
+}
+
+.billsTab-cellStatus {
+  flex: 0 0 78px;
+}
+
+.billsTab-statusBadge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #6b6483;
+  background: #f0ecfb;
+}
+
+.billsTab-cellInvoice {
+  flex: 0 0 88px;
+  text-align: right;
+}
+
+.billsTab-invoiceBtn {
+  font-size: 13px;
+}
+
+.billsTab-invoiceBtnActive {
+  color: $pc-text;
+  cursor: pointer;
+}
+
+.billsTab-invoiceBtnDisabled {
+  color: #c0bad0;
+  cursor: default;
+}
+
+.billsTab-footerHint {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: $pc-text-faint;
+}

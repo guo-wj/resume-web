@@ -1,0 +1,57 @@
+@use 'variables' as *;
+
+.ui-sectionTitle {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid $pc-border;
+}
+
+.ui-legend {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ui-legendDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.ui-legendName {
+  font-size: 14px;
+  color: #4a4360;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-legendValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b6483;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.ui-toast {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  z-index: 1200;
+  transform: translateX(-50%);
+  background: $pc-text;
+  color: $pc-white;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 13px 22px;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.5);
+  animation: pcPopIn 0.3s ease both;
+}

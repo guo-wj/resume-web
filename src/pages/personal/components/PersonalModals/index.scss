@@ -1,0 +1,446 @@
+@use 'variables' as *;
+
+.personalModals-inputWrap {
+  margin-top: 20px;
+  background: $pc-bg-input;
+  border: 1.5px solid #ece7f7;
+  border-radius: 13px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+}
+
+.personalModals-prefix {
+  font-size: 14px;
+  color: #6b6483;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.personalModals-textInput {
+  flex: 1;
+  font-size: 15px;
+  padding: 14px 0;
+}
+
+.personalModals-codeWrap {
+  background: $pc-bg-input;
+  border: 1.5px solid #ece7f7;
+  border-radius: 13px;
+  padding: 0 6px 0 16px;
+  display: flex;
+  align-items: center;
+  margin-top: 11px;
+}
+
+.personalModals-codeInput {
+  flex: 1;
+  font-size: 15px;
+  padding: 14px 0;
+  letter-spacing: 2px;
+}
+
+.personalModals-codeBtn {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 13px;
+  border-radius: 9px;
+}
+
+.personalModals-codeBtnDisabled {
+  color: #a7a0bc;
+  background: #ece7f7;
+}
+
+.personalModals-codeBtnActive {
+  color: $pc-primary;
+  background: #f1edfc;
+}
+
+.personalModals-qrBox {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin: 20px auto 0;
+  background: $pc-white;
+  border: 1px solid #ece7f7;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.personalModals-qrImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.personalModals-wechatBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #07c160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 4px $pc-white;
+}
+
+.personalModals-wechatIcon {
+  width: 16px;
+  height: 12px;
+  background: $pc-white;
+  border-radius: 6px 6px 6px 2px;
+}
+
+.personalModals-qrHint {
+  font-size: 13px;
+  color: $pc-text-soft;
+  margin-top: 14px;
+}
+
+.personalModals-cancelLink {
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: $pc-text-soft;
+}
+
+.personalModals-previewBox {
+  margin-top: 20px;
+  background: $pc-bg;
+  border: 1px solid $pc-border;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.personalModals-previewLoading {
+  font-size: 14px;
+  color: $pc-text-soft;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.personalModals-previewRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.personalModals-previewLabel {
+  color: $pc-text-muted;
+}
+
+.personalModals-previewValue {
+  font-weight: 800;
+}
+
+.personalModals-previewDiscount {
+  font-weight: 800;
+  color: $pc-success;
+}
+
+.personalModals-previewDivider {
+  height: 1px;
+  background: $pc-border;
+  margin: 14px 0;
+}
+
+.personalModals-previewTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+}
+
+.personalModals-previewTotalLabel {
+  font-weight: 700;
+}
+
+.personalModals-previewTotalValue {
+  font-weight: 800;
+  font-size: 19px;
+  color: $pc-primary;
+}
+
+.personalModals-paySection {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.personalModals-payQrImg {
+  width: 148px;
+  height: 148px;
+  border-radius: 14px;
+  border: 1px solid #ece7f7;
+}
+
+.personalModals-payQrBox {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  background: $pc-white;
+  border: 1px solid #ece7f7;
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.personalModals-payHint {
+  font-size: 12.5px;
+  color: $pc-text-soft;
+  margin-top: 10px;
+}
+
+.personalModals-addonList {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.personalModals-addonBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1.5px solid $pc-border;
+  background: $pc-white;
+  transition: all 0.15s;
+}
+
+.personalModals-addonBtnOn {
+  border-color: $pc-primary;
+  background: #f6f4ff;
+}
+
+.personalModals-addonCredits {
+  font-size: 16px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.personalModals-addonNote {
+  font-size: 12px;
+  color: $pc-text-soft;
+  margin-top: 2px;
+}
+
+.personalModals-addonPrice {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.personalModals-cancelBody {
+  font-size: 14px;
+  color: #6b6483;
+  margin: 12px 0 0;
+  line-height: 1.6;
+}
+
+.personalModals-cancelActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.personalModals-keepBtn {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 800;
+  color: $pc-white;
+  background: $pc-primary;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.personalModals-confirmCancelBtn {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: $pc-danger;
+  background: #fdecec;
+  padding: 13px;
+  border-radius: 12px;
+}
+
+.personalModals-invoiceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.personalModals-invoiceCloseBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f2effb;
+  color: #6b6483;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.personalModals-invoiceDesc {
+  margin: 7px 0 0;
+}
+
+.personalModals-invoiceSummary {
+  margin-top: 18px;
+  background: $pc-bg;
+  border: 1px solid $pc-border;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.personalModals-invoiceSummaryLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: $pc-text-muted;
+  font-weight: 600;
+}
+
+.personalModals-invoiceSummaryHint {
+  color: #c0bad0;
+}
+
+.personalModals-invoiceAmount {
+  font-size: 24px;
+  font-weight: 800;
+  margin-top: 3px;
+}
+
+.personalModals-invoiceDivider {
+  height: 1px;
+  background: $pc-border;
+  margin: 13px 0;
+}
+
+.personalModals-invoiceMeta {
+  display: flex;
+  gap: 24px;
+  font-size: 12.5px;
+  color: $pc-text-soft;
+}
+
+.personalModals-invoiceMetaBold {
+  color: #4a4360;
+  font-weight: 700;
+}
+
+.personalModals-invoiceForm {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.personalModals-noteRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.personalModals-noteLabel {
+  font-size: 14px;
+  font-weight: 700;
+  flex: 0 0 72px;
+  padding-top: 13px;
+}
+
+.personalModals-noteField {
+  flex: 1;
+  background: $pc-bg-input;
+  border: 1.5px solid #ece7f7;
+  border-radius: 12px;
+  padding: 11px 16px;
+  position: relative;
+}
+
+.personalModals-noteTextarea {
+  width: 100%;
+  font-size: 14.5px;
+  height: 54px;
+}
+
+.personalModals-noteCounter {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  color: $pc-text-faint;
+}
+
+.personalModals-invoiceActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.personalModals-invoiceCancelBtn {
+  font-size: 15px;
+  font-weight: 700;
+  color: #6b6483;
+  background: #f2effb;
+  padding: 12px 26px;
+  border-radius: 12px;
+}
+
+.personalModals-invoiceSubmitBtn {
+  font-size: 15px;
+  font-weight: 800;
+  color: $pc-white;
+  background: $pc-primary;
+  padding: 12px 28px;
+  border-radius: 12px;
+}
+
+.personalModals-viewInvoiceBox {
+  margin-top: 18px;
+  background: $pc-bg;
+  border: 1px solid $pc-border;
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.personalModals-viewInvoiceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.personalModals-pdfIcon {
+  width: 44px;
+  height: 54px;
+  border-radius: 8px;
+  background: $pc-white;
+  border: 1px solid #e4def4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: $pc-danger;
+}
+
+.personalModals-viewInvoiceName {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.personalModals-viewInvoiceMeta {
+  font-size: 12.5px;
+  color: $pc-text-soft;
+  margin-top: 2px;
+}

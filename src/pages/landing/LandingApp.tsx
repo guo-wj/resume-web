@@ -1,5 +1,9 @@
+// @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
 import { useNavigate } from "react-router-dom"
+import { ApiError, loginByPassword, logout, request, setUserPassword } from "@/api"
+import { PersonalCenter } from "@/pages/personal"
+import { useAuth } from "@/store"
 
 const { useState, useRef, useEffect, useCallback } = React
 
@@ -7,7 +11,7 @@ const { useState, useRef, useEffect, useCallback } = React
  * Magic Resume · 首页 + 登录模块
  * 由 login.html 原型（DCLogic 自定义模板）还原为 React 组件。
  * 保留全部交互：落地页 / AI 对话 / 创建方式 / 登录注册（弹窗 + 整屏）
- * / Apple 登录 / Toast / 演示控制面板。
+ * / Apple 登录 / Toast。
  * ========================================================== */
 
 /* 把 CSS 声明字符串解析为 React style 对象 */
@@ -54,12 +58,131 @@ const AppleIcon = ({ size = 20, fill = "#1B1530" }) => (
   </svg>
 )
 
+const ChevronDownIcon = ({ size = 14, color = "#9890AE" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M6 9l6 6 6-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
 const isPhone = (v) => /^1[3-9]\d{9}$/.test(v)
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
 const INTRO_MSG = {
   role: "ai",
   text: "嗨，我是 Magic Resume 助手 ✦ 简单聊两句，我就能帮你生成简历。先说说你想投递什么岗位？",
+}
+
+const LEGAL_DOCS = {
+  terms: {
+    title: "用户协议",
+    updated: "2025年6月26日",
+    sections: [
+      {
+        heading: "一、服务说明",
+        body: "Magic Resume（以下简称「本平台」）是一款 AI 驱动的在线简历制作与优化工具。注册或使用本平台，即表示你已阅读、理解并同意本协议全部条款。",
+      },
+      {
+        heading: "二、账号注册与使用",
+        body: "你应使用真实、有效的手机号或邮箱注册账号，并妥善保管登录凭证。账号下的全部操作均视为你本人行为，因保管不善导致的损失由你自行承担。",
+      },
+      {
+        heading: "三、用户内容与授权",
+        body: "你在本平台输入的工作经历、教育背景等个人信息，仅用于为你生成和优化简历。你保证对所提交内容拥有合法权利，不侵犯任何第三方权益。为提供服务，你授权本平台在必要范围内处理上述信息。",
+      },
+      {
+        heading: "四、AI 生成内容",
+        body: "本平台利用人工智能技术辅助生成简历内容。AI 输出仅供参考，你应在投递前自行核对准确性。因使用 AI 生成内容引发的纠纷，本平台不承担由此产生的直接或间接责任。",
+      },
+      {
+        heading: "五、付费服务",
+        body: "部分高级功能需付费使用。付费前请仔细确认套餐内容与价格，支付成功后除法律规定情形外不予退款。本平台保留调整定价与服务内容的权利。",
+      },
+      {
+        heading: "六、禁止行为",
+        body: "你不得利用本平台从事违法违规活动，包括但不限于传播虚假信息、侵犯他人隐私、恶意攻击系统或滥用 AI 功能批量生成垃圾内容。",
+      },
+      {
+        heading: "七、免责声明",
+        body: "本平台按「现状」提供服务，不保证服务不间断或完全无错误。因不可抗力、网络故障或第三方原因导致的服务中断，本平台不承担责任。",
+      },
+      {
+        heading: "八、协议变更",
+        body: "本平台有权根据需要修订本协议，修订后将通过网站公告等方式通知。若你继续使用服务，即视为接受修订后的协议。",
+      },
+    ],
+  },
+  privacy: {
+    title: "隐私政策",
+    updated: "2025年6月26日",
+    sections: [
+      {
+        heading: "一、我们收集的信息",
+        body: "为提供简历制作服务，我们可能收集：账号信息（手机号、邮箱）、个人资料（姓名、工作经历、教育背景等）、设备信息（浏览器类型、操作系统）及使用日志（访问时间、功能使用情况）。",
+      },
+      {
+        heading: "二、信息使用方式",
+        body: "我们收集的信息用于：创建和管理你的账号、生成与优化简历、改进产品体验、发送服务通知（如验证码、账户安全提醒），以及在获得你同意的前提下推送产品更新信息。",
+      },
+      {
+        heading: "三、AI 数据处理",
+        body: "你输入的简历相关信息会发送至 AI 模型进行处理以生成内容。我们采取去标识化等技术手段降低隐私风险，且不会将你的个人信息用于训练对外公开的通用模型。",
+      },
+      {
+        heading: "四、信息共享",
+        body: "我们不会向第三方出售你的个人信息。仅在以下情形可能共享：获得你的明确同意、法律法规要求、与可信服务商合作（如短信/邮件发送），且其须遵守严格的保密义务。",
+      },
+      {
+        heading: "五、数据安全",
+        body: "我们采用加密传输、访问控制等安全措施保护你的信息。尽管已尽合理努力，互联网传输无法保证绝对安全，请你理解并自行评估相关风险。",
+      },
+      {
+        heading: "六、信息存储",
+        body: "你的信息存储于中华人民共和国境内的服务器。账号注销后，我们将在合理期限内删除或匿名化处理你的个人信息，法律法规另有规定的除外。",
+      },
+      {
+        heading: "七、你的权利",
+        body: "你有权访问、更正、删除个人信息，以及撤回授权同意。如需行使上述权利，可通过产品内「个人中心」或联系客服处理，我们将在 15 个工作日内回复。",
+      },
+      {
+        heading: "八、联系我们",
+        body: "如对本政策有任何疑问，请发送邮件至 privacy@magicresume.com，我们将在收到后尽快处理。",
+      },
+    ],
+  },
+}
+
+function LegalModal({ docKey, onClose }) {
+  if (!docKey) return null
+  const doc = LEGAL_DOCS[docKey]
+  const stopProp = (e) => e.stopPropagation()
+
+  return (
+    <div
+      style={css("position:fixed;inset:0;z-index:510;background:rgba(22,17,45,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;")}
+      onClick={onClose}
+    >
+      <div
+        onClick={stopProp}
+        style={css("width:min(520px,100%);max-height:min(78vh,640px);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(40,24,90,.55);animation:popIn .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;")}
+      >
+        <div style={css("padding:22px 24px 16px;border-bottom:1px solid #ECE7F7;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0;")}>
+          <div>
+            <div style={css("font-size:18px;font-weight:800;color:#1B1530;")}>{doc.title}</div>
+            <div style={css("font-size:12px;color:#A7A0BC;margin-top:4px;")}>更新日期：{doc.updated}</div>
+          </div>
+          <button type="button" className="legal-close" style={css("width:30px;height:30px;border-radius:50%;background:#F2EFFB;color:#6B6483;font-size:15px;flex-shrink:0;")} onClick={onClose}>✕</button>
+        </div>
+        <div className="legal-body" style={css("flex:1;overflow-y:auto;padding:20px 24px 24px;")}>
+          {doc.sections.map((s, i) => (
+            <div key={i} style={css(i > 0 ? "margin-top:18px;" : "")}>
+              <div style={css("font-size:14px;font-weight:700;color:#1B1530;margin-bottom:6px;")}>{s.heading}</div>
+              <div style={css("font-size:13px;color:#5B5470;line-height:1.7;")}>{s.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /* 21x21 演示二维码点阵 */
@@ -85,6 +208,7 @@ const QR_CELLS = buildQr()
 
 export function LandingApp() {
   const navigate = useNavigate()
+  const { isLoggedIn, setSession, user, clearSession, refreshToken } = useAuth()
 
   const [screen, setScreen] = useState("landing") // landing | chat | createMethod | fullAuth
   const [modalOpen, setModalOpen] = useState(false)
@@ -96,6 +220,7 @@ export function LandingApp() {
   const [accountError, setAccountError] = useState("")
   const [code, setCode] = useState("")
   const [codeSent, setCodeSent] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
   const [loginMode, setLoginMode] = useState("code") // code | password
@@ -103,21 +228,21 @@ export function LandingApp() {
   const [loginPwError, setLoginPwError] = useState("")
   const [showLoginPw, setShowLoginPw] = useState(false)
 
-  const [pwScenario, setPwScenario] = useState("hasPassword") // hasPassword | noPassword
-  const [pwAttempts, setPwAttempts] = useState(0)
-  const [lockedUntil, setLockedUntil] = useState(0)
   const [pwNeedSwitch, setPwNeedSwitch] = useState(false)
 
   const [pw1, setPw1] = useState("")
   const [pw2, setPw2] = useState("")
   const [pwError, setPwError] = useState("")
   const [showPw, setShowPw] = useState(false)
+  const [settingPw, setSettingPw] = useState(false)
 
   const [agreed, setAgreed] = useState(false)
   const [agreeShake, setAgreeShake] = useState(false)
+  const [legalDoc, setLegalDoc] = useState(null) // terms | privacy
 
-  const [simNewUser, setSimNewUser] = useState(true)
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [loggingIn, setLoggingIn] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [personalOpen, setPersonalOpen] = useState(false)
   const [appleOpen, setAppleOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
 
@@ -127,18 +252,27 @@ export function LandingApp() {
   const [chat, setChat] = useState([INTRO_MSG])
 
   // 让锁定倒计时每秒刷新
-  const [, setTick] = useState(0)
-
   const timers = useRef({})
+  const userMenuRef = useRef(null)
   useEffect(() => {
     const t = timers.current
     return () => {
       clearInterval(t.countdown)
       clearTimeout(t.toast)
       clearTimeout(t.gen)
-      clearInterval(t.lock)
     }
   }, [])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+    const onDocClick = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onDocClick)
+    return () => document.removeEventListener("mousedown", onDocClick)
+  }, [userMenuOpen])
 
   const toast = useCallback((msg) => {
     clearTimeout(timers.current.toast)
@@ -157,8 +291,6 @@ export function LandingApp() {
     setLoginPw("")
     setLoginPwError("")
     setShowLoginPw(false)
-    setPwAttempts(0)
-    setLockedUntil(0)
     setPwNeedSwitch(false)
     setPw1("")
     setPw2("")
@@ -178,18 +310,10 @@ export function LandingApp() {
   }
   const openAuthLogin = () => openAuth("landing")
   const openAuthCreate = () => {
-    if (loggedIn) setScreen("createMethod")
+    if (isLoggedIn) setScreen("createMethod")
     else openAuth("createMethod")
   }
   const startCreate = () => openAuthCreate()
-  const openFullAuth = () => {
-    resetAuthFields()
-    setScreen("fullAuth")
-    setModalOpen(false)
-    setAuthReturn("landing")
-    setStep("method")
-    setTab("account")
-  }
   const closeAuth = () => {
     if (screen === "fullAuth") setScreen("landing")
     else setModalOpen(false)
@@ -207,8 +331,6 @@ export function LandingApp() {
     setAccount(e.target.value)
     setAccountError("")
     setLoginPwError("")
-    setPwAttempts(0)
-    setLockedUntil(0)
     setPwNeedSwitch(false)
   }
   const onAccountBlur = () => {
@@ -217,27 +339,38 @@ export function LandingApp() {
   }
   const onCodeChange = (e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))
 
-  const sendCode = () => {
-    if (countdown > 0) return
+  const sendCode = async () => {
+    if (countdown > 0 || sendingCode) return
     const a = account.trim()
     if (!isPhone(a) && !isEmail(a)) {
       setAccountError("请输入正确的手机号 / 邮箱")
       return
     }
-    setCodeSent(true)
-    setCountdown(60)
+    setSendingCode(true)
     setAccountError("")
-    toast(isPhone(a) ? "验证码短信已发送 · 演示码 1234" : "验证码邮件已发送 · 演示码 1234")
-    clearInterval(timers.current.countdown)
-    timers.current.countdown = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timers.current.countdown)
-          return 0
-        }
-        return c - 1
+    try {
+      await request("auth.sendCode", {
+        body: { identifier: a, scene: "login" },
       })
-    }, 1000)
+      setCodeSent(true)
+      setCountdown(60)
+      toast(isPhone(a) ? "验证码已发送至手机" : "验证码已发送至邮箱")
+      clearInterval(timers.current.countdown)
+      timers.current.countdown = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            clearInterval(timers.current.countdown)
+            return 0
+          }
+          return c - 1
+        })
+      }, 1000)
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "验证码发送失败，请稍后重试"
+      toast(msg)
+    } finally {
+      setSendingCode(false)
+    }
   }
 
   const nudgeAgree = () => {
@@ -246,13 +379,21 @@ export function LandingApp() {
     setTimeout(() => setAgreeShake(false), 600)
   }
   const toggleAgree = () => setAgreed((v) => !v)
+  const openLegal = (e, key) => {
+    e.stopPropagation()
+    setLegalDoc(key)
+  }
+  const closeLegal = () => setLegalDoc(null)
 
-  const proceedAuth = () => {
-    if (simNewUser) setStep("setpw")
-    else finishAuth()
+  const proceedAuth = (isNewUser = false) => {
+    if (isNewUser) {
+      setStep("setpw")
+      return
+    }
+    finishAuth()
   }
 
-  const submitAccount = () => {
+  const submitAccount = async () => {
     const a = account.trim()
     if (!isPhone(a) && !isEmail(a)) {
       setAccountError("请输入正确的手机号 / 邮箱")
@@ -266,7 +407,23 @@ export function LandingApp() {
       nudgeAgree()
       return
     }
-    proceedAuth()
+    if (loggingIn) return
+
+    setLoggingIn(true)
+    try {
+      const data = await request("auth.loginByCode", {
+        body: { identifier: a, code: code.trim() },
+      })
+      setSession(data)
+      proceedAuth(data.is_new_user === true)
+      // mock
+      // proceedAuth(data.is_new_user !== true)
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "登录失败，请稍后重试"
+      toast(msg)
+    } finally {
+      setLoggingIn(false)
+    }
   }
 
   /* ---------- 密码登录（已注册用户） ---------- */
@@ -300,27 +457,7 @@ export function LandingApp() {
     setLoginPw("")
   }
 
-  const startLockTick = () => {
-    clearInterval(timers.current.lock)
-    timers.current.lock = setInterval(() => {
-      if (Date.now() >= lockedUntilRef.current) {
-        clearInterval(timers.current.lock)
-        setLockedUntil(0)
-        setPwAttempts(0)
-        setLoginPwError("")
-        setPwNeedSwitch(false)
-      } else {
-        setTick((t) => t + 1)
-      }
-    }, 1000)
-  }
-  // 用 ref 让 interval 读到最新的 lockedUntil
-  const lockedUntilRef = useRef(0)
-  useEffect(() => {
-    lockedUntilRef.current = lockedUntil
-  }, [lockedUntil])
-
-  const submitPassword = () => {
+  const submitPassword = async () => {
     const a = account.trim()
     if (!isPhone(a) && !isEmail(a)) {
       setAccountError("请输入正确的手机号 / 邮箱")
@@ -334,43 +471,23 @@ export function LandingApp() {
       nudgeAgree()
       return
     }
-    if (lockedUntil && Date.now() < lockedUntil) {
-      setPwNeedSwitch(true)
-      return
-    }
-    // 未注册账户：以该密码新建账户，直接进入
-    if (simNewUser) {
-      toast("已用该密码为你创建账号 ✓")
+    if (loggingIn) return
+
+    setLoggingIn(true)
+    setLoginPwError("")
+    setPwNeedSwitch(false)
+    try {
+      const data = await loginByPassword(a, loginPw)
+      setSession(data)
       finishAuth()
-      return
-    }
-    // 已注册但未设置密码
-    if (pwScenario === "noPassword") {
-      setLoginPwError("你还没有设置登录密码")
-      setPwNeedSwitch(true)
-      return
-    }
-    // 已设置密码 —— 正确口令为 demo123
-    if (loginPw === "demo123") {
-      setPwAttempts(0)
-      setLockedUntil(0)
-      setPwNeedSwitch(false)
-      finishAuth()
-      return
-    }
-    // 密码错误
-    const attempts = pwAttempts + 1
-    if (attempts >= 5) {
-      const until = Date.now() + 5 * 60 * 1000
-      setPwAttempts(attempts)
-      setLockedUntil(until)
-      lockedUntilRef.current = until
-      setPwNeedSwitch(true)
-      setLoginPwError("密码错误次数过多，账户已锁定 5 分钟")
-      startLockTick()
-    } else {
-      setPwAttempts(attempts)
-      setLoginPwError("密码错误，请重试（" + attempts + "/5）")
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "登录失败，请稍后重试"
+      setLoginPwError(msg)
+      if (/未设置|没有密码|验证码|不存在|未注册/.test(msg)) {
+        setPwNeedSwitch(true)
+      }
+    } finally {
+      setLoggingIn(false)
     }
   }
 
@@ -406,22 +523,37 @@ export function LandingApp() {
     setPwError("")
   }
   const toggleShowPw = () => setShowPw((v) => !v)
-  const confirmPw = () => {
-    if (pw1.length < 6) {
-      setPwError("密码至少 6 位")
+  const confirmPw = async () => {
+    if (pw1.length < 8) {
+      setPwError("密码至少 8 位")
       return
     }
     if (pw1 !== pw2) {
       setPwError("两次输入的密码不一致")
       return
     }
-    finishAuth()
+    if (settingPw) return
+
+    setSettingPw(true)
+    setPwError("")
+    try {
+      // 首次设置：不传 old_password；access_token 由 request 自动从 store 写入 Authorization 头
+      await setUserPassword({
+        new_password: pw1,
+        confirm_password: pw2,
+      })
+      finishAuth()
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "密码设置失败，请稍后重试"
+      setPwError(msg)
+    } finally {
+      setSettingPw(false)
+    }
   }
   const skipPw = () => finishAuth()
 
   const finishAuth = () => {
     const ret = authReturn
-    setLoggedIn(true)
     setModalOpen(false)
     setScreen("landing")
     if (ret === "createMethod") setScreen("createMethod")
@@ -475,7 +607,7 @@ export function LandingApp() {
     }
   }
   const generateResume = () => {
-    if (!loggedIn) openAuth("chat")
+    if (!isLoggedIn) openAuth("chat")
     else doGenerate()
   }
   const doGenerate = () => {
@@ -485,6 +617,23 @@ export function LandingApp() {
   }
   const enterEditor = () => navigate("/console")
 
+  const openPersonalCenter = () => {
+    setUserMenuOpen(false)
+    setPersonalOpen(true)
+  }
+
+  const handleLogout = async () => {
+    setUserMenuOpen(false)
+    try {
+      await logout(refreshToken)
+      clearSession()
+      toast("已退出登录")
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "退出登录失败，请稍后重试"
+      toast(msg)
+    }
+  }
+
   /* ---------- 创建方式 ---------- */
   const pickChat = () => setScreen("chat")
   const pickOther = () => toast("进入该创建方式（原型示意）")
@@ -493,74 +642,23 @@ export function LandingApp() {
     setModalOpen(false)
   }
 
-  /* ---------- 演示控制 ---------- */
-  const setScNew = () => {
-    setSimNewUser(true)
-    setLoginPwError("")
-    setPwAttempts(0)
-    setLockedUntil(0)
-    setPwNeedSwitch(false)
-  }
-  const setScHasPw = () => {
-    setSimNewUser(false)
-    setPwScenario("hasPassword")
-    setLoginPwError("")
-    setPwAttempts(0)
-    setLockedUntil(0)
-    setPwNeedSwitch(false)
-  }
-  const setScNoPw = () => {
-    setSimNewUser(false)
-    setPwScenario("noPassword")
-    setLoginPwError("")
-    setPwAttempts(0)
-    setLockedUntil(0)
-    setPwNeedSwitch(false)
-  }
-  const resetAll = () => {
-    clearInterval(timers.current.countdown)
-    clearTimeout(timers.current.gen)
-    clearInterval(timers.current.lock)
-    setScreen("landing")
-    setModalOpen(false)
-    setLoggedIn(false)
-    setAppleOpen(false)
-    setStep("method")
-    setTab("account")
-    setSimNewUser(true)
-    setPwScenario("hasPassword")
-    setChatStage("intro")
-    setChatInput("")
-    setHeroInput("")
-    setChat([INTRO_MSG])
-    resetAuthFields()
-  }
-
   /* ================= 派生展示值 ================= */
   const isFull = screen === "fullAuth"
   const authVisible = modalOpen || isFull
   const isModal = modalOpen ? true : !isFull
-  const pwLocked = !!(lockedUntil && Date.now() < lockedUntil)
-  const lockCountdown = pwLocked ? Math.ceil((lockedUntil - Date.now()) / 1000) + "s" : ""
 
   const tabBtnBase =
     "position:relative;z-index:1;flex:1;padding:11px 0;border-radius:11px;font-size:14.5px;font-weight:700;background:transparent;transition:color .2s;"
   const tabBtn = (active) => tabBtnBase + (active ? "color:#1B1530;" : "color:#9890AE;")
   const modeTab = (active) =>
-    "font-size:14px;font-weight:700;padding-bottom:6px;border-bottom:2px solid " +
+    "font-size:14px;font-weight:700;padding:6px 0;border:none;outline:none;box-shadow:none;border-bottom:2px solid " +
     (active ? "#6D5DF6" : "transparent") +
     ";color:" +
     (active ? "#1B1530" : "#9890AE") +
-    ";transition:all .2s;"
-  const segSc = (sel) =>
-    "flex:1;padding:7px 2px;border-radius:8px;font-size:10.5px;font-weight:700;line-height:1.25;transition:all .2s;" +
-    (sel
-      ? "background:#fff;color:#6D5DF6;box-shadow:0 3px 8px -4px rgba(40,24,90,.4);"
-      : "background:transparent;color:#9890AE;")
-
+    ";transition:all .2s;background:transparent;"
   const authWrapStyle = isModal
-    ? "position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);"
-    : "position:fixed;inset:0;z-index:60;display:flex;align-items:stretch;justify-content:center;padding:0;background:#EFEAFE;"
+    ? "position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);"
+    : "position:fixed;inset:0;z-index:500;display:flex;align-items:stretch;justify-content:center;padding:0;background:#EFEAFE;"
   const authCardStyle = isModal
     ? "width:min(940px,100%);height:min(620px,calc(100vh - 40px));display:flex;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(40,24,90,.55);animation:popIn .34s cubic-bezier(.2,.8,.2,1);"
     : "width:100%;height:100%;display:flex;background:#fff;border-radius:0;overflow:hidden;box-shadow:none;"
@@ -573,14 +671,13 @@ export function LandingApp() {
 
   const isAccountTab = tab === "account"
   const isWechatTab = tab === "wechat"
-  const accountBorder = accountError ? "#F3B5B7" : "#ECE7F7"
-  const codeBtnLabel = countdown > 0 ? countdown + "s 后重发" : "获取验证码"
+  const codeBtnLabel = sendingCode ? "发送中…" : countdown > 0 ? countdown + "s 后重发" : "获取验证码"
   const codeBtnStyle =
     "flex:0 0 auto;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;transition:all .2s;" +
-    (countdown > 0 ? "color:#A7A0BC;background:#ECE7F7;" : "color:#6D5DF6;background:#F1EDFC;")
+    (countdown > 0 || sendingCode ? "color:#A7A0BC;background:#ECE7F7;" : "color:#6D5DF6;background:#F1EDFC;")
 
   const checkboxStyle =
-    "flex:0 0 auto;width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;margin-top:1px;transition:all .15s;border:1.5px solid " +
+    "flex:0 0 auto;width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:all .15s;border:1.5px solid " +
     (agreed ? "#6D5DF6" : "#CFC8E0") +
     ";background:" +
     (agreed ? "#6D5DF6" : "#fff") +
@@ -599,7 +696,7 @@ export function LandingApp() {
   }))
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: "'Plus Jakarta Sans','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif", color: "#1B1530", background: "#F6F4FF" }}>
+    <div className="magic-landing" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: "'Plus Jakarta Sans','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif", color: "#1B1530", background: "#F6F4FF" }}>
       <style>{LANDING_CSS}</style>
 
       {/* ===================== LANDING ===================== */}
@@ -610,7 +707,7 @@ export function LandingApp() {
           <div style={css("position:absolute;top:140px;right:60px;width:90px;height:90px;border-radius:50%;border:14px solid #FFB3D1;opacity:.6;animation:floatA 7.5s ease-in-out infinite;")} />
 
           {/* nav */}
-          <div style={css("position:relative;z-index:5;max-width:1180px;margin:0 auto;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;")}>
+          <div style={css("position:relative;z-index:100;max-width:1180px;margin:0 auto;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;")}>
             <div style={css("display:flex;align-items:center;gap:10px;")}>
               <div style={css("width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6D5DF6,#9B7BFF);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -6px rgba(109,93,246,.7);")}>
                 <div style={css("width:13px;height:13px;border-radius:4px;background:#CBF35E;transform:rotate(12deg);")} />
@@ -623,11 +720,30 @@ export function LandingApp() {
                 <span>模板库</span>
                 <span>定价</span>
               </div>
-              {loggedIn ? (
-                <E s="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ECE7FB;padding:5px 12px 5px 5px;border-radius:999px;box-shadow:0 4px 14px -8px rgba(40,24,90,.4);cursor:pointer;" h="box-shadow:0 8px 22px -8px rgba(40,24,90,.5);" onClick={enterEditor}>
-                  <div style={css("width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6D5DF6,#C77BFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;")}>你</div>
-                  <span style={css("font-size:13.5px;font-weight:700;")}>个人中心</span>
-                </E>
+              {isLoggedIn ? (
+                <div ref={userMenuRef} style={css("position:relative;z-index:1;")}>
+                  <button
+                    type="button"
+                    style={css("display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ECE7FB;padding:5px 12px 5px 5px;border-radius:999px;box-shadow:0 4px 14px -8px rgba(40,24,90,.4);cursor:pointer;font-family:inherit;color:inherit;")}
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                  >
+                    <div style={css("width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6D5DF6,#C77BFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;")}>{user?.nickname?.slice(0, 1) || "你"}</div>
+                    <span style={css("font-size:13.5px;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>{user?.nickname || "用户"}</span>
+                    <ChevronDownIcon color={userMenuOpen ? "#6D5DF6" : "#9890AE"} />
+                  </button>
+                  {userMenuOpen && (
+                    <div style={css("position:absolute;top:100%;right:0;padding-top:8px;z-index:10;")}>
+                      <div style={css("min-width:168px;background:#fff;border:1px solid #ECE7FB;border-radius:14px;box-shadow:0 16px 40px -16px rgba(40,24,90,.35);padding:6px;animation:popIn .2s ease both;")}>
+                        <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
+                          个人中心
+                        </button>
+                        <button type="button" className="user-menu-item danger" onClick={handleLogout}>
+                          退出登录
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={css("display:flex;align-items:center;gap:12px;")}>
                   <E as="button" s="font-size:14.5px;font-weight:700;color:#1B1530;padding:9px 16px;border-radius:999px;" h="background:#EEE9FD;" onClick={openAuthLogin}>登录</E>
@@ -849,11 +965,11 @@ export function LandingApp() {
                     <div style={css("margin-top:20px;animation:slideIn .3s ease both;")}>
                       {/* login-mode switch */}
                       <div style={css("display:flex;gap:22px;margin-bottom:14px;")}>
-                        <button style={css(modeTab(loginMode === "code"))} onClick={setModeCode}>验证码登录</button>
-                        <button style={css(modeTab(loginMode === "password"))} onClick={setModePassword}>密码登录</button>
+                        <button className="mode-tab" style={css(modeTab(loginMode === "code"))} onClick={setModeCode}>验证码登录</button>
+                        <button className="mode-tab" style={css(modeTab(loginMode === "password"))} onClick={setModePassword}>密码登录</button>
                       </div>
 
-                      <div style={css("background:#F4F2FB;border:1.5px solid " + accountBorder + ";border-radius:14px;padding:0 16px;display:flex;align-items:center;transition:border-color .2s;")}>
+                      <div className={accountError ? "auth-field error" : "auth-field"} style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 16px;display:flex;align-items:center;")}>
                         <input value={account} onChange={onAccountChange} onBlur={onAccountBlur} placeholder="请输入手机号 / 邮箱" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
                       </div>
                       {accountError && (
@@ -863,28 +979,27 @@ export function LandingApp() {
                       {/* CODE mode */}
                       {loginMode === "code" && (
                         <div style={css("animation:slideIn .25s ease both;")}>
-                          <div style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
+                          <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
                             <input value={code} onChange={onCodeChange} placeholder="输入验证码" inputMode="numeric" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;letter-spacing:2px;")} />
                             <button style={css(codeBtnStyle)} onClick={sendCode}>{codeBtnLabel}</button>
                           </div>
                           {codeSent && (
-                            <div style={css("font-size:12px;color:#6D5DF6;font-weight:600;margin-top:7px;padding-left:4px;")}>已发送 · 演示验证码 1234</div>
+                            <div style={css("font-size:12px;color:#6D5DF6;font-weight:600;margin-top:7px;padding-left:4px;")}>验证码已发送，请查收</div>
                           )}
-                          <E as="button" s="width:100%;margin-top:18px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" h="background:#5B4BE8;" onClick={submitAccount}>登录 / 注册</E>
+                          <E as="button" s={"width:100%;margin-top:18px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitAccount}>{loggingIn ? "登录中…" : "登录 / 注册"}</E>
                         </div>
                       )}
 
                       {/* PASSWORD mode */}
                       {loginMode === "password" && (
                         <div style={css("animation:slideIn .25s ease both;")}>
-                          <div style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
+                          <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
                             <input value={loginPw} onChange={onLoginPw} onKeyDown={onLoginPwKey} type={showLoginPw ? "text" : "password"} placeholder="请输入登录密码" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
                             <button style={css("font-size:12px;font-weight:700;color:#6D5DF6;padding:6px 10px;")} onClick={toggleShowLoginPw}>{showLoginPw ? "隐藏" : "显示"}</button>
                           </div>
                           {loginPwError && (
                             <div style={css("font-size:12.5px;color:#E5484D;font-weight:600;margin-top:7px;padding-left:4px;")}>
                               {loginPwError}
-                              {pwLocked && <span> · {lockCountdown}</span>}
                             </div>
                           )}
                           {pwNeedSwitch && (
@@ -893,7 +1008,7 @@ export function LandingApp() {
                           <div style={css("display:flex;align-items:center;justify-content:flex-end;margin-top:9px;")}>
                             <E as="button" s="font-size:12.5px;font-weight:600;color:#9890AE;" h="color:#6D5DF6;" onClick={forgotPw}>忘记密码？</E>
                           </div>
-                          <E as="button" s="width:100%;margin-top:10px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" h="background:#5B4BE8;" onClick={submitPassword}>登录 / 注册</E>
+                          <E as="button" s={"width:100%;margin-top:10px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitPassword}>{loggingIn ? "登录中…" : "登录"}</E>
                         </div>
                       )}
                     </div>
@@ -936,9 +1051,14 @@ export function LandingApp() {
                   </div>
 
                   {/* agreement */}
-                  <div style={{ ...css("margin-top:18px;display:flex;align-items:flex-start;gap:8px;"), ...(agreeShake ? css("animation:shake .5s;") : {}) }}>
+                  <div style={{ ...css("margin-top:18px;display:flex;align-items:center;gap:8px;"), ...(agreeShake ? css("animation:shake .5s;") : {}) }}>
                     <button style={css(checkboxStyle)} onClick={toggleAgree}>{agreed ? "✓" : ""}</button>
-                    <div style={css("font-size:12px;color:#9890AE;line-height:1.5;")}>我已阅读并同意 Magic Resume<span style={css("color:#6D5DF6;font-weight:600;")}>《用户协议》</span>和<span style={css("color:#6D5DF6;font-weight:600;")}>《隐私政策》</span></div>
+                    <div style={css("font-size:12px;color:#9890AE;line-height:1.5;")}>
+                      我已阅读并同意 Magic Resume
+                      <button type="button" className="legal-link" style={css("color:#6D5DF6;font-weight:600;")} onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
+                      和
+                      <button type="button" className="legal-link" style={css("color:#6D5DF6;font-weight:600;")} onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -949,18 +1069,18 @@ export function LandingApp() {
                   <h2 style={css("font-size:25px;font-weight:800;letter-spacing:-.4px;margin:0;")}>设置登录密码</h2>
                   <p style={css("font-size:14px;color:#7A7390;margin:8px 0 0;")}>方便下次用密码快速登录 —— 也可以稍后再说。</p>
 
-                  <div style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:24px;")}>
-                    <input value={pw1} onChange={onPw1} type={showPw ? "text" : "password"} placeholder="设置新密码（至少 6 位）" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
+                  <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:24px;")}>
+                    <input value={pw1} onChange={onPw1} type={showPw ? "text" : "password"} placeholder="设置新密码（至少 8 位）" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
                     <button style={css("font-size:12px;font-weight:700;color:#6D5DF6;padding:6px 10px;")} onClick={toggleShowPw}>{showPw ? "隐藏" : "显示"}</button>
                   </div>
-                  <div style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 16px;display:flex;align-items:center;margin-top:12px;")}>
+                  <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 16px;display:flex;align-items:center;margin-top:12px;")}>
                     <input value={pw2} onChange={onPw2} type={showPw ? "text" : "password"} placeholder="确认新密码" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
                   </div>
                   {pwError && (
                     <div style={css("font-size:12.5px;color:#E5484D;font-weight:600;margin-top:7px;padding-left:4px;")}>{pwError}</div>
                   )}
 
-                  <E as="button" s="width:100%;margin-top:20px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);" h="background:#5B4BE8;" onClick={confirmPw}>确认并进入</E>
+                  <E as="button" s={"width:100%;margin-top:20px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);" + (settingPw ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={confirmPw}>{settingPw ? "提交中…" : "确认并进入"}</E>
 
                   <div style={css("display:flex;align-items:center;gap:12px;color:#A7A0BC;font-size:12px;font-weight:600;margin-top:24px;")}>
                     <div style={css("flex:1;height:1px;background:#ECE7F7;")} />或<div style={css("flex:1;height:1px;background:#ECE7F7;")} />
@@ -975,7 +1095,7 @@ export function LandingApp() {
 
       {/* ===================== APPLE SHEET ===================== */}
       {appleOpen && (
-        <div style={css("position:fixed;inset:0;z-index:80;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;")} onClick={closeApple}>
+        <div style={css("position:fixed;inset:0;z-index:520;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;")} onClick={closeApple}>
           <div onClick={stopProp} style={css("width:380px;max-width:100%;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);animation:popIn .3s cubic-bezier(.2,.8,.2,1);")}>
             <div style={css("padding:26px 26px 0;display:flex;flex-direction:column;align-items:center;text-align:center;")}>
               <AppleIcon size={34} />
@@ -992,30 +1112,97 @@ export function LandingApp() {
         </div>
       )}
 
+      {/* ===================== LEGAL MODAL ===================== */}
+      <LegalModal docKey={legalDoc} onClose={closeLegal} />
+
+      {personalOpen && <PersonalCenter onClose={() => setPersonalOpen(false)} />}
+
       {/* ===================== TOAST ===================== */}
       {toastMsg && (
-        <div style={css("position:fixed;bottom:34px;left:50%;z-index:120;transform:translateX(-50%);background:#1B1530;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:14px;box-shadow:0 18px 40px -16px rgba(0,0,0,.5);animation:toastIn .3s ease both;")}>{toastMsg}</div>
+        <div style={css("position:fixed;top:34px;left:50%;z-index:600;transform:translateX(-50%);background:#1B1530;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:14px;box-shadow:0 18px 40px -16px rgba(0,0,0,.5);animation:toastIn .3s ease both;")}>{toastMsg}</div>
       )}
 
-      {/* ===================== DEMO PANEL ===================== */}
-      <div style={css("position:fixed;bottom:18px;right:18px;z-index:130;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid #E7E1F8;border-radius:16px;padding:13px 14px;box-shadow:0 16px 40px -22px rgba(40,24,90,.5);width:188px;")}>
-        <div style={css("font-size:11px;font-weight:800;color:#9890AE;letter-spacing:.4px;text-transform:uppercase;margin-bottom:9px;")}>演示控制</div>
-        <div style={css("font-size:11.5px;color:#7A7390;font-weight:600;margin-bottom:6px;")}>模拟账户状态</div>
-        <div style={css("display:flex;background:#F2EFFB;border-radius:10px;padding:3px;gap:3px;")}>
-          <button style={css(segSc(simNewUser))} onClick={setScNew}>未注册<br />新用户</button>
-          <button style={css(segSc(!simNewUser && pwScenario === "hasPassword"))} onClick={setScHasPw}>已注册<br />有密码</button>
-          <button style={css(segSc(!simNewUser && pwScenario === "noPassword"))} onClick={setScNoPw}>已注册<br />无密码</button>
-        </div>
-        <div style={css("font-size:10.5px;color:#A7A0BC;line-height:1.45;margin-top:6px;")}>密码登录正确口令 <b style={css("color:#6D5DF6;")}>demo123</b>。「有密码」输错可触发 5 次锁定；验证码登录中新用户登录后会出现「设置密码」。</div>
-        <E as="button" s="width:100%;margin-top:10px;font-size:12px;font-weight:700;color:#6D5DF6;background:#F1EDFC;padding:8px;border-radius:10px;" h="background:#E7E1F8;" onClick={openFullAuth}>查看整屏登录页 →</E>
-        <E as="button" s="width:100%;margin-top:7px;font-size:12px;font-weight:700;color:#6B6483;background:#F2EFFB;padding:8px;border-radius:10px;" h="background:#E7E1F8;" onClick={resetAll}>重置原型</E>
-      </div>
     </div>
   )
 }
 
 const LANDING_CSS = `
-  .magic-landing input { font-family: inherit; outline: none; }
+  .magic-landing button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .magic-landing button:focus,
+  .magic-landing button:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing input {
+    font-family: inherit;
+    outline: none;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 0;
+    width: 100%;
+  }
+  .magic-landing input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing input:-webkit-autofill,
+  .magic-landing input:-webkit-autofill:hover,
+  .magic-landing input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #F4F2FB inset;
+    -webkit-text-fill-color: #1B1530;
+    caret-color: #1B1530;
+  }
+  .magic-landing .auth-field {
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .magic-landing .auth-field:focus-within:not(.error) {
+    border-color: #6D5DF6;
+  }
+  .magic-landing .auth-field.error {
+    border-color: #F3B5B7;
+  }
+  .magic-landing .mode-tab,
+  .magic-landing .mode-tab:focus,
+  .magic-landing .mode-tab:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing .legal-link {
+    outline: none;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .magic-landing .legal-link:hover,
+  .magic-landing .legal-link:focus,
+  .magic-landing .legal-link:focus-visible {
+    text-decoration: none;
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing .legal-close {
+    outline: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .magic-landing .legal-close:hover,
+  .magic-landing .legal-close:focus,
+  .magic-landing .legal-close:focus-visible {
+    text-decoration: none;
+    outline: none;
+    box-shadow: none;
+    background: #E7E1F8;
+  }
+  .magic-landing .legal-body::-webkit-scrollbar { width: 6px; }
+  .magic-landing .legal-body::-webkit-scrollbar-thumb { background: #D9D3EC; border-radius: 6px; }
   ::placeholder { color: #A7A0BC; }
   @keyframes floatA { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-16px) } }
   @keyframes floatB { 0%,100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(12px) rotate(8deg) } }
@@ -1025,5 +1212,37 @@ const LANDING_CSS = `
   @keyframes msgIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
   @keyframes shake { 10%,90% { transform: translateX(-2px) } 20%,80% { transform: translateX(3px) } 30%,50%,70% { transform: translateX(-5px) } 40%,60% { transform: translateX(5px) } }
   @keyframes spin { to { transform: rotate(360deg) } }
-  @keyframes toastIn { from { opacity: 0; transform: translate(-50%,14px) } to { opacity: 1; transform: translate(-50%,0) } }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%,-14px) } to { opacity: 1; transform: translate(-50%,0) } }
+  .magic-landing .user-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1B1530;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    background: transparent;
+    transition: background .15s;
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing .user-menu-item:focus,
+  .magic-landing .user-menu-item:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing .user-menu-item:hover {
+    background: #F4F2FB;
+  }
+  .magic-landing .user-menu-item.danger {
+    color: #E5484D;
+  }
+  .magic-landing .user-menu-item.danger:hover {
+    background: #FEF2F2;
+  }
 `
