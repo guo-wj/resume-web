@@ -89,21 +89,19 @@ echo "  VITE_SERVER = $VITE_SERVER"
 
 # 安装依赖
 if [ -n "$GITHUB_ACTIONS" ]; then
-    # CI 环境
+    # CI 环境：完全不用 lockfile
     log_info "CI 环境，清理并重新安装依赖..."
     rm -rf node_modules package-lock.json
     
-    # 创建空的 package-lock.json
-    echo '{}' > package-lock.json
+    # 使用 --no-package-lock 不生成 lockfile
+    # 使用 --omit=optional 跳过可选依赖
+    log_info "安装依赖（不使用 lockfile，跳过可选依赖）..."
+    npm install --no-package-lock --omit=optional --legacy-peer-deps
     
-    # 安装时忽略可选依赖
-    log_info "安装依赖（使用 --omit=optional）..."
-    npm install --omit=optional
-    
-    # 如果安装了 rolldown 但没有 binding，手动安装 Linux binding
+    # 如果构建报错需要 rolldown binding，手动安装 Linux 版本
     if [ -d "node_modules/rolldown" ]; then
         log_info "检测到 Rolldown，安装 Linux 平台 binding..."
-        npm install @rolldown/binding-linux-x64-gnu@1.1.3 --save-optional || true
+        npm install @rolldown/binding-linux-x64-gnu@1.1.3 --save-optional --no-package-lock || true
     fi
 else
     # 本地环境
