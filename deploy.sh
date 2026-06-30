@@ -90,7 +90,7 @@ echo "  VITE_SERVER = $VITE_SERVER"
 # 安装依赖（如果 node_modules 不存在）
 if [ ! -d "node_modules" ]; then
     log_info "安装依赖..."
-    npm install
+    npm install --no-optional
 fi
 
 # 构建
