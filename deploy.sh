@@ -90,7 +90,16 @@ echo "  VITE_SERVER = $VITE_SERVER"
 # 安装依赖（如果 node_modules 不存在）
 if [ ! -d "node_modules" ]; then
     log_info "安装依赖..."
-    npm install --no-optional
+    
+    if [ -n "$GITHUB_ACTIONS" ]; then
+        # CI 环境：先安装 Linux binding，再安装其他依赖
+        log_info "CI 环境，安装 Linux 平台的 Rolldown binding..."
+        npm install @rolldown/binding-linux-x64-gnu@1.1.3 --save-optional
+        npm install --no-optional
+    else
+        # 本地环境：正常安装
+        npm install --no-optional
+    fi
 fi
 
 # 构建
