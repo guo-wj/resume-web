@@ -1,0 +1,34 @@
+name: CI/CD Deploy to Aliyun ECS
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_REMOTE_DIR: /var/www/html/dist
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          VITE_ENV: test
+          VITE_API_BASE: /api
+          VITE_SERVER: http://8.152.214.136:8000
+          GITHUB_ACTIONS: true
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh
