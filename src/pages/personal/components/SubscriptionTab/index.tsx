@@ -26,7 +26,7 @@ export function SubscriptionTab({
         <div className="subscriptionTab-planContent">
           <div className="subscriptionTab-planHeader">
             <span className="subscriptionTab-planName">{subscriptionLoading ? "加载中…" : planName}</span>
-            {!subscriptionLoading && (
+            {!subscriptionLoading && planStatusLabel && (
               <span className="subscriptionTab-planBadge">{planStatusLabel}</span>
             )}
           </div>
@@ -65,7 +65,12 @@ export function SubscriptionTab({
                   }}
                 />
               ))}
-              <div className="subscriptionTab-usageBarRemainder" />
+              {remaining > 0 && (
+                <div
+                  className="subscriptionTab-usageBarRemainder"
+                  style={{ width: `${grandTotal ? (remaining / grandTotal) * 100 : 0}%` }}
+                />
+              )}
             </div>
             <div className="subscriptionTab-legendGrid">
               {usageFeatures.map(([name, v, col]) => (
@@ -87,6 +92,8 @@ export function SubscriptionTab({
         </div>
         {usageLoading ? (
           <div className="subscriptionTab-detailLoading">加载明细中…</div>
+        ) : detailRows.length === 0 ? (
+          <div className="subscriptionTab-detailLoading">暂无积分明细</div>
         ) : detailRows.map((d, i) => {
           const got = d.amount > 0
           return (

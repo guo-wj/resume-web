@@ -8,20 +8,6 @@ export interface CreditDetailRow {
 
 export type BillInvoiceAction = "view" | "download" | "invoiceable" | "none"
 
-export interface BillFallbackRow {
-  date: string
-  category: string
-  amount: string
-  status: string
-  inv: BillInvoiceAction
-}
-
-export interface AddonOption {
-  credits: string
-  note: string
-  price: string
-}
-
 export interface FaqParagraph {
   label?: string
   text: string
@@ -41,41 +27,6 @@ export interface PersonalNavItem {
   label: string
   iconKey: PersonalNavIconKey
 }
-
-export const USAGE_FALLBACK: UsageFeatureTuple[] = [
-  ["简历制作", 620, "#7C5CFD"],
-  ["履历", 410, "#A78BFA"],
-  ["随记", 280, "#C77BFF"],
-  ["面试准备", 210, "#FF9E8A"],
-  ["职业画像", 120, "#3BB89A"],
-]
-
-export const GRAND_TOTAL_FALLBACK = 4200
-
-export const DETAIL_FALLBACK: CreditDetailRow[] = [
-  { name: "简历制作 · 产品经理版", amount: -52, date: "2026-06-17 14:22" },
-  { name: "每日登录奖励", amount: 70, date: "2026-06-17 09:01" },
-  { name: "模拟面试 · 一轮技术面", amount: -38, date: "2026-06-16 21:10" },
-  { name: "自我介绍撰写", amount: -16, date: "2026-06-15 18:44" },
-  { name: "邀请好友奖励", amount: 200, date: "2026-06-14 11:30" },
-  { name: "能力 Gap 分析", amount: -24, date: "2026-06-13 16:05" },
-  { name: "简历制作 · 运营版", amount: -48, date: "2026-06-12 10:18" },
-]
-
-export const BILL_DATA: BillFallbackRow[] = [
-  { date: "2026-03-20 16:48", category: "会员订阅 · Pro 年付", amount: "¥468", status: "已支付", inv: "view" },
-  { date: "2026-03-18 10:12", category: "积分加量包 · 5000", amount: "¥30", status: "已支付", inv: "download" },
-  { date: "2026-02-21 09:30", category: "订阅升级补差价", amount: "¥138", status: "已支付", inv: "invoiceable" },
-  { date: "2026-02-08 14:20", category: "积分加量包 · 1000", amount: "¥9", status: "已支付", inv: "invoiceable" },
-  { date: "2026-01-22 11:05", category: "会员订阅 · Pro 月付", amount: "¥59", status: "已支付", inv: "download" },
-  { date: "2026-01-15 16:55", category: "会员订阅 · Pro 月付", amount: "¥59", status: "已退款", inv: "none" },
-]
-
-export const ADDON_DATA: AddonOption[] = [
-  { credits: "1000", note: "约可生成 20 份简历", price: "¥9" },
-  { credits: "5000", note: "约可生成 100 份简历 · 更划算", price: "¥30" },
-  { credits: "12000", note: "重度使用首选 · 最划算", price: "¥60" },
-]
 
 export const FAQ_DATA: FaqItem[] = [
   {

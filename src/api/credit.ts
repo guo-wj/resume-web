@@ -2,7 +2,9 @@ import { request } from "./request"
 import { formatDateTimeLabel } from "./subscription"
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : null
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
 }
 
 function pickString(...values: unknown[]): string {
@@ -18,6 +20,16 @@ function pickNumber(...values: unknown[]): number {
     if (Number.isFinite(n)) return n
   }
   return 0
+}
+
+function pickList(raw: unknown, ...keys: string[]): unknown[] {
+  if (Array.isArray(raw)) return raw
+  const data = asRecord(raw)
+  if (!data) return []
+  for (const key of keys) {
+    if (Array.isArray(data[key])) return data[key] as unknown[]
+  }
+  return []
 }
 
 export const FEATURE_COLORS = ["#7C5CFD", "#A78BFA", "#C77BFF", "#FF9E8A", "#3BB89A"]
@@ -48,65 +60,68 @@ export interface CreditTransactionsPage {
   pageSize: number
 }
 
-/** 积分概览 → 个人中心「用量」汇总 */
+/** 积分概览 → 个人中心「用量」汇总（余额 / 本月已用 / 本月发放） */
 export function normalizeCreditOverview(raw: unknown): CreditOverview {
-  const data = asRecord(raw) ?? {}
-  const usedTotal = pickNumber(
+  const root = asRecord(raw) ?? {}
+  const data = asRecord(root.overview) ?? root
+
+  const balance = pickNumber(
+    data.balance,
+    data.remaining,
+    data.available,
+    data.remaining_total,
+    data.remainingTotal,
+  )
+  const monthUsed = pickNumber(
+    data.month_used,
+    data.monthUsed,
+    data.monthly_used,
+    data.monthlyUsed,
     data.used_total,
+    data.usedTotal,
     data.used,
     data.consumed,
-    data.month_used,
-    data.monthly_used,
   )
-  const grantedTotal = pickNumber(
-    data.granted_total,
-    data.granted,
-    data.total,
+  const monthGranted = pickNumber(
     data.month_granted,
+    data.monthGranted,
     data.monthly_granted,
+    data.monthlyGranted,
+    data.granted_total,
+    data.grantedTotal,
+    data.granted,
     data.quota,
-  )
-  const remainingTotal = pickNumber(
-    data.remaining,
-    data.balance,
-    data.available,
-    grantedTotal - usedTotal,
+    data.total,
   )
 
-  return {
-    usedTotal,
-    grantedTotal: grantedTotal || usedTotal + remainingTotal,
-    remainingTotal,
-  }
+  const grantedTotal = monthGranted || (monthUsed + balance)
+  const usedTotal = monthUsed
+  const remainingTotal = balance || Math.max(grantedTotal - usedTotal, 0)
+
+  return { usedTotal, grantedTotal, remainingTotal }
 }
 
 /** 功能消耗 Top N → 个人中心「用量」分类条 */
 export function normalizeCreditTopFeatures(raw: unknown, limit = 5): CreditFeatureUsage[] {
-  const data = asRecord(raw)
-  const list = Array.isArray(raw)
-    ? raw
-    : Array.isArray(data?.features)
-      ? data.features
-      : Array.isArray(data?.items)
-        ? data.items
-        : Array.isArray(data?.top_features)
-          ? data.top_features
-          : []
+  const list = pickList(raw, "top_features", "topFeatures", "features", "items", "list", "data")
 
   return list.slice(0, limit).map((item, index) => {
     const row = asRecord(item) ?? {}
     return {
-      name: pickString(row.feature, row.feature_name, row.name, row.label, "其他"),
-      amount: pickNumber(row.amount, row.credits, row.points, row.consumed, row.used),
+      name: pickString(row.feature_name, row.featureName, row.feature, row.name, row.label, "其他"),
+      amount: pickNumber(row.amount, row.credits, row.points, row.consumed, row.used, row.value, row.count),
       color: FEATURE_COLORS[index % FEATURE_COLORS.length],
     }
-  })
+  }).filter((item) => item.name && item.amount > 0)
 }
 
 function normalizeTransactionDirection(raw: unknown, amount: number): "earn" | "spend" {
   const n = Number(raw)
   if (n === 1) return "earn"
   if (n === 2) return "spend"
+  const text = String(raw ?? "").toLowerCase()
+  if (text.includes("earn") || text.includes("gain") || text.includes("grant") || text === "in") return "earn"
+  if (text.includes("spend") || text.includes("consume") || text.includes("debit") || text === "out") return "spend"
   if (amount > 0) return "earn"
   return "spend"
 }
@@ -114,31 +129,31 @@ function normalizeTransactionDirection(raw: unknown, amount: number): "earn" | "
 /** 积分明细 → 个人中心「明细」表格 */
 export function normalizeCreditTransactions(raw: unknown): CreditTransactionsPage {
   const data = asRecord(raw)
-  const list = Array.isArray(raw)
-    ? raw
-    : Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.records)
-        ? data.records
-        : Array.isArray(data?.list)
-          ? data.list
-          : []
+  const list = pickList(raw, "items", "records", "list", "transactions", "data")
 
   const items = list.map((item) => {
     const row = asRecord(item) ?? {}
-    const signedAmount = pickNumber(row.amount, row.credits, row.points, row.change)
-    const direction = normalizeTransactionDirection(row.direction ?? row.type, signedAmount)
-    const amount = signedAmount !== 0
-      ? signedAmount
-      : direction === "earn"
-        ? pickNumber(row.credit, row.gain)
-        : -pickNumber(row.debit, row.cost, row.consume)
+    const direction = normalizeTransactionDirection(row.direction ?? row.type ?? row.change_type, 0)
+    const rawAmount = pickNumber(row.amount, row.credits, row.points, row.change, row.credit, row.debit)
+    const amount = direction === "spend"
+      ? (rawAmount > 0 ? -rawAmount : rawAmount || -pickNumber(row.cost, row.consume))
+      : (rawAmount > 0 ? rawAmount : pickNumber(row.gain, row.credit))
 
     return {
-      name: pickString(row.feature_name, row.feature, row.title, row.description, row.remark, "积分变动"),
-      amount: direction === "spend" && amount > 0 ? -amount : amount,
+      name: pickString(
+        row.feature_name,
+        row.featureName,
+        row.feature,
+        row.title,
+        row.description,
+        row.desc,
+        row.remark,
+        row.summary,
+        "积分变动",
+      ),
+      amount,
       direction,
-      date: formatDateTimeLabel(row.created_at ?? row.time ?? row.date ?? row.occurred_at),
+      date: formatDateTimeLabel(row.created_at ?? row.createdAt ?? row.time ?? row.date ?? row.occurred_at),
     }
   })
 

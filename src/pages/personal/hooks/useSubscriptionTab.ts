@@ -3,17 +3,13 @@ import {
   ApiError,
   formatMoney,
   loadPersonalPlansData,
-  loadPersonalSubscriptionData,
+  loadPersonalSubscriptionOnly,
+  loadPersonalUsageData,
   previewSubscriptionUpgrade,
   upgradeSubscription,
 } from "@/api"
 import type { SubscriptionCurrent, SubscriptionPlan } from "@/api/subscription"
 import { getPersonalCenterCache } from "@/store"
-import {
-  DETAIL_FALLBACK,
-  GRAND_TOTAL_FALLBACK,
-  USAGE_FALLBACK,
-} from "@/constant"
 import type { UsageFeatureTuple } from "@/constant"
 import type { CreditDetailRow } from "@/constant"
 import type { DisplayPlan, UseSubscriptionTabParams } from "../types"
@@ -31,13 +27,10 @@ export function useSubscriptionTab({
   const [subscription, setSubscription] = useState<SubscriptionCurrent | null>(
     initialPcCache?.subscription ?? null,
   )
-  const [subscriptionLoading, setSubscriptionLoading] = useState(
-    !initialPcCache?.subscription || !initialPcCache?.usage,
-  )
+  const [subscriptionLoading, setSubscriptionLoading] = useState(!initialPcCache?.subscription)
   const [usageData, setUsageData] = useState<UsagePageData | null>(initialPcCache?.usage ?? null)
-  const [usageLoading, setUsageLoading] = useState(
-    !initialPcCache?.subscription || !initialPcCache?.usage,
-  )
+  const [usageLoading, setUsageLoading] = useState(!initialPcCache?.usage)
+  const [usageLoaded, setUsageLoaded] = useState(!!initialPcCache?.usage)
   const [apiPlans, setApiPlans] = useState<SubscriptionPlan[]>(initialPcCache?.plans ?? [])
   const [plansLoading, setPlansLoading] = useState(initialPcCache?.plans == null)
 
@@ -54,25 +47,43 @@ export function useSubscriptionTab({
   const loadSubscription = useCallback(async (force = false) => {
     if (!force) {
       const cached = getPersonalCenterCache()
-      if (cached?.subscription && cached?.usage) {
+      if (cached?.subscription) {
         setSubscription(cached.subscription)
-        setUsageData(cached.usage)
         setSubscriptionLoading(false)
-        setUsageLoading(false)
         return
       }
     }
 
     setSubscriptionLoading(true)
-    setUsageLoading(true)
     try {
-      const data = await loadPersonalSubscriptionData(force)
-      setSubscription(data.subscription)
-      setUsageData(data.usage)
+      const next = await loadPersonalSubscriptionOnly(force)
+      setSubscription(next)
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : "加载订阅信息失败")
     } finally {
       setSubscriptionLoading(false)
+    }
+  }, [showToast])
+
+  const loadUsage = useCallback(async (force = false) => {
+    if (!force) {
+      const cached = getPersonalCenterCache()
+      if (cached?.usage) {
+        setUsageData(cached.usage)
+        setUsageLoaded(true)
+        setUsageLoading(false)
+        return
+      }
+    }
+
+    setUsageLoading(true)
+    try {
+      const next = await loadPersonalUsageData(force)
+      setUsageData(next)
+      setUsageLoaded(true)
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : "加载积分用量失败")
+    } finally {
       setUsageLoading(false)
     }
   }, [showToast])
@@ -125,9 +136,11 @@ export function useSubscriptionTab({
 
   const confirmUpgrade = async () => {
     if (!upgradePlanCode) {
-      closeModal()
-      setPricingOpen(false)
-      showToast("升级成功，权益已即时生效 🎉")
+      showToast("请选择可升级的套餐")
+      return
+    }
+    if (!upgradePreview) {
+      showToast("请等待升级预览加载完成")
       return
     }
     try {
@@ -136,33 +149,39 @@ export function useSubscriptionTab({
       setPricingOpen(false)
       showToast("升级成功，权益已即时生效 🎉")
       await loadSubscription(true)
+      await loadUsage(true)
       await loadPlans(true)
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : "升级失败，请稍后重试")
     }
   }
 
-  const openAddon = () => { setAddonPick(1); setModal("addon") }
-  const confirmAddon = () => { closeModal(); showToast("购买成功，积分已到账 ✓") }
+  const openAddon = () => showToast("加量包购买暂未开放")
+  const confirmAddon = () => showToast("加量包购买暂未开放")
   const openCancel = () => setModal("cancel")
-  const confirmCancel = () => { closeModal(); showToast("已取消自动续费，到期前仍可使用") }
+  const confirmCancel = () => {
+    closeModal()
+    showToast("取消续费功能暂未开放")
+  }
 
-  const usageFeatures: UsageFeatureTuple[] = usageData?.topFeatures?.length
-    ? usageData.topFeatures.map((f): UsageFeatureTuple => [f.name, f.amount, f.color])
-    : USAGE_FALLBACK
-  const grandTotal = usageData?.overview?.grantedTotal || GRAND_TOTAL_FALLBACK
-  const usedTotal = usageData?.overview?.usedTotal ?? usageFeatures.reduce((a, [, v]) => a + v, 0)
-  const remaining = usageData?.overview?.remainingTotal ?? (grandTotal - usedTotal)
-  const detailRows: CreditDetailRow[] = usageData?.transactions?.items?.length
-    ? usageData.transactions.items.map((d) => ({ name: d.name, amount: d.amount, date: d.date }))
-    : DETAIL_FALLBACK
+  const usageFeatures: UsageFeatureTuple[] = usageLoaded
+    ? (usageData?.topFeatures ?? []).map((f): UsageFeatureTuple => [f.name, f.amount, f.color])
+    : []
+  const grandTotal = usageLoaded ? (usageData?.overview?.grantedTotal ?? 0) : 0
+  const usedTotal = usageLoaded ? (usageData?.overview?.usedTotal ?? 0) : 0
+  const remaining = usageLoaded ? (usageData?.overview?.remainingTotal ?? 0) : 0
+  const detailRows: CreditDetailRow[] = usageLoaded
+    ? (usageData?.transactions?.items ?? []).map((d) => ({ name: d.name, amount: d.amount, date: d.date }))
+    : []
 
-  const planName = subscription?.planName || "Pro"
-  const planStatusLabel = subscription?.statusLabel || "订阅中"
-  const planRenewText = subscription
-    ? `续订日期 ${subscription.renewAt} · ${subscription.billingCycleLabel}`
-    : "续订日期 2026-07-08 · 按年付费"
-  const cancelExpireDate = subscription?.renewAt || "2026-07-08"
+  const planName = subscriptionLoading ? "加载中…" : (subscription?.planName || "—")
+  const planStatusLabel = subscription?.statusLabel || ""
+  const planRenewText = subscriptionLoading
+    ? "正在同步订阅状态"
+    : subscription
+      ? `续订日期 ${subscription.renewAt} · ${subscription.billingCycleLabel}`
+      : "暂无订阅信息"
+  const cancelExpireDate = subscription?.renewAt || "—"
 
   const cyclePlans = apiPlans.filter((p) => p.cycle === cycle)
   const displayPlans = cyclePlans.length ? cyclePlans : (apiPlans.length ? apiPlans : null)
@@ -178,22 +197,16 @@ export function useSubscriptionTab({
       daily: String(p.dailyCredits || "—"),
       hl: p.isCurrent,
       recommend: p.recommend,
-      features: p.features.length ? p.features : ["权益详情以套餐页为准"],
+      features: p.features,
       btnLabel: p.isCurrent ? "当前方案" : p.canUpgrade ? `升级到 ${p.name}` : "当前不可降级",
       btnKind: p.isCurrent ? "current" : p.canUpgrade ? "up" : "disabled",
       onClick: p.canUpgrade ? () => openUpgrade(p) : () => {},
     }))
-    : [
-      { name: "免费版", planCode: null, price: "¥0", unit: "", save: "体验核心能力", saveColor: "#9890AE", daily: "50", hl: false, recommend: false,
-        features: ["基础简历模板", "每日 50 积分", "AI 对话挖掘（限量）", "导出带水印"], btnLabel: "当前不可降级", btnKind: "disabled", onClick: () => {} },
-      { name: "Pro", planCode: null, price: yr ? "¥39" : "¥59", unit: "/月", save: yr ? "按年 ¥468，省 ¥240（约 40%）" : "原价 ¥59/月", saveColor: yr ? "#5A8A1A" : "#9890AE", daily: "200", hl: true, recommend: false,
-        features: ["全部高级模板", "每日 200 积分 + 每月 3,000", "无限 AI 对话挖掘", "模拟面试 & 能力 Gap 分析", "无水印导出"], btnLabel: "当前方案", btnKind: "current", onClick: () => {} },
-      { name: "Pro Max", planCode: null, price: yr ? "¥99" : "¥139", unit: "/月", save: yr ? "按年 ¥1188，省 ¥480（约 40%）" : "原价 ¥139/月", saveColor: yr ? "#5A8A1A" : "#9890AE", daily: "400", hl: false, recommend: true,
-        features: ["Pro 全部权益", "每日 400 积分 + 每月 8,000", "优先生成队列", "专属职业方向洞察报告", "1 对 1 简历精修建议"], btnLabel: "升级到 Pro Max", btnKind: "up", onClick: () => openUpgrade("Pro Max") },
-    ]
+    : []
 
   return {
     loadSubscription,
+    loadUsage,
     loadPlans,
     subscriptionLoading,
     usageLoading,

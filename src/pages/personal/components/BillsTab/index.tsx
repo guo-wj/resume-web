@@ -24,14 +24,14 @@ export function BillsTab({
           <div className="billsTab-loading">加载账单中…</div>
         ) : bills.map((b, i) => {
           let action = "开票"
-          let onClick: () => void = onOpenInvoice
+          let onClick: () => void = () => onOpenInvoice(b.id)
           let linkActive = true
-          if (b.inv === "view") { action = "查看"; onClick = onViewInvoice }
-          else if (b.inv === "download") { action = "下载"; onClick = onDownloadInvoice }
+          if (b.inv === "view") { action = "查看"; onClick = () => onViewInvoice(b) }
+          else if (b.inv === "download") { action = "下载"; onClick = () => onDownloadInvoice(b) }
           else if (b.inv === "none") { action = "—"; onClick = () => {}; linkActive = false }
           return (
             <div
-              key={"id" in b ? b.id : i}
+              key={b.id}
               className={`pc-row billsTab-row ${i === bills.length - 1 ? "billsTab-rowLast" : ""}`}
             >
               <div className="billsTab-cellDate">{b.date}</div>

@@ -1,7 +1,7 @@
-import type { UpgradePreview } from "@/api"
+import type { BillingOrder, BillingOrderInvoiceSummary, InvoiceDetail } from "@/api/billing"
+import type { UpgradePreview } from "@/api/subscription"
 import type { BindingChannel, UserProfile } from "@/api/types"
 import type { CreditDetailRow, PersonalPageId, UsageFeatureTuple } from "@/constant"
-import type { BillingOrder } from "@/api/billing"
 import type { SVGProps, ReactNode, Dispatch, MouseEvent, SetStateAction } from "react"
 
 export type PersonalModalId =
@@ -147,14 +147,14 @@ export interface SubscriptionTabProps {
   onOpenPricing: () => void
 }
 
-export type BillRow = BillingOrder | import("@/constant").BillFallbackRow
+export type BillRow = BillingOrder
 
 export interface BillsTabProps {
   bills: BillRow[]
   billsLoading: boolean
-  onOpenInvoice: () => void
-  onViewInvoice: () => void
-  onDownloadInvoice: () => void
+  onOpenInvoice: (orderId: number) => void
+  onViewInvoice: (order: BillingOrder) => void
+  onDownloadInvoice: (order?: BillingOrder) => void
 }
 
 export interface PricingOverlayProps {
@@ -182,18 +182,19 @@ export interface PersonalModalsProps {
   upgradeTarget: string | null
   upgradePreview: UpgradePreview | null
   upgradeLoading: boolean
-  upgradePlanCode: string | null
   yr: boolean
   onConfirmUpgrade: () => void | Promise<void>
-  addonPick: number
-  setAddonPick: (index: number) => void
-  onConfirmAddon: () => void
   planName: string
   cancelExpireDate: string
   onConfirmCancel: () => void
   invoiceModal: InvoiceModalState
-  onSubmitInvoice: () => void
-  onDownloadInvoice: () => void
+  invoiceSummary: BillingOrderInvoiceSummary | null
+  invoiceSummaryLoading: boolean
+  invoiceSubmitting: boolean
+  viewInvoiceDetail: InvoiceDetail | null
+  viewInvoiceLoading: boolean
+  onSubmitInvoice: () => void | Promise<void>
+  onDownloadInvoice: (order?: BillingOrder) => void
 }
 
 export interface SectionTitleProps {

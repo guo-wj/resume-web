@@ -1,5 +1,4 @@
 import { formatMoney } from "@/api"
-import { ADDON_DATA } from "@/constant"
 import {
   InvInput,
   Modal,
@@ -28,16 +27,17 @@ export function PersonalModals({
   upgradeTarget,
   upgradePreview,
   upgradeLoading,
-  upgradePlanCode,
   yr,
   onConfirmUpgrade,
-  addonPick,
-  setAddonPick,
-  onConfirmAddon,
   planName,
   cancelExpireDate,
   onConfirmCancel,
   invoiceModal,
+  invoiceSummary,
+  invoiceSummaryLoading,
+  invoiceSubmitting,
+  viewInvoiceDetail,
+  viewInvoiceLoading,
   onSubmitInvoice,
   onDownloadInvoice,
 }: PersonalModalsProps) {
@@ -108,46 +108,44 @@ export function PersonalModals({
 
         {modal === "upgrade" && (
           <ModalBody>
-            <ModalTitle>升级到 {upgradePreview?.planName || upgradeTarget || "Pro Max"}</ModalTitle>
+            <ModalTitle>升级到 {upgradePreview?.planName || upgradeTarget || "—"}</ModalTitle>
             <ModalDesc>升级即时生效，已支付的费用将按比例抵扣。</ModalDesc>
             <div className="personalModals-previewBox">
               {upgradeLoading ? (
                 <div className="personalModals-previewLoading">加载差价预览中…</div>
-              ) : (
+              ) : upgradePreview ? (
                 <>
-                  <div className="personalModals-previewRow"><span className="personalModals-previewLabel">{upgradePreview?.planName || upgradeTarget || "Pro Max"} · {yr ? "按年" : "按月"}</span><span className="personalModals-previewValue">{upgradePreview ? formatMoney(upgradePreview.originalPriceCents) : (yr ? "¥1188" : "¥139")}</span></div>
-                  <div className="personalModals-previewRow" style={{ marginTop: 10 }}><span className="personalModals-previewLabel">升级退差价（抵扣）</span><span className="personalModals-previewDiscount">- {upgradePreview ? formatMoney(upgradePreview.discountCents) : "¥36.00"}</span></div>
+                  <div className="personalModals-previewRow"><span className="personalModals-previewLabel">{upgradePreview.planName} · {yr ? "按年" : "按月"}</span><span className="personalModals-previewValue">{formatMoney(upgradePreview.originalPriceCents)}</span></div>
+                  <div className="personalModals-previewRow" style={{ marginTop: 10 }}><span className="personalModals-previewLabel">升级退差价（抵扣）</span><span className="personalModals-previewDiscount">- {formatMoney(upgradePreview.discountCents)}</span></div>
                   <div className="personalModals-previewDivider" />
-                  <div className="personalModals-previewTotal"><span className="personalModals-previewTotalLabel">实付</span><span className="personalModals-previewTotalValue">{upgradePreview ? formatMoney(upgradePreview.payableCents) : (yr ? "¥1152.00" : "¥103.00")}</span></div>
+                  <div className="personalModals-previewTotal"><span className="personalModals-previewTotalLabel">实付</span><span className="personalModals-previewTotalValue">{formatMoney(upgradePreview.payableCents)}</span></div>
                 </>
+              ) : (
+                <div className="personalModals-previewLoading">暂无升级预览</div>
               )}
             </div>
             <div className="personalModals-paySection">
               {upgradePreview?.payUrl
                 ? <img src={upgradePreview.payUrl} alt="支付二维码" className="personalModals-payQrImg" />
-                : <div className="personalModals-payQrBox"><Qr cells={qrCells} /></div>}
-              <div className="personalModals-payHint">微信 / 支付宝 扫码支付</div>
+                : upgradeLoading
+                  ? <div className="personalModals-payQrBox"><Qr cells={qrCells} /></div>
+                  : null}
+              {upgradePreview?.payUrl && <div className="personalModals-payHint">微信 / 支付宝 扫码支付</div>}
             </div>
-            <ModalActions onCancel={closeModal} onConfirm={onConfirmUpgrade} confirmLabel={upgradePlanCode ? "确认升级" : "模拟支付成功"} cancelLabel="稍后再说" />
+            <ModalActions
+              onCancel={closeModal}
+              onConfirm={onConfirmUpgrade}
+              confirmLabel={upgradeLoading ? "加载中…" : "确认升级"}
+              cancelLabel="稍后再说"
+            />
           </ModalBody>
         )}
 
         {modal === "addon" && (
           <ModalBody>
             <ModalTitle>购买积分加量包</ModalTitle>
-            <ModalDesc>选择档位，支付后立即到账。</ModalDesc>
-            <div className="personalModals-addonList">
-              {ADDON_DATA.map((a, i) => {
-                const on = addonPick === i
-                return (
-                  <button key={i} type="button" onClick={() => setAddonPick(i)} className={`personalModals-addonBtn ${on ? "personalModals-addonBtnOn" : ""}`}>
-                    <div><div className="personalModals-addonCredits">{a.credits} 积分</div><div className="personalModals-addonNote">{a.note}</div></div>
-                    <div className="personalModals-addonPrice">{a.price}</div>
-                  </button>
-                )
-              })}
-            </div>
-            <ModalActions onCancel={closeModal} onConfirm={onConfirmAddon} confirmLabel="确认购买" cancelLabel="取消" />
+            <ModalDesc>加量包购买功能暂未开放。</ModalDesc>
+            <ModalActions onCancel={closeModal} onConfirm={closeModal} confirmLabel="知道了" cancelLabel="关闭" />
           </ModalBody>
         )}
 
@@ -173,12 +171,14 @@ export function PersonalModals({
               <ModalDesc className="personalModals-invoiceDesc">信息将用于开具发票与发送电子发票，请仔细核对。</ModalDesc>
               <div className="personalModals-invoiceSummary">
                 <div className="personalModals-invoiceSummaryLabel">本单可开金额 <span className="personalModals-invoiceSummaryHint">ⓘ</span></div>
-                <div className="personalModals-invoiceAmount">¥901.80</div>
+                <div className="personalModals-invoiceAmount">
+                  {invoiceSummaryLoading ? "加载中…" : (invoiceSummary?.invoiceableAmount || "—")}
+                </div>
                 <div className="personalModals-invoiceDivider" />
                 <div className="personalModals-invoiceMeta">
-                  <div>原价 <b className="personalModals-invoiceMetaBold">¥948.00</b></div>
-                  <div>折扣价 <b className="personalModals-invoiceMetaBold">—</b></div>
-                  <div>总可开金额 <b className="personalModals-invoiceMetaBold">¥1000.80</b></div>
+                  <div>原价 <b className="personalModals-invoiceMetaBold">{invoiceSummary?.originalAmount || "—"}</b></div>
+                  <div>折扣价 <b className="personalModals-invoiceMetaBold">{invoiceSummary?.discountAmount || "—"}</b></div>
+                  <div>总可开金额 <b className="personalModals-invoiceMetaBold">{invoiceSummary?.totalInvoiceableAmount || "—"}</b></div>
                 </div>
               </div>
               <div className="personalModals-invoiceForm">
@@ -198,7 +198,7 @@ export function PersonalModals({
               {invErr && <ModalError style={{ marginTop: 10 }}>{invErr}</ModalError>}
               <div className="personalModals-invoiceActions">
                 <button type="button" onClick={closeModal} className={`pc-soft personalModals-invoiceCancelBtn`}>取消</button>
-                <button type="button" onClick={onSubmitInvoice} className={`pc-primary personalModals-invoiceSubmitBtn`}>提交</button>
+                <button type="button" onClick={onSubmitInvoice} disabled={invoiceSummaryLoading || invoiceSubmitting} className={`pc-primary personalModals-invoiceSubmitBtn`}>{invoiceSubmitting ? "提交中…" : "提交"}</button>
               </div>
             </ModalBody>
           )
@@ -207,16 +207,27 @@ export function PersonalModals({
         {modal === "viewInvoice" && (
           <ModalBody>
             <ModalTitle>查看发票</ModalTitle>
-            <div className="personalModals-viewInvoiceBox">
-              <div className="personalModals-viewInvoiceRow">
-                <div className="personalModals-pdfIcon">PDF</div>
-                <div>
-                  <div className="personalModals-viewInvoiceName">增值税电子普通发票.pdf</div>
-                  <div className="personalModals-viewInvoiceMeta">¥468.00 · 2026-03-20</div>
+            {viewInvoiceLoading ? (
+              <div className="personalModals-previewLoading">加载发票中…</div>
+            ) : viewInvoiceDetail ? (
+              <div className="personalModals-viewInvoiceBox">
+                <div className="personalModals-viewInvoiceRow">
+                  <div className="personalModals-pdfIcon">PDF</div>
+                  <div>
+                    <div className="personalModals-viewInvoiceName">{viewInvoiceDetail.fileName}</div>
+                    <div className="personalModals-viewInvoiceMeta">{viewInvoiceDetail.amount} · {viewInvoiceDetail.date}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <ModalActions onCancel={closeModal} onConfirm={onDownloadInvoice} confirmLabel="下载 PDF" cancelLabel="关闭" />
+            ) : (
+              <div className="personalModals-previewLoading">暂无发票信息</div>
+            )}
+            <ModalActions
+              onCancel={closeModal}
+              onConfirm={() => onDownloadInvoice()}
+              confirmLabel="下载 PDF"
+              cancelLabel="关闭"
+            />
           </ModalBody>
         )}
     </Modal>

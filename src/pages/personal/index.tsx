@@ -43,6 +43,7 @@ export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
   useEffect(() => {
     account.loadAccount()
     subscription.loadSubscription()
+    subscription.loadUsage()
     subscription.loadPlans()
     bills.loadBills()
   // 有缓存则直接展示，无缓存才请求；同一会话内不重复拉取
@@ -157,16 +158,17 @@ export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
           upgradeTarget={subscription.upgradeTarget}
           upgradePreview={subscription.upgradePreview}
           upgradeLoading={subscription.upgradeLoading}
-          upgradePlanCode={subscription.upgradePlanCode}
           yr={subscription.yr}
           onConfirmUpgrade={subscription.confirmUpgrade}
-          addonPick={subscription.addonPick}
-          setAddonPick={subscription.setAddonPick}
-          onConfirmAddon={subscription.confirmAddon}
           planName={subscription.planName}
           cancelExpireDate={subscription.cancelExpireDate}
           onConfirmCancel={subscription.confirmCancel}
           invoiceModal={bills.invoiceModal}
+          invoiceSummary={bills.invoiceSummary}
+          invoiceSummaryLoading={bills.invoiceSummaryLoading}
+          invoiceSubmitting={bills.invoiceSubmitting}
+          viewInvoiceDetail={bills.viewInvoiceDetail}
+          viewInvoiceLoading={bills.viewInvoiceLoading}
           onSubmitInvoice={bills.submitInvoice}
           onDownloadInvoice={bills.downloadInvoice}
         />

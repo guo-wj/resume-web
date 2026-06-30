@@ -33,10 +33,18 @@ export {
 } from "./subscription"
 export {
   loadPersonalSubscriptionData,
+  loadPersonalSubscriptionOnly,
+  loadPersonalUsageData,
   loadPersonalPlansData,
   loadPersonalBillingData,
 } from "./personalCenter"
-export { getBillingOrders, normalizeBillingOrders } from "./billing"
+export {
+  getBillingOrders,
+  getBillingOrderDetail,
+  applyBillingInvoice,
+  getBillingInvoiceDetail,
+  normalizeBillingOrders,
+} from "./billing"
 export type {
   ApiEndpoint,
   ApiResponse,
@@ -63,7 +71,12 @@ export type {
   CreditTransaction,
   CreditTransactionsPage,
 } from "./credit"
-export type { BillingOrder } from "./billing"
+export type {
+  BillingOrder,
+  BillingOrderInvoiceSummary,
+  InvoiceDetail,
+  InvoiceApplyInput,
+} from "./billing"
 export {
   getCreditOverview,
   getCreditTopFeatures,

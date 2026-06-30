@@ -43,6 +43,8 @@ export function PricingOverlay({
         <div className="pricingOverlay-plansGrid">
           {plansLoading ? (
             <div className="pricingOverlay-plansLoading">加载套餐中…</div>
+          ) : plans.length === 0 ? (
+            <div className="pricingOverlay-plansLoading">暂无可用套餐</div>
           ) : plans.map((p) => (
             <div
               key={p.name}
