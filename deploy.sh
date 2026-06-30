@@ -89,11 +89,20 @@ echo "  VITE_SERVER = $VITE_SERVER"
 
 # 安装依赖
 if [ -n "$GITHUB_ACTIONS" ]; then
-    # CI 环境：完全重装，让 npm 自动选择平台
+    # CI 环境：删除 lockfile 和 node_modules，重新生成 Linux 版本
     log_info "CI 环境，清理并重新安装依赖..."
     rm -rf node_modules package-lock.json
-    npm cache clean --force
-    npm install
+    
+    # 安装时跳过可选依赖（避免安装 Mac 平台的 binding）
+    log_info "安装依赖（跳过可选依赖）..."
+    npm install --no-optional
+    
+    # 检查是否有 rolldown 相关的 native binding 缺失
+    # 如果 Rolldown 需要 Linux binding，手动安装
+    if [ -d "node_modules/rolldown" ]; then
+        log_info "检测到 Rolldown，安装 Linux 平台 binding..."
+        npm install @rolldown/binding-linux-x64-gnu@1.1.3 --save-optional || true
+    fi
 else
     # 本地环境
     if [ ! -d "node_modules" ]; then
@@ -216,8 +225,8 @@ fi
 # ============================================
 
 echo ""
-log_success "======================================="
+log_success "========================================"
 log_success "部署完成！"
-log_success "======================================="
+log_success "========================================"
 log_info "访问地址: http://$DEPLOY_HOST"
 echo ""
