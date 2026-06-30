@@ -12,9 +12,24 @@ import type {
 } from "./types"
 import "./index.scss"
 
-export function Modal({ wide, onOverlayClick, children }: ModalProps) {
+export function Modal({ wide, onOverlayClick, onBack, children }: ModalProps) {
   return (
     <div className="modal-overlay" onClick={onOverlayClick} role="presentation">
+      {onBack && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onBack()
+          }}
+          className="modal-backBtn"
+          aria-label="返回"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M14 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
       <div
         className={`modal-dialog ${wide ? "modal-dialogWide" : "modal-dialogNarrow"}`}
         onClick={onOverlayClick}

@@ -12,10 +12,12 @@ import {
   RadioRow,
 } from "@/components/Modal"
 import type { PersonalModalsProps } from "../../types"
+import { isPricingNestedModal } from "../../types"
 import './index.scss'
 
 export function PersonalModals({
   modal,
+  pricingOpen,
   stop,
   closeModal,
   phoneBinding,
@@ -44,9 +46,10 @@ export function PersonalModals({
   if (!modal) return null
 
   const wide = modal === "upgrade" || modal === "invoice"
+  const nestedInPricing = pricingOpen && isPricingNestedModal(modal)
 
   return (
-    <Modal wide={wide} onOverlayClick={stop}>
+    <Modal wide={wide} onOverlayClick={stop} onBack={nestedInPricing ? closeModal : undefined}>
         {(modal === "bindPhone" || modal === "bindEmail") && (() => {
           const isPhone = modal === "bindPhone"
           const bound = isPhone ? phoneBinding.bound : emailBinding.bound

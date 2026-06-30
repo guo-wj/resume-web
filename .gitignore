@@ -2,3 +2,5 @@ node_modules
 dist
 .env.dev
 .package-lock.json
+.npmrc
+.nvmrc

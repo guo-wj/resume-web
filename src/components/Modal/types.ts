@@ -3,6 +3,7 @@ import type { CSSProperties, MouseEvent, ReactNode } from "react"
 export interface ModalProps {
   wide?: boolean
   onOverlayClick?: (e: MouseEvent) => void
+  onBack?: () => void
   children: ReactNode
 }
 

@@ -157,8 +157,17 @@ export interface BillsTabProps {
   onDownloadInvoice: (order?: BillingOrder) => void
 }
 
+export const PRICING_NESTED_MODALS = ["upgrade", "addon", "cancel"] as const
+
+export function isPricingNestedModal(
+  modal: PersonalModalId,
+): modal is (typeof PRICING_NESTED_MODALS)[number] {
+  return modal === "upgrade" || modal === "addon" || modal === "cancel"
+}
+
 export interface PricingOverlayProps {
   onClose: () => void
+  hideClose?: boolean
   cycle: string
   setCycle: (cycle: string) => void
   plansLoading: boolean
@@ -171,6 +180,7 @@ export interface PricingOverlayProps {
 
 export interface PersonalModalsProps {
   modal: PersonalModalId
+  pricingOpen: boolean
   stop: (e: MouseEvent) => void
   closeModal: () => void
   phoneBinding: BindingChannel

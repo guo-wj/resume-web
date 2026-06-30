@@ -4,6 +4,7 @@ import './index.scss'
 
 export function PricingOverlay({
   onClose,
+  hideClose = false,
   cycle,
   setCycle,
   plansLoading,
@@ -15,7 +16,9 @@ export function PricingOverlay({
 }: PricingOverlayProps) {
   return (
     <div className={`pc-scroll pricingOverlay-overlay`}>
-      <button type="button" onClick={onClose} className={`pc-chip pricingOverlay-closeBtn`} aria-label="关闭">✕</button>
+      {!hideClose && (
+        <button type="button" onClick={onClose} className={`pc-chip pricingOverlay-closeBtn`} aria-label="关闭">✕</button>
+      )}
       <div className="pricingOverlay-inner">
         <div className="pricingOverlay-hero">
           <h2 className="pricingOverlay-heroTitle">解锁 Magic Resume 全部能力</h2>

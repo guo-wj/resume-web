@@ -13,6 +13,7 @@ import { AccountTab } from "./components/AccountTab"
 import { BillsTab } from "./components/BillsTab"
 import { SubscriptionTab } from "./components/SubscriptionTab"
 import type { PersonalCenterProps, PersonalModalId } from "./types"
+import { isPricingNestedModal } from "./types"
 import './index.scss'
 
 export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
@@ -78,14 +79,16 @@ export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
     <div className="pc-root">
       <div className="personalCenter-backdrop" onClick={handlePrimaryBackdropClick} role="presentation">
         <div className={`pc-scroll personalCenter-panel`} onClick={stop} role="presentation">
-          <button
-            type="button"
-            onClick={onClose}
-            className={`pc-chip personalCenter-closeBtn`}
-            aria-label="关闭"
-          >
-            ✕
-          </button>
+          {!pricingOpen && (
+            <button
+              type="button"
+              onClick={onClose}
+              className={`pc-chip personalCenter-closeBtn`}
+              aria-label="关闭"
+            >
+              ✕
+            </button>
+          )}
 
           <Sidebar page={page} onPageChange={setPage} onClose={onClose} />
 
@@ -133,6 +136,7 @@ export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
           {pricingOpen && (
             <PricingOverlay
               onClose={() => setPricingOpen(false)}
+              hideClose={isPricingNestedModal(modal)}
               cycle={subscription.cycle}
               setCycle={subscription.setCycle}
               plansLoading={subscription.plansLoading}
@@ -147,6 +151,7 @@ export function PersonalCenter({ onClose = () => {} }: PersonalCenterProps) {
 
         <PersonalModals
           modal={modal}
+          pricingOpen={pricingOpen}
           stop={stop}
           closeModal={closeModal}
           phoneBinding={account.phoneBinding}

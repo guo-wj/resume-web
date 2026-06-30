@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "setup": "./scripts/npm-install.sh install",
     "dev": "vite --mode dev",
     "build": "tsc -b && vite build --mode prod",
     "deploy": "npm run build && ./deploy.sh --skip-build",
@@ -23,6 +24,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.1.3",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
