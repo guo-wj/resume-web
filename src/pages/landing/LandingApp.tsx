@@ -64,6 +64,58 @@ const ChevronDownIcon = ({ size = 14, color = "#9890AE" }) => (
   </svg>
 )
 
+/* ---- 「求职搭子」首页图标 & 吉祥物（还原自 index.html 原型） ---- */
+const Mascot = ({ size = 98 }) => (
+  <svg width={size} height={size} viewBox="0 0 104 104" fill="none">
+    <path d="M48 21 C 43 7, 60 5, 52 20" stroke="#2fae70" strokeWidth="5" strokeLinecap="round" fill="none" />
+    <rect x="16" y="22" width="72" height="60" rx="22" fill="#4fd08a" />
+    <path d="M34 74 L23 94 L50 78 Z" fill="#4fd08a" />
+    <ellipse cx="42" cy="49" rx="9.5" ry="11" fill="#fff" />
+    <ellipse cx="66" cy="49" rx="9.5" ry="11" fill="#fff" />
+    <circle cx="44.5" cy="51" r="4.8" fill="#123524" />
+    <circle cx="68.5" cy="51" r="4.8" fill="#123524" />
+    <circle cx="46" cy="49" r="1.7" fill="#fff" />
+    <circle cx="70" cy="49" r="1.7" fill="#fff" />
+    <path d="M46 65 Q52 72 61 65" stroke="#123524" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+    <ellipse cx="34" cy="60" rx="4.5" ry="3" fill="#ff9db8" opacity=".7" />
+    <ellipse cx="75" cy="60" rx="4.5" ry="3" fill="#ff9db8" opacity=".7" />
+  </svg>
+)
+const ArrowUpIcon = ({ size = 18, color = "#fff" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={color}>
+    <path fillRule="evenodd" d="M7.2 3.83 4.3 6.74a.9.9 0 1 1-1.27-1.27l4.34-4.35a.9.9 0 0 1 1.27 0l4.34 4.35a.9.9 0 1 1-1.27 1.27L8.8 3.83v9.47a.8.8 0 0 1-1.6 0V3.83Z" />
+  </svg>
+)
+const MicIcon = ({ size = 17, color = "#7b61ff" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="9" y="2" width="6" height="12" rx="3" fill={color} />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
+const ClipIcon = ({ size = 17, color = "#7b61ff" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.6 1.6 0 0 1-2.3-2.3l7.3-7.3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const PlusMiniIcon = ({ size = 13, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill={color}>
+    <path fillRule="evenodd" d="M7.1 7.1V2.5a.9.9 0 0 1 1.8 0V7.1h4.6a.9.9 0 0 1 0 1.8H8.9v4.6a.9.9 0 0 1-1.8 0V8.9H2.5a.9.9 0 0 1 0-1.8H7.1Z" />
+  </svg>
+)
+const UploadIcon = ({ size = 22, color = "#7b61ff" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 15V4m0 0 4 4m-4-4-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+const PiecesIcon = ({ size = 22, color = "#1f8a57" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10v6H4V5.5ZM14 4h4.5A1.5 1.5 0 0 1 20 5.5V10h-6V4ZM4 14h6v6H5.5A1.5 1.5 0 0 1 4 18.5V14ZM14 14h6v4.5a1.5 1.5 0 0 1-1.5 1.5H14v-6Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+  </svg>
+)
+
+const HOME_PROMPTS = ["0 经验想转产品经理", "实习经历太单薄怎么写", "简历投了没回音"]
+
 const isPhone = (v) => /^1[3-9]\d{9}$/.test(v)
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
@@ -247,6 +299,8 @@ export function LandingApp() {
   const [toastMsg, setToastMsg] = useState("")
 
   const [heroInput, setHeroInput] = useState("")
+  const [heroGoal, setHeroGoal] = useState("generate") // explore | revise | generate
+  const [heroIdentity, setHeroIdentity] = useState("student") // student | intern | pro
   const [chatInput, setChatInput] = useState("")
   const [chatStage, setChatStage] = useState("intro") // intro | ready | generating | done
   const [chat, setChat] = useState([INTRO_MSG])
@@ -566,6 +620,7 @@ export function LandingApp() {
   }
 
   /* ---------- 落地页 AI 输入 ---------- */
+  const addPrompt = (text) => setHeroInput((v) => (v.trim() ? v.trim() + " " : "") + text)
   const onHeroChange = (e) => setHeroInput(e.target.value)
   const onHeroKey = (e) => {
     if (e.key === "Enter") heroSubmit()
@@ -701,117 +756,194 @@ export function LandingApp() {
 
       {/* ===================== LANDING ===================== */}
       {screen === "landing" && (
-        <div style={css("position:relative;min-height:100vh;background:radial-gradient(1100px 600px at 82% -8%,#EBE4FF 0%,rgba(235,228,255,0) 60%),#F6F4FF;overflow:hidden;")}>
-          <div style={css("position:absolute;top:-90px;left:-70px;width:300px;height:300px;border-radius:50%;background:#D9CCFF;filter:blur(8px);opacity:.55;animation:floatA 9s ease-in-out infinite;")} />
-          <div style={css("position:absolute;bottom:40px;left:-40px;width:150px;height:150px;border-radius:42% 58% 60% 40%/45% 45% 55% 55%;background:#CBF35E;opacity:.7;animation:floatB 11s ease-in-out infinite;")} />
-          <div style={css("position:absolute;top:140px;right:60px;width:90px;height:90px;border-radius:50%;border:14px solid #FFB3D1;opacity:.6;animation:floatA 7.5s ease-in-out infinite;")} />
+        <div style={css("--accent:#9875ff;--accent-strong:#7b61ff;--accent-press:#6a4ff0;--accent-tint:#f0ecff;--on-accent:#ffffff;--ink-1:#1f1f1f;--ink-2:rgba(31,31,31,.64);--ink-3:rgba(31,31,31,.40);--border:rgba(17,24,39,.07);--border-strong:rgba(17,24,39,.13);--font-sans:'Inter','HarmonyOS Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;--font-sans-sc:'HarmonyOS Sans SC','PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;position:relative;min-height:100vh;background:#f3f1fb;font-family:var(--font-sans);color:var(--ink-1);overflow:hidden;padding-bottom:56px;")}>
 
-          {/* nav */}
-          <div style={css("position:relative;z-index:100;max-width:1180px;margin:0 auto;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;")}>
-            <div style={css("display:flex;align-items:center;gap:10px;")}>
-              <div style={css("width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6D5DF6,#9B7BFF);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -6px rgba(109,93,246,.7);")}>
-                <div style={css("width:13px;height:13px;border-radius:4px;background:#CBF35E;transform:rotate(12deg);")} />
-              </div>
-              <span style={css("font-weight:800;font-size:19px;letter-spacing:-.3px;")}>Magic Resume</span>
+          {/* header */}
+          <header style={css("height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.78);backdrop-filter:blur(10px);position:sticky;top:0;z-index:30;")}>
+            <div style={css("display:flex;align-items:center;gap:9px;")}>
+              <Mascot size={30} />
+              <span style={css("font-family:var(--font-sans-sc);font-weight:800;font-size:19px;letter-spacing:.5px;")}>不写简历</span>
+              <span style={css("font-size:11px;color:var(--ink-3);border:1px solid var(--border-strong);border-radius:99px;padding:2px 8px;margin-left:2px;")}>求职搭子</span>
             </div>
-            <div style={css("display:flex;align-items:center;gap:30px;")}>
-              <div style={css("display:flex;gap:26px;font-size:14.5px;font-weight:600;color:#5B5470;white-space:nowrap;")}>
-                <span>AI 简历</span>
-                <span>模板库</span>
-                <span>定价</span>
-              </div>
-              {isLoggedIn ? (
-                <div ref={userMenuRef} style={css("position:relative;z-index:1;")}>
-                  <button
-                    type="button"
-                    style={css("display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #ECE7FB;padding:5px 12px 5px 5px;border-radius:999px;box-shadow:0 4px 14px -8px rgba(40,24,90,.4);cursor:pointer;font-family:inherit;color:inherit;")}
-                    onClick={() => setUserMenuOpen((v) => !v)}
-                  >
-                    <div style={css("width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6D5DF6,#C77BFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;")}>{user?.nickname?.slice(0, 1) || "你"}</div>
-                    <span style={css("font-size:13.5px;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>{user?.nickname || "用户"}</span>
-                    <ChevronDownIcon color={userMenuOpen ? "#6D5DF6" : "#9890AE"} />
-                  </button>
-                  {userMenuOpen && (
-                    <div style={css("position:absolute;top:100%;right:0;padding-top:8px;z-index:10;")}>
-                      <div style={css("min-width:168px;background:#fff;border:1px solid #ECE7FB;border-radius:14px;box-shadow:0 16px 40px -16px rgba(40,24,90,.35);padding:6px;animation:popIn .2s ease both;")}>
-                        <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
-                          个人中心
-                        </button>
-                        <button type="button" className="user-menu-item danger" onClick={handleLogout}>
-                          退出登录
-                        </button>
-                      </div>
+            {isLoggedIn ? (
+              <div ref={userMenuRef} style={css("position:relative;z-index:1;")}>
+                <button
+                  type="button"
+                  style={css("display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border-strong);padding:4px 12px 4px 4px;border-radius:999px;cursor:pointer;font-family:inherit;color:inherit;")}
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                >
+                  <div style={css("width:30px;height:30px;border-radius:99px;background:var(--accent-tint);color:var(--accent-strong);display:grid;place-items:center;font-weight:700;font-size:13px;")}>{user?.nickname?.slice(0, 1) || "你"}</div>
+                  <span style={css("font-size:13px;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>{user?.nickname || "用户"}</span>
+                  <ChevronDownIcon color={userMenuOpen ? "#7b61ff" : "#9890AE"} />
+                </button>
+                {userMenuOpen && (
+                  <div style={css("position:absolute;top:100%;right:0;padding-top:8px;z-index:10;")}>
+                    <div style={css("min-width:168px;background:#fff;border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 16px 40px -16px rgba(40,24,90,.35);padding:6px;animation:popIn .2s ease both;")}>
+                      <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
+                        个人中心
+                      </button>
+                      <button type="button" className="user-menu-item danger" onClick={handleLogout}>
+                        退出登录
+                      </button>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div style={css("display:flex;align-items:center;gap:12px;")}>
-                  <E as="button" s="font-size:14.5px;font-weight:700;color:#1B1530;padding:9px 16px;border-radius:999px;" h="background:#EEE9FD;" onClick={openAuthLogin}>登录</E>
-                  <E as="button" s="font-size:14.5px;font-weight:700;color:#fff;background:#6D5DF6;padding:10px 20px;border-radius:999px;box-shadow:0 8px 20px -8px rgba(109,93,246,.8);" h="background:#5B4BE8;" onClick={openAuthCreate}>免费开始</E>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* hero */}
-          <div style={css("position:relative;z-index:5;max-width:1120px;margin:0 auto;padding:36px 32px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;")}>
-            <div style={css("animation:fadeUp .6s ease both;")}>
-              <div style={css("display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #ECE6FB;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#6D5DF6;box-shadow:0 6px 18px -12px rgba(40,24,90,.5);")}>✦ AI 驱动的简历工具</div>
-              <h1 style={css("font-size:60px;line-height:1.04;letter-spacing:-1.5px;font-weight:800;margin:20px 0 0;")}>
-                更少折腾，<br />更多{" "}
-                <span style={css("position:relative;white-space:nowrap;")}>
-                  Offer
-                  <span style={css("position:absolute;left:-2px;right:-2px;bottom:6px;height:16px;background:#CBF35E;z-index:-1;border-radius:4px;")} />
-                </span>
-                。
-              </h1>
-              <p style={css("font-size:18px;line-height:1.6;color:#5B5470;margin:18px 0 28px;max-width:430px;")}>和 AI 聊几句，几分钟就能生成一份打动 HR 的简历。无需从零开始，先聊聊你的经历吧。</p>
-
-              {/* AI chat input entry */}
-              <div style={css("background:#fff;border:1px solid #E9E3FA;border-radius:20px;padding:8px 8px 8px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 20px 50px -28px rgba(40,24,90,.55);max-width:480px;")}>
-                <span style={css("color:#6D5DF6;font-size:18px;flex:0 0 auto;")}>✦</span>
-                <input value={heroInput} onChange={onHeroChange} onKeyDown={onHeroKey} placeholder="说说你的工作经历，我来帮你写…" style={css("flex:1;border:none;font-size:15.5px;color:#1B1530;background:transparent;padding:10px 0;")} />
-                <E as="button" s="flex:0 0 auto;width:44px;height:44px;border-radius:14px;background:#6D5DF6;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -8px rgba(109,93,246,.9);" h="background:#5B4BE8;" onClick={heroSubmit}>
-                  <SendIcon />
-                </E>
-              </div>
-              <div style={css("display:flex;align-items:center;gap:16px;margin-top:18px;")}>
-                <E as="button" s="font-size:15px;font-weight:700;color:#1B1530;display:inline-flex;align-items:center;gap:6px;" h="color:#6D5DF6;" onClick={startCreate}>
-                  或 直接创建你的简历 <span>→</span>
-                </E>
-                <span style={css("font-size:13.5px;color:#9890AE;")}>已帮助 50,000+ 求职者拿到 offer</span>
-              </div>
-            </div>
-
-            {/* hero illustration */}
-            <div style={css("position:relative;animation:fadeUp .7s ease .1s both;")}>
-              <div style={css("position:absolute;right:-10px;top:-26px;width:120px;height:120px;border-radius:46% 54% 62% 38%/52% 42% 58% 48%;background:linear-gradient(135deg,#9B7BFF,#6D5DF6);opacity:.9;animation:floatA 8s ease-in-out infinite;")} />
-              <div style={css("background:#fff;border-radius:22px;padding:26px;box-shadow:0 40px 80px -36px rgba(40,24,90,.5);position:relative;z-index:2;")}>
-                <div style={css("display:flex;align-items:center;gap:13px;")}>
-                  <div style={css("width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#FFB3D1,#FF9E8A);")} />
-                  <div style={css("flex:1;")}>
-                    <div style={css("height:13px;width:62%;background:#1B1530;border-radius:5px;")} />
-                    <div style={css("height:9px;width:42%;background:#D9D3EC;border-radius:5px;margin-top:8px;")} />
                   </div>
-                  <div style={css("background:#EEFAD2;color:#5A8A1A;font-weight:800;font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid #DBF0AE;")}>匹配度 92</div>
-                </div>
-                <div style={css("height:1px;background:#F0ECFA;margin:18px 0;")} />
-                <div style={css("height:9px;width:30%;background:#C9C2E2;border-radius:5px;")} />
-                <div style={css("height:8px;width:92%;background:#EDE9F8;border-radius:5px;margin-top:11px;")} />
-                <div style={css("height:8px;width:84%;background:#EDE9F8;border-radius:5px;margin-top:8px;")} />
-                <div style={css("height:8px;width:74%;background:#EDE9F8;border-radius:5px;margin-top:8px;")} />
-                <div style={css("display:flex;gap:8px;margin-top:18px;")}>
-                  <div style={css("height:24px;width:62px;background:#EFEAFE;border-radius:8px;")} />
-                  <div style={css("height:24px;width:78px;background:#EFEAFE;border-radius:8px;")} />
-                  <div style={css("height:24px;width:54px;background:#EFEAFE;border-radius:8px;")} />
-                </div>
+                )}
               </div>
-              <div style={css("position:absolute;bottom:-22px;left:-20px;z-index:3;background:#fff;border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:9px;box-shadow:0 18px 40px -18px rgba(40,24,90,.5);animation:floatB 6.5s ease-in-out infinite;")}>
-                <span style={css("color:#6D5DF6;")}>✦</span>
-                <span style={css("font-size:13px;font-weight:700;")}>AI 已优化 8 处表达</span>
+            ) : (
+              <div style={css("display:flex;align-items:center;gap:10px;")}>
+                <E as="button" s="height:34px;padding:0 14px;border:0;background:transparent;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-1);" h="background:var(--accent-tint);" onClick={openAuthLogin}>登录</E>
+                <E as="button" s="height:34px;padding:0 18px;border:0;background:var(--accent);color:#fff;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(123,97,255,.28);" h="background:var(--accent-press);" onClick={openAuthCreate}>免费注册</E>
+              </div>
+            )}
+          </header>
+
+          {/* home / 落地页 */}
+          <main style={css("position:relative;max-width:960px;margin:0 auto;padding:44px 24px 56px;overflow:visible;")}>
+            {/* 装饰色块 */}
+            <div aria-hidden="true" style={css("position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:0;")}>
+              <span style={css("position:absolute;top:44px;left:7%;width:86px;height:86px;border-radius:52% 48% 46% 54% / 54% 46% 54% 46%;background:#bff0d6;animation:wzfloat 4.5s ease-in-out infinite;")} />
+              <span style={css("position:absolute;top:14px;left:23%;width:40px;height:40px;border-radius:50%;background:#dcd0ff;")} />
+              <span style={css("position:absolute;top:96px;right:8%;width:74px;height:74px;border-radius:50%;background:#ffd8e8;animation:wzfloat 5.5s ease-in-out infinite;")} />
+              <span style={css("position:absolute;top:26px;right:23%;width:30px;height:30px;border-radius:11px;background:#ffe6a3;transform:rotate(16deg);")} />
+              <span style={css("position:absolute;top:168px;left:3%;width:24px;height:24px;border-radius:50%;background:#c7dbff;")} />
+              <span style={css("position:absolute;top:150px;right:3%;width:18px;height:18px;border-radius:50%;background:#bff0d6;")} />
+            </div>
+
+            {/* 标题 + 吉祥物 */}
+            <div style={css("position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:15px;")}>
+              <div style={css("filter:drop-shadow(0 10px 20px rgba(47,174,112,.26));animation:wzfloat 4s ease-in-out infinite;")}>
+                <Mascot size={98} />
+              </div>
+              <h1 style={css("font-family:var(--font-sans-sc);font-weight:800;font-size:46px;line-height:1.2;letter-spacing:.005em;margin:0;")}>
+                不止简历，<span style={css("color:var(--accent-strong);")}>解决一切求职卡点</span>
+              </h1>
+              <p style={css("font-size:16px;line-height:1.75;color:var(--ink-2);max-width:500px;margin:0;")}>
+                没实习憋不出简历？海投却石沉大海？简历太丑？<br />让「求职搭子」陪你，一个一个搞定 🌱
+              </p>
+            </div>
+
+            {/* 目标胶囊 */}
+            <div style={css("position:relative;z-index:1;display:flex;justify-content:center;margin-top:26px;")}>
+              <div style={css("display:inline-flex;gap:5px;background:#efeaff;padding:5px;border-radius:9999px;")}>
+                {[
+                  { key: "explore", label: "职业探索" },
+                  { key: "revise", label: "简历修改" },
+                  { key: "generate", label: "生成简历" },
+                ].map((g) => (
+                  <button
+                    key={g.key}
+                    onClick={() => setHeroGoal(g.key)}
+                    style={css(
+                      "padding:8px 17px;border-radius:9999px;border:0;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;transition:all .18s;" +
+                        (heroGoal === g.key
+                          ? "background:#fff;color:var(--accent-strong);box-shadow:0 2px 8px rgba(123,97,255,.20);"
+                          : "background:transparent;color:var(--ink-2);"),
+                    )}
+                  >
+                    {g.label}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+
+            {/* 友好输入区 */}
+            <div style={css("position:relative;z-index:1;max-width:660px;margin:16px auto 0;")}>
+              <div style={css("background:#fff;border:1.5px solid var(--accent);border-radius:24px;box-shadow:0 14px 34px rgba(123,97,255,.14);padding:14px 16px 12px;")}>
+                <div style={css("display:flex;align-items:center;gap:8px;margin-bottom:2px;")}>
+                  <span style={css("display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#1f8a57;background:#e6f7ef;padding:3px 9px;border-radius:9999px;")}>
+                    <span style={css("width:6px;height:6px;border-radius:50%;background:#22c06b;")} />求职搭子在线
+                  </span>
+                </div>
+                <textarea
+                  value={heroInput}
+                  onChange={onHeroChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      heroSubmit()
+                    }
+                  }}
+                  placeholder="把烦恼丢给搭子就行，比如「0 经验想转产品经理，怎么写简历？」"
+                  style={css("width:100%;border:0;outline:0;resize:none;background:transparent;font-family:inherit;font-size:15px;line-height:1.6;color:var(--ink-1);min-height:44px;padding:6px 2px 4px;")}
+                />
+                <div style={css("display:flex;align-items:center;gap:8px;flex-wrap:wrap;")}>
+                  <span style={css("font-size:12.5px;color:var(--ink-3);")}>我是</span>
+                  {[
+                    { key: "student", label: "大学生" },
+                    { key: "intern", label: "实习生" },
+                    { key: "pro", label: "职场人" },
+                  ].map((it) => (
+                    <button
+                      key={it.key}
+                      onClick={() => setHeroIdentity(it.key)}
+                      style={css(
+                        "padding:5px 13px;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;transition:all .16s;" +
+                          (heroIdentity === it.key
+                            ? "background:var(--accent-tint);color:var(--accent-strong);border:1px solid var(--accent);"
+                            : "background:transparent;color:var(--ink-2);border:1px solid var(--border-strong);"),
+                      )}
+                    >
+                      {it.label}
+                    </button>
+                  ))}
+                  <span style={css("flex:1;min-width:8px;")} />
+                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="语音说给搭子听" onClick={() => toast("语音输入开发中 🎤")}>
+                    <MicIcon />
+                  </E>
+                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="添加材料" onClick={startCreate}>
+                    <ClipIcon />
+                  </E>
+                  <E as="button" s="width:40px;height:40px;border-radius:99px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(123,97,255,.32);" h="background:var(--accent-press);" title="发送" onClick={heroSubmit}>
+                    <ArrowUpIcon />
+                  </E>
+                </div>
+              </div>
+            </div>
+
+            {/* 提示词参考 */}
+            <div style={css("position:relative;z-index:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;")}>
+              <span style={css("font-size:12.5px;color:var(--ink-3);")}>大家都在问</span>
+              {HOME_PROMPTS.map((p) => (
+                <E
+                  key={p}
+                  as="button"
+                  s="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9999px;border:1px solid var(--border-strong);background:#fff;color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer;transition:all .16s;"
+                  h="border-color:var(--accent);color:var(--accent-strong);"
+                  onClick={() => addPrompt(p)}
+                >
+                  {p}
+                  <PlusMiniIcon />
+                </E>
+              ))}
+            </div>
+
+            {/* 快捷启动 / 入口二、三 */}
+            <div style={css("position:relative;z-index:1;display:flex;align-items:center;gap:14px;width:100%;max-width:660px;margin:36px auto 14px;")}>
+              <span style={css("flex:1;height:1px;background:var(--border-strong);")} />
+              <span style={css("font-size:12px;color:var(--ink-3);")}>手上有材料？一步到位</span>
+              <span style={css("flex:1;height:1px;background:var(--border-strong);")} />
+            </div>
+            <div style={css("position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:660px;margin:0 auto;text-align:left;")}>
+              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #e4dcff;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(123,97,255,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(123,97,255,.14);" onClick={startCreate}>
+                <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-tint);")}>
+                  <UploadIcon />
+                </span>
+                <span style={css("display:flex;flex-direction:column;gap:3px;")}>
+                  <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>已有简历，直接上传</span>
+                  <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>搭子秒读、诊断打分，告诉你哪儿能更好</span>
+                </span>
+              </E>
+              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #cdeedd;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(34,168,106,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(34,168,106,.14);" onClick={startCreate}>
+                <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:#e6f7ef;")}>
+                  <PiecesIcon />
+                </span>
+                <span style={css("display:flex;flex-direction:column;gap:3px;")}>
+                  <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>只有零散材料，帮我拼</span>
+                  <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>丢进项目 / 作品 / JD，自动拼出简历骨架</span>
+                </span>
+              </E>
+            </div>
+          </main>
         </div>
       )}
 
@@ -1206,6 +1338,7 @@ const LANDING_CSS = `
   ::placeholder { color: #A7A0BC; }
   @keyframes floatA { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-16px) } }
   @keyframes floatB { 0%,100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(12px) rotate(8deg) } }
+  @keyframes wzfloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
   @keyframes popIn { from { opacity: 0; transform: scale(.95) translateY(12px) } to { opacity: 1; transform: none } }
   @keyframes slideIn { from { opacity: 0; transform: translateX(14px) } to { opacity: 1; transform: none } }
