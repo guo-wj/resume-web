@@ -622,9 +622,6 @@ export function LandingApp() {
   /* ---------- 落地页 AI 输入 ---------- */
   const addPrompt = (text) => setHeroInput((v) => (v.trim() ? v.trim() + " " : "") + text)
   const onHeroChange = (e) => setHeroInput(e.target.value)
-  const onHeroKey = (e) => {
-    if (e.key === "Enter") heroSubmit()
-  }
   const heroSubmit = () => {
     const v = heroInput.trim()
     setScreen("chat")
