@@ -1,8 +1,9 @@
 // @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import { ApiError, loginByPassword, logout, request, setUserPassword } from "@/api"
+import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId, HERO_GOAL_WORKFLOW } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
+import { AuthGateProvider, RequireAuthAction } from "@/components"
 import { useAuth } from "@/store"
 
 const { useState, useRef, useEffect, useCallback } = React
@@ -114,7 +115,232 @@ const PiecesIcon = ({ size = 22, color = "#1f8a57" }) => (
   </svg>
 )
 
-const HOME_PROMPTS = ["0 经验想转产品经理", "实习经历太单薄怎么写", "简历投了没回音"]
+const HERO_GOAL_PROMPTS = {
+  explore: [
+    "我想转行做产品经理，需要具备哪些核心技能？",
+    "互联网行业哪些岗位前景和薪资更好？",
+    "大厂和创业公司，应届生该如何选择？",
+  ],
+  revise: [
+    "帮我润色这段实习经历，让它更有成就感",
+    "简历内容太多，怎么精简到一页？",
+    "针对这个岗位 JD，帮我优化简历关键词",
+  ],
+  generate: ["0 经验想转产品经理", "实习经历太单薄怎么写", "简历投了没回音"],
+}
+
+const HERO_IDENTITY_LABELS = {
+  student: "大学生",
+  intern: "实习生",
+  pro: "职场人",
+}
+
+const HERO_IDENTITY_PREFIX_RE = /^我是(?:大学生|实习生|职场人)/
+
+function formatHeroIdentity(identityKey) {
+  return `我是${HERO_IDENTITY_LABELS[identityKey]}`
+}
+
+function applyHeroIdentity(input, identityKey) {
+  const prefix = formatHeroIdentity(identityKey)
+  const rest = input.replace(HERO_IDENTITY_PREFIX_RE, "").trim()
+  return rest ? `${prefix} ${rest}` : prefix
+}
+
+const HERO_FILE_TYPES = [".pdf", ".doc", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg", ".webp"]
+const HERO_FILE_ACCEPT = HERO_FILE_TYPES.join(",")
+const RESUME_FILE_TYPES = [".pdf", ".doc", ".docx"]
+const RESUME_FILE_ACCEPT = RESUME_FILE_TYPES.join(",")
+const MATERIAL_FILE_TYPES = [".pdf", ".doc", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg", ".webp"]
+const MATERIAL_FILE_ACCEPT = MATERIAL_FILE_TYPES.join(",")
+const MATERIAL_FILE_MAX_COUNT = 5
+const HERO_FILE_MAX_SIZE = 10 * 1024 * 1024
+const HERO_FILE_MAX_COUNT = 5
+
+function isHeroFileAllowed(file) {
+  const ext = `.${file.name.split(".").pop()?.toLowerCase() || ""}`
+  return HERO_FILE_TYPES.includes(ext)
+}
+
+function isResumeFileAllowed(file) {
+  const ext = `.${file.name.split(".").pop()?.toLowerCase() || ""}`
+  return RESUME_FILE_TYPES.includes(ext)
+}
+
+function isMaterialFileAllowed(file) {
+  const ext = `.${file.name.split(".").pop()?.toLowerCase() || ""}`
+  return MATERIAL_FILE_TYPES.includes(ext)
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function createHeroFileItem(file) {
+  return {
+    id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    file,
+    name: file.name,
+    size: file.size,
+  }
+}
+
+const HERO_VOICE_MAX_COUNT = 3
+const HERO_VOICE_MAX_DURATION = 60
+const HERO_VOICE_MIN_DURATION = 0.8
+const HERO_VOICE_BAR_COUNT = 28
+
+function formatVoiceDuration(seconds) {
+  const total = Math.max(0, Math.floor(seconds))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, "0")}`
+}
+
+function getVoiceMimeType() {
+  if (typeof MediaRecorder === "undefined") return ""
+  if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) return "audio/webm;codecs=opus"
+  if (MediaRecorder.isTypeSupported("audio/webm")) return "audio/webm"
+  if (MediaRecorder.isTypeSupported("audio/mp4")) return "audio/mp4"
+  return ""
+}
+
+function canUseVoiceInput() {
+  if (!window.isSecureContext) return "insecure"
+  if (navigator.mediaDevices?.getUserMedia) return "ok"
+  const legacyGetUserMedia =
+    navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+  return legacyGetUserMedia ? "legacy" : "unsupported"
+}
+
+async function requestAudioStream() {
+  const support = canUseVoiceInput()
+  if (support === "insecure") {
+    const err = new Error("INSECURE_CONTEXT")
+    err.code = "INSECURE_CONTEXT"
+    throw err
+  }
+  if (support === "unsupported") {
+    const err = new Error("UNSUPPORTED")
+    err.code = "UNSUPPORTED"
+    throw err
+  }
+  if (support === "ok") {
+    return navigator.mediaDevices.getUserMedia({ audio: true })
+  }
+  const legacyGetUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+  return new Promise((resolve, reject) => {
+    legacyGetUserMedia.call(navigator, { audio: true }, resolve, reject)
+  })
+}
+
+function getVoiceInputErrorMessage(err) {
+  if (err?.code === "INSECURE_CONTEXT" || err?.name === "INSECURE_CONTEXT") {
+    return "语音输入需要在 HTTPS 或 localhost 环境下使用"
+  }
+  if (err?.code === "UNSUPPORTED" || err?.name === "UNSUPPORTED") {
+    return "当前浏览器不支持语音输入，请使用 Chrome / Edge / Safari 最新版"
+  }
+  if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+    return "请允许使用麦克风后再试"
+  }
+  if (err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError") {
+    return "未检测到可用麦克风，请检查设备连接"
+  }
+  return "无法启动录音，请检查麦克风权限"
+}
+
+function createEmptyVoiceBars(count = HERO_VOICE_BAR_COUNT) {
+  return Array.from({ length: count }, () => 0.18)
+}
+
+function sampleLiveVoiceBars(analyser, dataArray) {
+  analyser.getByteFrequencyData(dataArray)
+  const step = Math.max(1, Math.floor(dataArray.length / HERO_VOICE_BAR_COUNT))
+  const bars = []
+  for (let i = 0; i < HERO_VOICE_BAR_COUNT; i++) {
+    let sum = 0
+    for (let j = 0; j < step; j++) sum += dataArray[i * step + j] || 0
+    bars.push(Math.max(0.15, (sum / step / 255) * 1.15))
+  }
+  return bars
+}
+
+async function buildVoiceWaveformBars(blob, barCount = HERO_VOICE_BAR_COUNT) {
+  const arrayBuffer = await blob.arrayBuffer()
+  const AudioCtx = window.AudioContext || window.webkitAudioContext
+  const audioContext = new AudioCtx()
+  try {
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+    const channel = audioBuffer.getChannelData(0)
+    const blockSize = Math.max(1, Math.floor(channel.length / barCount))
+    const bars = []
+    for (let i = 0; i < barCount; i++) {
+      let sum = 0
+      const start = i * blockSize
+      for (let j = 0; j < blockSize; j++) sum += Math.abs(channel[start + j] || 0)
+      bars.push(sum / blockSize)
+    }
+    const max = Math.max(...bars, 0.01)
+    return bars.map((v) => Math.max(0.12, v / max))
+  } finally {
+    await audioContext.close()
+  }
+}
+
+function VoiceWaveBar({ bars, color = "#7b61ff", height = 28, animate = false }) {
+  const displayBars = bars?.length ? bars : createEmptyVoiceBars()
+  return (
+    <div style={css(`display:flex;align-items:center;gap:2px;height:${height}px;min-width:0;flex:1;`)}>
+      {displayBars.map((level, i) => (
+        <span
+          key={i}
+          style={css(
+            `width:3px;border-radius:9999px;background:${color};opacity:${animate ? 0.55 + (i % 5) * 0.09 : 0.88};transform:scaleY(${Math.max(0.14, Math.min(1, level))});transform-origin:center;height:100%;transition:transform .08s ease;`,
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
+function VoiceClipRow({ clip, tone = "input", playing = false, onPlay, onRemove }) {
+  const barColor = tone === "chat" ? "#ffffff" : "#7b61ff"
+  const shellStyle =
+    tone === "chat"
+      ? "display:inline-flex;align-items:center;gap:10px;min-width:196px;max-width:100%;padding:8px 12px;border-radius:16px;background:rgba(255,255,255,.16);"
+      : "display:inline-flex;align-items:center;gap:10px;min-width:196px;max-width:100%;padding:8px 12px;border-radius:16px;background:#f3f0ff;border:1px solid #e4dcff;"
+  const btnStyle =
+    tone === "chat"
+      ? "display:grid;place-items:center;flex:0 0 auto;width:28px;height:28px;border:0;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;cursor:pointer;font-size:11px;"
+      : "display:grid;place-items:center;flex:0 0 auto;width:28px;height:28px;border:0;border-radius:50%;background:#ebe4ff;color:#7b61ff;cursor:pointer;font-size:11px;"
+  const timeStyle =
+    tone === "chat"
+      ? "flex:0 0 auto;font-size:12px;color:#fff;opacity:.9;"
+      : "flex:0 0 auto;font-size:12px;color:var(--ink-3);"
+
+  return (
+    <div style={css(shellStyle)}>
+      <button type="button" style={css(btnStyle)} onClick={() => onPlay?.(clip)} aria-label={playing ? "暂停语音" : "播放语音"}>
+        {playing ? "❚❚" : "▶"}
+      </button>
+      <VoiceWaveBar bars={clip.bars} color={barColor} animate={playing} />
+      <span style={css(timeStyle)}>{formatVoiceDuration(clip.duration)}</span>
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={() => onRemove(clip.id)}
+          style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:#7b61ff;cursor:pointer;font-size:12px;line-height:1;")}
+          aria-label="移除语音"
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
+  )
+}
 
 const isPhone = (v) => /^1[3-9]\d{9}$/.test(v)
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
@@ -262,9 +488,9 @@ export function LandingApp() {
   const navigate = useNavigate()
   const { isLoggedIn, setSession, user, clearSession, refreshToken } = useAuth()
 
-  const [screen, setScreen] = useState("landing") // landing | chat | createMethod | fullAuth
+  const [screen, setScreen] = useState("landing") // landing | chat | fullAuth
   const [modalOpen, setModalOpen] = useState(false)
-  const [authReturn, setAuthReturn] = useState("landing") // landing | createMethod | chat
+  const [authReturn, setAuthReturn] = useState("landing") // landing | chat
   const [tab, setTab] = useState("account") // account | wechat
   const [step, setStep] = useState("method") // method | setpw
 
@@ -298,22 +524,38 @@ export function LandingApp() {
   const [appleOpen, setAppleOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
 
-  const [heroInput, setHeroInput] = useState("")
+  const [heroInput, setHeroInput] = useState(() => formatHeroIdentity("student"))
   const [heroGoal, setHeroGoal] = useState("generate") // explore | revise | generate
   const [heroIdentity, setHeroIdentity] = useState("student") // student | intern | pro
+  const [heroFiles, setHeroFiles] = useState([])
+  const [heroVoices, setHeroVoices] = useState([])
+  const [heroRecording, setHeroRecording] = useState(null)
+  const [voicePlayingId, setVoicePlayingId] = useState(null)
   const [chatInput, setChatInput] = useState("")
   const [chatStage, setChatStage] = useState("intro") // intro | ready | generating | done
+  const [chatStreaming, setChatStreaming] = useState(false)
   const [chat, setChat] = useState([INTRO_MSG])
 
   // 让锁定倒计时每秒刷新
   const timers = useRef({})
   const userMenuRef = useRef(null)
+  const authGateRef = useRef(null)
+  const heroFileInputRef = useRef(null)
+  const resumeUploadInputRef = useRef(null)
+  const materialUploadInputRef = useRef(null)
+  const chatSessionIdRef = useRef("")
+  const chatAbortRef = useRef(null)
+  const heroVoiceRecorderRef = useRef(null)
+  const heroVoiceAudioRef = useRef(null)
+  const heroVoicesRef = useRef(heroVoices)
+  heroVoicesRef.current = heroVoices
   useEffect(() => {
     const t = timers.current
     return () => {
       clearInterval(t.countdown)
       clearTimeout(t.toast)
       clearTimeout(t.gen)
+      chatAbortRef.current?.abort()
     }
   }, [])
 
@@ -333,6 +575,169 @@ export function LandingApp() {
     setToastMsg(msg)
     timers.current.toast = setTimeout(() => setToastMsg(""), 2800)
   }, [])
+
+  const clearHeroVoices = useCallback((voices) => {
+    voices.forEach((voice) => URL.revokeObjectURL(voice.url))
+  }, [])
+
+  const stopHeroVoiceRecording = useCallback(
+    async (cancel = false) => {
+      const ctx = heroVoiceRecorderRef.current
+      if (!ctx) return
+
+      cancelAnimationFrame(ctx.rafId)
+      heroVoiceRecorderRef.current = null
+      setHeroRecording(null)
+
+      const { recorder, stream, audioContext, chunks, startedAt, mimeType } = ctx
+
+      if (recorder && recorder.state !== "inactive") {
+        await new Promise((resolve) => {
+          recorder.addEventListener("stop", resolve, { once: true })
+          recorder.stop()
+        })
+      }
+
+      stream.getTracks().forEach((track) => track.stop())
+      await audioContext?.close().catch(() => {})
+
+      if (cancel || !chunks.length) return
+
+      const duration = (Date.now() - startedAt) / 1000
+      if (duration < HERO_VOICE_MIN_DURATION) {
+        toast("录音太短了，请再说几句")
+        return
+      }
+
+      const blob = new Blob(chunks, { type: mimeType || "audio/webm" })
+      try {
+        const bars = await buildVoiceWaveformBars(blob)
+        const url = URL.createObjectURL(blob)
+        const id = `voice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        setHeroVoices((prev) => [...prev, { id, blob, url, duration, bars }])
+        toast("语音已添加")
+      } catch {
+        toast("语音处理失败，请重试")
+      }
+    },
+    [toast],
+  )
+
+  const startHeroVoiceRecording = useCallback(async () => {
+    if (heroVoiceRecorderRef.current) return
+    if (heroVoices.length >= HERO_VOICE_MAX_COUNT) {
+      toast(`最多添加 ${HERO_VOICE_MAX_COUNT} 条语音`)
+      return
+    }
+
+    const mimeType = getVoiceMimeType()
+    if (!mimeType) {
+      toast("当前浏览器不支持录音编码")
+      return
+    }
+
+    try {
+      const stream = await requestAudioStream()
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      const audioContext = new AudioCtx()
+      const source = audioContext.createMediaStreamSource(stream)
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 256
+      source.connect(analyser)
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount)
+      const chunks = []
+      const recorder = new MediaRecorder(stream, { mimeType })
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data)
+      }
+
+      const startedAt = Date.now()
+      const ctx = {
+        stream,
+        recorder,
+        chunks,
+        audioContext,
+        analyser,
+        dataArray,
+        startedAt,
+        mimeType,
+        rafId: 0,
+      }
+      heroVoiceRecorderRef.current = ctx
+
+      const tick = () => {
+        if (!heroVoiceRecorderRef.current) return
+        const bars = sampleLiveVoiceBars(analyser, dataArray)
+        const duration = (Date.now() - startedAt) / 1000
+        setHeroRecording({ bars, duration })
+        if (duration >= HERO_VOICE_MAX_DURATION) {
+          stopHeroVoiceRecording(false)
+          return
+        }
+        ctx.rafId = requestAnimationFrame(tick)
+      }
+
+      recorder.start(200)
+      ctx.rafId = requestAnimationFrame(tick)
+      setHeroRecording({ bars: createEmptyVoiceBars(), duration: 0 })
+    } catch (err) {
+      toast(getVoiceInputErrorMessage(err))
+    }
+  }, [heroVoices.length, stopHeroVoiceRecording, toast])
+
+  const toggleHeroVoiceRecord = useCallback(() => {
+    if (heroVoiceRecorderRef.current) stopHeroVoiceRecording(false)
+    else startHeroVoiceRecording()
+  }, [startHeroVoiceRecording, stopHeroVoiceRecording])
+
+  const removeHeroVoice = useCallback(
+    (id) => {
+      setHeroVoices((prev) => {
+        const target = prev.find((voice) => voice.id === id)
+        if (target) URL.revokeObjectURL(target.url)
+        return prev.filter((voice) => voice.id !== id)
+      })
+      if (voicePlayingId === id) {
+        heroVoiceAudioRef.current?.pause()
+        setVoicePlayingId(null)
+      }
+    },
+    [voicePlayingId],
+  )
+
+  const playVoiceClip = useCallback(
+    (clip) => {
+      if (!clip?.url) return
+      if (voicePlayingId === clip.id) {
+        heroVoiceAudioRef.current?.pause()
+        setVoicePlayingId(null)
+        return
+      }
+
+      heroVoiceAudioRef.current?.pause()
+      const audio = new Audio(clip.url)
+      heroVoiceAudioRef.current = audio
+      audio.onended = () => setVoicePlayingId(null)
+      audio.onerror = () => {
+        setVoicePlayingId(null)
+        toast("语音播放失败")
+      }
+      audio
+        .play()
+        .then(() => setVoicePlayingId(clip.id))
+        .catch(() => toast("语音播放失败"))
+    },
+    [toast, voicePlayingId],
+  )
+
+  useEffect(() => {
+    return () => {
+      stopHeroVoiceRecording(true)
+      heroVoiceAudioRef.current?.pause()
+      clearHeroVoices(heroVoicesRef.current)
+    }
+  }, [clearHeroVoices, stopHeroVoiceRecording])
 
   const resetAuthFields = useCallback(() => {
     clearInterval(timers.current.countdown)
@@ -363,11 +768,7 @@ export function LandingApp() {
     setTab("account")
   }
   const openAuthLogin = () => openAuth("landing")
-  const openAuthCreate = () => {
-    if (isLoggedIn) setScreen("createMethod")
-    else openAuth("createMethod")
-  }
-  const startCreate = () => openAuthCreate()
+  const openAuthCreate = () => openAuth("landing")
   const closeAuth = () => {
     if (screen === "fullAuth") setScreen("landing")
     else setModalOpen(false)
@@ -610,8 +1011,14 @@ export function LandingApp() {
     const ret = authReturn
     setModalOpen(false)
     setScreen("landing")
-    if (ret === "createMethod") setScreen("createMethod")
-    else if (ret === "chat") {
+
+    if (authGateRef.current?.resumePendingAction(ret)) {
+      toast("登录成功，欢迎来到 Magic Resume 🎉")
+      resetAuthFields()
+      return
+    }
+
+    if (ret === "chat") {
       setScreen("chat")
       doGenerate()
     }
@@ -620,22 +1027,219 @@ export function LandingApp() {
   }
 
   /* ---------- 落地页 AI 输入 ---------- */
-  const addPrompt = (text) => setHeroInput((v) => (v.trim() ? v.trim() + " " : "") + text)
+  const addPrompt = (text) =>
+    setHeroInput((v) => {
+      const trimmed = v.trim()
+      if (!trimmed) return text
+      const sep = /[，。！？；、,:]$/.test(trimmed) ? "" : "，"
+      return trimmed + sep + text
+    })
   const onHeroChange = (e) => setHeroInput(e.target.value)
-  const heroSubmit = () => {
-    const v = heroInput.trim()
+  const openHeroFilePicker = () => heroFileInputRef.current?.click()
+  const handleHeroFiles = (e) => {
+    const picked = Array.from(e.target.files || [])
+    e.target.value = ""
+    if (!picked.length) return
+
+    setHeroFiles((prev) => {
+      const next = [...prev]
+      for (const file of picked) {
+        if (next.length >= HERO_FILE_MAX_COUNT) {
+          toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
+          break
+        }
+        if (!isHeroFileAllowed(file)) {
+          toast(`${file.name} 格式不支持`)
+          continue
+        }
+        if (file.size > HERO_FILE_MAX_SIZE) {
+          toast(`${file.name} 超过 10MB`)
+          continue
+        }
+        if (next.some((item) => item.name === file.name && item.size === file.size)) continue
+        next.push(createHeroFileItem(file))
+      }
+      return next
+    })
+  }
+  const removeHeroFile = (id) => setHeroFiles((files) => files.filter((f) => f.id !== id))
+
+  const sendChatMessage = useCallback(
+    async (message) => {
+      const trimmed = message.trim()
+      if (!trimmed) return
+
+      const userId = user?.id
+      if (!userId) {
+        toast("请先登录后再对话")
+        return
+      }
+
+      if (!chatSessionIdRef.current) {
+        chatSessionIdRef.current = createAgentSessionId()
+      }
+
+      chatAbortRef.current?.abort()
+      const ac = new AbortController()
+      chatAbortRef.current = ac
+      setChatStreaming(true)
+
+      let aiText = ""
+      setChat((c) => [...c, { role: "ai", text: "", streaming: true }])
+
+      const patchAiText = (text) => {
+        aiText = text
+        setChat((c) => {
+          const next = [...c]
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i].role === "ai" && next[i].streaming) {
+              next[i] = { ...next[i], text: aiText }
+              break
+            }
+          }
+          return next
+        })
+      }
+
+      const finishAi = (readyGenerate) => {
+        setChat((c) => {
+          const next = [...c]
+          for (let i = next.length - 1; i >= 0; i--) {
+            if (next[i].role === "ai" && next[i].streaming) {
+              if (!aiText) next.splice(i, 1)
+              else next[i] = { role: "ai", text: aiText, streaming: false }
+              break
+            }
+          }
+          return next
+        })
+        setChatStage(readyGenerate ? "ready" : "intro")
+        setChatStreaming(false)
+      }
+
+      let doneReceived = false
+
+      try {
+        await streamAgentChat(
+          {
+            user_id: String(userId),
+            session_id: chatSessionIdRef.current,
+            message: trimmed,
+            workflow: HERO_GOAL_WORKFLOW[heroGoal] || "resume_generate",
+            stream_output: true,
+          },
+          {
+            onDelta: (delta) => patchAiText(aiText + delta),
+            onFull: (text) => patchAiText(text),
+            onDone: (ev) => {
+              doneReceived = true
+              if (ev.session_id) chatSessionIdRef.current = ev.session_id
+              finishAi(!!ev.ready_generate)
+            },
+            onError: (err) => toast(err.message || "对话失败，请稍后重试"),
+          },
+          ac.signal,
+        )
+        if (!ac.signal.aborted && !doneReceived) finishAi(false)
+      } catch (err) {
+        if (ac.signal.aborted) return
+        const msg = err instanceof ApiError ? err.message : "对话失败，请稍后重试"
+        toast(msg)
+        finishAi(false)
+      }
+    },
+    [heroGoal, toast, user?.id],
+  )
+
+  const enterChatWithContent = ({ text = "", files = [], voices = [] }) => {
+    stopHeroVoiceRecording(true)
     setScreen("chat")
-    setHeroInput("")
-    if (v) {
-      setChat((c) => [...c, { role: "user", text: v }])
-      setChatStage("ready")
-      setTimeout(() => {
-        setChat((c) => [
-          ...c,
-          { role: "ai", text: "收到！我已经了解你的背景啦 👍 准备好就点下面的按钮，我马上为你生成简历。" },
-        ])
-      }, 520)
+    setHeroInput(() => formatHeroIdentity(heroIdentity))
+    setHeroFiles([])
+    setHeroVoices([])
+    setChat((c) => [
+      ...c,
+      {
+        role: "user",
+        text,
+        files,
+        voices,
+      },
+    ])
+    setChatStage("intro")
+    void sendChatMessage(buildAgentChatMessage(text, files))
+  }
+  const heroSubmitCore = () => {
+    enterChatWithContent({
+      text: heroInput.trim(),
+      files: heroFiles.map((f) => ({ name: f.name, size: f.size })),
+      voices: heroVoices.map((voice) => ({
+        id: voice.id,
+        url: voice.url,
+        duration: voice.duration,
+        bars: voice.bars,
+      })),
+    })
+  }
+  const openResumeUploadPicker = () => resumeUploadInputRef.current?.click()
+  const handleResumeUpload = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    if (!isResumeFileAllowed(file)) {
+      toast("请上传 PDF 或 Word 格式的简历")
+      return
     }
+    if (file.size > HERO_FILE_MAX_SIZE) {
+      toast(`${file.name} 超过 10MB`)
+      return
+    }
+    const submitResume = () =>
+      enterChatWithContent({
+        text: "",
+        files: [{ name: file.name, size: file.size }],
+      })
+    authGateRef.current?.withAuth("resumeUpload", submitResume)
+  }
+  const openMaterialUploadPicker = () => materialUploadInputRef.current?.click()
+  const handleMaterialUpload = (e) => {
+    const picked = Array.from(e.target.files || [])
+    e.target.value = ""
+    if (!picked.length) return
+
+    const files = []
+    for (const file of picked) {
+      if (files.length >= MATERIAL_FILE_MAX_COUNT) {
+        toast(`最多上传 ${MATERIAL_FILE_MAX_COUNT} 个文件`)
+        break
+      }
+      if (!isMaterialFileAllowed(file)) {
+        toast(`${file.name} 格式不支持`)
+        continue
+      }
+      if (file.size > HERO_FILE_MAX_SIZE) {
+        toast(`${file.name} 超过 10MB`)
+        continue
+      }
+      if (files.some((item) => item.name === file.name && item.size === file.size)) continue
+      files.push({ name: file.name, size: file.size })
+    }
+    if (!files.length) return
+
+    const submitMaterials = () =>
+      enterChatWithContent({
+        text: "",
+        files,
+      })
+    authGateRef.current?.withAuth("materialUpload", submitMaterials)
+  }
+  const hasHeroContent = () => {
+    const v = heroInput.trim()
+    return !!(v || heroFiles.length || heroVoices.length)
+  }
+  const heroSubmit = () => {
+    if (!hasHeroContent()) return
+    authGateRef.current?.withAuth("heroSubmit", heroSubmitCore)
   }
 
   /* ---------- 对话 ---------- */
@@ -645,18 +1249,10 @@ export function LandingApp() {
   }
   const chatSend = () => {
     const v = chatInput.trim()
-    if (!v) return
+    if (!v || chatStreaming) return
     setChat((c) => [...c, { role: "user", text: v }])
     setChatInput("")
-    if (chatStage === "intro") {
-      setTimeout(() => {
-        setChat((c) => [
-          ...c,
-          { role: "ai", text: "太好了！我已经了解你的背景啦 👍 准备好就点下面的按钮，我马上为你生成简历。" },
-        ])
-        setChatStage("ready")
-      }, 520)
-    }
+    void sendChatMessage(v)
   }
   const generateResume = () => {
     if (!isLoggedIn) openAuth("chat")
@@ -686,9 +1282,6 @@ export function LandingApp() {
     }
   }
 
-  /* ---------- 创建方式 ---------- */
-  const pickChat = () => setScreen("chat")
-  const pickOther = () => toast("进入该创建方式（原型示意）")
   const gotoLanding = () => {
     setScreen("landing")
     setModalOpen(false)
@@ -737,6 +1330,9 @@ export function LandingApp() {
 
   const chatRows = chat.map((m) => ({
     text: m.text,
+    streaming: !!m.streaming,
+    files: m.files || [],
+    voices: m.voices || [],
     rowStyle:
       "display:flex;animation:msgIn .3s ease both;justify-content:" +
       (m.role === "user" ? "flex-end" : "flex-start") +
@@ -748,6 +1344,7 @@ export function LandingApp() {
   }))
 
   return (
+    <AuthGateProvider ref={authGateRef} onRequireAuth={openAuth}>
     <div className="magic-landing" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: "'Plus Jakarta Sans','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif", color: "#1B1530", background: "#F6F4FF" }}>
       <style>{LANDING_CSS}</style>
 
@@ -829,7 +1426,17 @@ export function LandingApp() {
                 ].map((g) => (
                   <button
                     key={g.key}
-                    onClick={() => setHeroGoal(g.key)}
+                    onClick={() => {
+                      if (heroGoal === g.key) return
+                      stopHeroVoiceRecording(true)
+                      setHeroVoices((prev) => {
+                        clearHeroVoices(prev)
+                        return []
+                      })
+                      setHeroGoal(g.key)
+                      setHeroInput(formatHeroIdentity(heroIdentity))
+                      setHeroFiles([])
+                    }}
                     style={css(
                       "padding:8px 17px;border-radius:9999px;border:0;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;transition:all .18s;" +
                         (heroGoal === g.key
@@ -863,6 +1470,60 @@ export function LandingApp() {
                   placeholder="把烦恼丢给搭子就行，比如「0 经验想转产品经理，怎么写简历？」"
                   style={css("width:100%;border:0;outline:0;resize:none;background:transparent;font-family:inherit;font-size:15px;line-height:1.6;color:var(--ink-1);min-height:44px;padding:6px 2px 4px;")}
                 />
+                {heroRecording && (
+                  <div style={css("display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 12px;border-radius:16px;background:#fff4f4;border:1px solid #ffd5d5;")}>
+                    <span style={css("display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;font-size:12px;font-weight:600;color:#d64545;")}>
+                      <span style={css("width:8px;height:8px;border-radius:50%;background:#ff4d4f;animation:pulse 1.2s ease-in-out infinite;")} />
+                      录音中 {formatVoiceDuration(heroRecording.duration)}
+                    </span>
+                    <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" animate />
+                    <button
+                      type="button"
+                      onClick={() => stopHeroVoiceRecording(false)}
+                      style={css("flex:0 0 auto;padding:5px 10px;border:0;border-radius:9999px;background:#ff6b6b;color:#fff;font-size:12px;font-weight:600;cursor:pointer;")}
+                    >
+                      完成
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={heroFileInputRef}
+                  type="file"
+                  multiple
+                  accept={HERO_FILE_ACCEPT}
+                  style={{ display: "none" }}
+                  onChange={handleHeroFiles}
+                />
+                {(heroFiles.length > 0 || heroVoices.length > 0) && (
+                  <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;")}>
+                    {heroVoices.map((voice) => (
+                      <VoiceClipRow
+                        key={voice.id}
+                        clip={voice}
+                        playing={voicePlayingId === voice.id}
+                        onPlay={playVoiceClip}
+                        onRemove={removeHeroVoice}
+                      />
+                    ))}
+                    {heroFiles.map((f) => (
+                      <span
+                        key={f.id}
+                        style={css("display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 8px 4px 10px;border-radius:9999px;background:#f3f0ff;border:1px solid #e4dcff;font-size:12px;color:var(--ink-2);")}
+                      >
+                        <span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>📎 {f.name}</span>
+                        <span style={css("flex:0 0 auto;font-size:11px;color:var(--ink-3);")}>{formatFileSize(f.size)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeHeroFile(f.id)}
+                          style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:var(--accent-strong);cursor:pointer;font-size:12px;line-height:1;")}
+                          aria-label={`移除 ${f.name}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div style={css("display:flex;align-items:center;gap:8px;flex-wrap:wrap;")}>
                   <span style={css("font-size:12.5px;color:var(--ink-3);")}>我是</span>
                   {[
@@ -872,7 +1533,10 @@ export function LandingApp() {
                   ].map((it) => (
                     <button
                       key={it.key}
-                      onClick={() => setHeroIdentity(it.key)}
+                      onClick={() => {
+                        setHeroIdentity(it.key)
+                        setHeroInput((v) => applyHeroIdentity(v, it.key))
+                      }}
                       style={css(
                         "padding:5px 13px;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;transition:all .16s;" +
                           (heroIdentity === it.key
@@ -884,15 +1548,28 @@ export function LandingApp() {
                     </button>
                   ))}
                   <span style={css("flex:1;min-width:8px;")} />
-                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="语音说给搭子听" onClick={() => toast("语音输入开发中 🎤")}>
-                    <MicIcon />
+                  <E
+                    as="button"
+                    s={
+                      "width:36px;height:36px;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
+                      (heroRecording
+                        ? "background:#ffe3e3;box-shadow:0 0 0 4px rgba(255,77,79,.14);"
+                        : "background:#f3f0ff;")
+                    }
+                    h={heroRecording ? "background:#ffd6d6;" : "background:var(--accent-tint);"}
+                    title={heroRecording ? "点击结束录音" : "语音说给搭子听"}
+                    onClick={toggleHeroVoiceRecord}
+                  >
+                    <MicIcon color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
                   </E>
-                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="添加材料" onClick={startCreate}>
+                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="添加材料" onClick={openHeroFilePicker}>
                     <ClipIcon />
                   </E>
-                  <E as="button" s="width:40px;height:40px;border-radius:99px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(123,97,255,.32);" h="background:var(--accent-press);" title="发送" onClick={heroSubmit}>
-                    <ArrowUpIcon />
-                  </E>
+                  <RequireAuthAction returnTo="heroSubmit" shouldRun={hasHeroContent} onAuthorized={heroSubmitCore}>
+                    <E as="button" s="width:40px;height:40px;border-radius:99px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(123,97,255,.32);" h="background:var(--accent-press);" title="发送">
+                      <ArrowUpIcon />
+                    </E>
+                  </RequireAuthAction>
                 </div>
               </div>
             </div>
@@ -900,7 +1577,7 @@ export function LandingApp() {
             {/* 提示词参考 */}
             <div style={css("position:relative;z-index:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;")}>
               <span style={css("font-size:12.5px;color:var(--ink-3);")}>大家都在问</span>
-              {HOME_PROMPTS.map((p) => (
+              {HERO_GOAL_PROMPTS[heroGoal].map((p) => (
                 <E
                   key={p}
                   as="button"
@@ -921,24 +1598,39 @@ export function LandingApp() {
               <span style={css("flex:1;height:1px;background:var(--border-strong);")} />
             </div>
             <div style={css("position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:660px;margin:0 auto;text-align:left;")}>
-              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #e4dcff;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(123,97,255,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(123,97,255,.14);" onClick={startCreate}>
-                <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-tint);")}>
-                  <UploadIcon />
-                </span>
-                <span style={css("display:flex;flex-direction:column;gap:3px;")}>
-                  <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>已有简历，直接上传</span>
-                  <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>搭子秒读、诊断打分，告诉你哪儿能更好</span>
-                </span>
-              </E>
-              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #cdeedd;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(34,168,106,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(34,168,106,.14);" onClick={startCreate}>
-                <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:#e6f7ef;")}>
-                  <PiecesIcon />
-                </span>
-                <span style={css("display:flex;flex-direction:column;gap:3px;")}>
-                  <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>只有零散材料，帮我拼</span>
-                  <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>丢进项目 / 作品 / JD，自动拼出简历骨架</span>
-                </span>
-              </E>
+              <input
+                ref={resumeUploadInputRef}
+                type="file"
+                accept={RESUME_FILE_ACCEPT}
+                style={{ display: "none" }}
+                onChange={handleResumeUpload}
+              />
+              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #e4dcff;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(123,97,255,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(123,97,255,.14);" onClick={openResumeUploadPicker}>
+                  <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-tint);")}>
+                    <UploadIcon />
+                  </span>
+                  <span style={css("display:flex;flex-direction:column;gap:3px;")}>
+                    <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>已有简历，直接上传</span>
+                    <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>搭子秒读、诊断打分，告诉你哪儿能更好</span>
+                  </span>
+                </E>
+              <input
+                ref={materialUploadInputRef}
+                type="file"
+                multiple
+                accept={MATERIAL_FILE_ACCEPT}
+                style={{ display: "none" }}
+                onChange={handleMaterialUpload}
+              />
+              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #cdeedd;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(34,168,106,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(34,168,106,.14);" onClick={openMaterialUploadPicker}>
+                  <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:#e6f7ef;")}>
+                    <PiecesIcon />
+                  </span>
+                  <span style={css("display:flex;flex-direction:column;gap:3px;")}>
+                    <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>只有零散材料，帮我拼</span>
+                    <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>丢进项目 / 作品 / JD，自动拼出简历骨架</span>
+                  </span>
+                </E>
             </div>
           </main>
         </div>
@@ -958,7 +1650,40 @@ export function LandingApp() {
           <div style={css("flex:1;max-width:780px;width:100%;margin:0 auto;padding:8px 24px 24px;display:flex;flex-direction:column;gap:16px;overflow:auto;")}>
             {chatRows.map((m, i) => (
               <div key={i} style={css(m.rowStyle)}>
-                <div style={css(m.bubbleStyle)}>{m.text}</div>
+                <div style={css(m.bubbleStyle)}>
+                  {m.text || m.streaming ? (
+                    <div>
+                      {m.text}
+                      {m.streaming ? <span style={css("opacity:.55;")}>▍</span> : null}
+                    </div>
+                  ) : null}
+                  {m.files.length > 0 && (
+                    <div style={css(`display:flex;flex-direction:column;gap:6px;${m.text || m.voices.length ? "margin-top:10px;" : ""}`)}>
+                      {m.files.map((f) => (
+                        <span
+                          key={`${f.name}-${f.size}`}
+                          style={css("display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.16);font-size:12.5px;")}
+                        >
+                          📎 {f.name}
+                          <span style={css("opacity:.75;")}>{formatFileSize(f.size)}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {m.voices.length > 0 && (
+                    <div style={css(`display:flex;flex-direction:column;gap:8px;${m.text || m.files.length ? "margin-top:10px;" : ""}`)}>
+                      {m.voices.map((voice) => (
+                        <VoiceClipRow
+                          key={voice.id}
+                          clip={voice}
+                          tone="chat"
+                          playing={voicePlayingId === voice.id}
+                          onPlay={playVoiceClip}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
 
@@ -996,41 +1721,12 @@ export function LandingApp() {
             )}
             {(chatStage === "intro" || chatStage === "ready") && (
               <div style={css("background:#fff;border:1px solid #E9E3FA;border-radius:18px;padding:7px 7px 7px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 14px 36px -22px rgba(40,24,90,.5);")}>
-                <input value={chatInput} onChange={onChatChange} onKeyDown={onChatKey} placeholder="输入你的回复…" style={css("flex:1;border:none;font-size:15px;background:transparent;padding:10px 0;")} />
-                <E as="button" s="width:42px;height:42px;border-radius:13px;background:#6D5DF6;display:flex;align-items:center;justify-content:center;" h="background:#5B4BE8;" onClick={chatSend}>
+                <input value={chatInput} onChange={onChatChange} onKeyDown={onChatKey} disabled={chatStreaming} placeholder={chatStreaming ? "搭子正在回复…" : "输入你的回复…"} style={css("flex:1;border:none;font-size:15px;background:transparent;padding:10px 0;")} />
+                <E as="button" s={"width:42px;height:42px;border-radius:13px;background:" + (chatStreaming ? "#CFC8E0" : "#6D5DF6") + ";display:flex;align-items:center;justify-content:center;"} h={chatStreaming ? "" : "background:#5B4BE8;"} onClick={chatSend}>
                   <SendIcon size={18} />
                 </E>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ===================== CREATE METHOD ===================== */}
-      {screen === "createMethod" && (
-        <div style={css("min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,#EBE4FF 0%,rgba(235,228,255,0) 60%),#F6F4FF;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;")}>
-          <E as="button" s="position:absolute;top:24px;left:28px;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#5B5470;" h="color:#6D5DF6;" onClick={gotoLanding}>‹ 返回首页</E>
-          <div style={css("text-align:center;animation:fadeUp .5s ease both;")}>
-            <h2 style={css("font-size:36px;font-weight:800;letter-spacing:-.8px;margin:0;")}>你想怎么开始？</h2>
-            <p style={css("font-size:16px;color:#5B5470;margin:12px 0 0;")}>选一种方式，几分钟拥有一份好简历。</p>
-          </div>
-          <div style={css("display:grid;grid-template-columns:repeat(3,260px);gap:20px;margin-top:38px;animation:fadeUp .6s ease .08s both;")}>
-            <E as="button" s="text-align:left;background:#fff;border:1.5px solid #EDE7FA;border-radius:20px;padding:26px;box-shadow:0 14px 40px -26px rgba(40,24,90,.5);transition:transform .2s,box-shadow .2s,border-color .2s;" h="transform:translateY(-4px);box-shadow:0 24px 50px -24px rgba(109,93,246,.6);border-color:#CFC2FB;" onClick={pickChat}>
-              <div style={css("width:50px;height:50px;border-radius:14px;background:#EFEAFE;display:flex;align-items:center;justify-content:center;font-size:24px;")}>💬</div>
-              <div style={css("font-size:17px;font-weight:800;margin-top:16px;")}>和 AI 对话生成</div>
-              <div style={css("font-size:13.5px;color:#7A7390;margin-top:6px;line-height:1.5;")}>聊几句，AI 自动帮你成稿</div>
-              <div style={css("margin-top:14px;font-size:12px;font-weight:800;color:#6D5DF6;background:#F1EDFC;display:inline-block;padding:4px 9px;border-radius:999px;")}>推荐</div>
-            </E>
-            <E as="button" s="text-align:left;background:#fff;border:1.5px solid #EDE7FA;border-radius:20px;padding:26px;box-shadow:0 14px 40px -26px rgba(40,24,90,.5);transition:transform .2s,box-shadow .2s,border-color .2s;" h="transform:translateY(-4px);box-shadow:0 24px 50px -24px rgba(109,93,246,.6);border-color:#CFC2FB;" onClick={pickOther}>
-              <div style={css("width:50px;height:50px;border-radius:14px;background:#EFEAFE;display:flex;align-items:center;justify-content:center;font-size:24px;")}>📄</div>
-              <div style={css("font-size:17px;font-weight:800;margin-top:16px;")}>上传已有简历</div>
-              <div style={css("font-size:13.5px;color:#7A7390;margin-top:6px;line-height:1.5;")}>让 AI 帮你润色和优化</div>
-            </E>
-            <E as="button" s="text-align:left;background:#fff;border:1.5px solid #EDE7FA;border-radius:20px;padding:26px;box-shadow:0 14px 40px -26px rgba(40,24,90,.5);transition:transform .2s,box-shadow .2s,border-color .2s;" h="transform:translateY(-4px);box-shadow:0 24px 50px -24px rgba(109,93,246,.6);border-color:#CFC2FB;" onClick={pickOther}>
-              <div style={css("width:50px;height:50px;border-radius:14px;background:#EFEAFE;display:flex;align-items:center;justify-content:center;font-size:24px;")}>🧩</div>
-              <div style={css("font-size:17px;font-weight:800;margin-top:16px;")}>从模板开始</div>
-              <div style={css("font-size:13.5px;color:#7A7390;margin-top:6px;line-height:1.5;")}>浏览精选模板，套用即可</div>
-            </E>
           </div>
         </div>
       )}
@@ -1252,6 +1948,7 @@ export function LandingApp() {
       )}
 
     </div>
+    </AuthGateProvider>
   )
 }
 
@@ -1342,6 +2039,7 @@ const LANDING_CSS = `
   @keyframes msgIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
   @keyframes shake { 10%,90% { transform: translateX(-2px) } 20%,80% { transform: translateX(3px) } 30%,50%,70% { transform: translateX(-5px) } 40%,60% { transform: translateX(5px) } }
   @keyframes spin { to { transform: rotate(360deg) } }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: .45; transform: scale(.88) } }
   @keyframes toastIn { from { opacity: 0; transform: translate(-50%,-14px) } to { opacity: 1; transform: translate(-50%,0) } }
   .magic-landing .user-menu-item {
     width: 100%;

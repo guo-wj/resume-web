@@ -5,6 +5,13 @@ export {
   resolveApiPath,
 } from "./endpoints"
 export { request, API_BASE } from "./request"
+export {
+  streamAgentChat,
+  buildAgentChatMessage,
+  createAgentSessionId,
+  HERO_GOAL_WORKFLOW,
+} from "./agent"
+export type { AgentChatRequest, AgentChatDoneEvent, AgentWorkflow } from "./agent"
 export { logout, loginByPassword } from "./auth"
 export {
   getUserProfile,

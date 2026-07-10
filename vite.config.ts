@@ -7,6 +7,7 @@ import { defineConfig, loadEnv } from "vite"
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
   const apiBase = env.VITE_API_BASE || "/api"
+  const agentBase = env.VITE_AGENT_BASE || "/agent"
   const target = env.VITE_SERVER?.replace(/\/$/, "")
   const useProxy = apiBase.startsWith("/") && target
 
@@ -40,6 +41,11 @@ export default defineConfig(({ mode }) => {
       proxy: useProxy
         ? {
             [apiBase]: {
+              target,
+              changeOrigin: true,
+              secure: false,
+            },
+            [agentBase]: {
               target,
               changeOrigin: true,
               secure: false,

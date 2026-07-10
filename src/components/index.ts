@@ -10,4 +10,5 @@ export {
   RadioRow,
   Qr,
 } from "./Modal"
+export { AuthGateProvider, RequireAuthAction, useAuthGate } from "./RequireAuth"
 export type * from "./Modal"

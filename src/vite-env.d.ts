@@ -13,6 +13,7 @@ declare module "*.scss" {
 interface ImportMetaEnv {
   readonly VITE_ENV: string
   readonly VITE_API_BASE: string
+  readonly VITE_AGENT_BASE: string
   readonly VITE_SERVER: string
 }
 

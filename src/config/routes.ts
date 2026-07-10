@@ -129,7 +129,6 @@ export const CONSOLE_GROUP_TITLE: Record<string, string> = Object.fromEntries(
 export const LANDING_SCREENS: LandingScreen[] = [
   { id: "landing", label: "落地页", description: "营销首页" },
   { id: "chat", label: "AI 对话", description: "对话式创建简历" },
-  { id: "createMethod", label: "创建方式", description: "选择简历创建入口" },
   { id: "fullAuth", label: "整屏登录", description: "全屏登录页（开发调试）" },
 ]
 

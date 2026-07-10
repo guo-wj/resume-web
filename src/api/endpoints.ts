@@ -3,7 +3,9 @@ import type { ApiEndpoint } from "./types"
 /**
  * 后端服务表 — API 端点单一数据源
  *
- * 开发环境：VITE_API_BASE（默认 /api）经 Vite 代理到 VITE_SERVER
+ * 开发环境：
+ * - VITE_API_BASE（默认 /api）经 Vite 代理到 VITE_SERVER
+ * - VITE_AGENT_BASE（默认 /agent）Agent 对话独立前缀，同样代理到 VITE_SERVER
  * 生产环境：由部署侧配置同前缀反向代理
  */
 export const API_ENDPOINTS: ApiEndpoint[] = [
@@ -279,6 +281,16 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     method: "POST",
     path: "/resumes/:id/export",
     description: "导出 PDF",
+    auth: true,
+  },
+
+  // ── Agent 对话（独立前缀 VITE_AGENT_BASE，非 /api）──
+  {
+    key: "agent.chat",
+    module: "Agent",
+    method: "POST",
+    path: "/chat",
+    description: "AI 对话（SSE 流式）",
     auth: true,
   },
 ]
