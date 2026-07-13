@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
   const apiBase = env.VITE_API_BASE || "/api"
   const agentBase = env.VITE_AGENT_BASE || "/agent"
   const target = env.VITE_SERVER?.replace(/\/$/, "")
+  const agentTarget = (env.VITE_AGENT_SERVER || env.VITE_SERVER)?.replace(/\/$/, "")
+  const stripAgentPrefix = env.VITE_AGENT_STRIP_PREFIX === "true"
+  const agentBasePattern = agentBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   const useProxy = apiBase.startsWith("/") && target
 
   return {
@@ -46,9 +49,14 @@ export default defineConfig(({ mode }) => {
               secure: false,
             },
             [agentBase]: {
-              target,
+              target: agentTarget,
               changeOrigin: true,
               secure: false,
+              ...(stripAgentPrefix
+                ? {
+                    rewrite: (p) => p.replace(new RegExp(`^${agentBasePattern}`), "") || "/",
+                  }
+                : {}),
             },
           }
         : undefined,

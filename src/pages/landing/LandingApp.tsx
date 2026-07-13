@@ -1,7 +1,7 @@
 // @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId, HERO_GOAL_WORKFLOW } from "@/api"
+import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
 import { AuthGateProvider, RequireAuthAction } from "@/components"
 import { useAuth } from "@/store"
@@ -1125,7 +1125,7 @@ export function LandingApp() {
             user_id: String(userId),
             session_id: chatSessionIdRef.current,
             message: trimmed,
-            workflow: HERO_GOAL_WORKFLOW[heroGoal] || "resume_generate",
+            workflow: "career_explore",
             stream_output: true,
           },
           {

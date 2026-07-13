@@ -22,7 +22,7 @@ DEPLOY_SSH_KEY=${DEPLOY_SSH_KEY:-~/.ssh/id_ed25519}
 # 前端环境变量（构建时使用）
 VITE_ENV=${VITE_ENV:-test}
 VITE_API_BASE=${VITE_API_BASE:-/api}
-VITE_SERVER=${VITE_SERVER:-http://8.152.214.136:8000}
+VITE_SERVER=${VITE_SERVER:-http://8.152.214.136}
 
 # ============================================
 # 2. 颜色输出（美化日志）
@@ -125,7 +125,9 @@ fi
 # 构建
 export VITE_ENV="$VITE_ENV"
 export VITE_API_BASE="$VITE_API_BASE"
+export VITE_AGENT_BASE="${VITE_AGENT_BASE:-/agent}"
 export VITE_SERVER="$VITE_SERVER"
+export VITE_AGENT_SERVER="${VITE_AGENT_SERVER:-$VITE_SERVER}"
 
 npm run build
 

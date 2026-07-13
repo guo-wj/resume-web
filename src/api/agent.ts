@@ -1,9 +1,25 @@
 import { getAccessToken } from "@/store/auth"
-import { resolveApiPath } from "./endpoints"
 import { ApiError } from "./types"
 
 /** Agent 服务独立前缀，不走 VITE_API_BASE */
-const AGENT_BASE = import.meta.env.VITE_AGENT_BASE || "/agent"
+const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, "")
+/**
+ * 对外路径（经 Nginx /agent/ 转发到 8888，去掉 /agent 前缀）：
+ * - /agent/health → 127.0.0.1:8888/health
+ * - /agent/chat   → 127.0.0.1:8888/chat
+ */
+const AGENT_CHAT_PATH =
+  import.meta.env.VITE_AGENT_CHAT_PATH || `${AGENT_BASE}/chat`
+
+export function resolveAgentChatUrl(): string {
+  const override = import.meta.env.VITE_AGENT_CHAT_URL
+  if (override) return override
+  return AGENT_CHAT_PATH.startsWith("http")
+    ? AGENT_CHAT_PATH
+    : AGENT_CHAT_PATH.startsWith("/")
+      ? AGENT_CHAT_PATH
+      : `/${AGENT_CHAT_PATH}`
+}
 
 export type AgentWorkflow = "career_explore" | "resume_revise" | "resume_generate"
 
@@ -27,12 +43,6 @@ export interface AgentChatStreamCallbacks {
   onFull?: (text: string) => void
   onDone?: (event: AgentChatDoneEvent) => void
   onError?: (error: Error) => void
-}
-
-function joinAgentUrl(path: string): string {
-  const base = AGENT_BASE.replace(/\/$/, "")
-  const p = path.startsWith("/") ? path : `/${path}`
-  return `${base}${p}`
 }
 
 function parseStreamLine(line: string): Record<string, unknown> | null {
@@ -74,8 +84,7 @@ export async function streamAgentChat(
   callbacks: AgentChatStreamCallbacks,
   signal?: AbortSignal,
 ): Promise<void> {
-  const path = resolveApiPath("agent.chat")
-  const url = joinAgentUrl(path)
+  const url = resolveAgentChatUrl()
   const token = getAccessToken()
 
   const res = await fetch(url, {

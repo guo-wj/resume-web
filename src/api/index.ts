@@ -10,6 +10,7 @@ export {
   buildAgentChatMessage,
   createAgentSessionId,
   HERO_GOAL_WORKFLOW,
+  resolveAgentChatUrl,
 } from "./agent"
 export type { AgentChatRequest, AgentChatDoneEvent, AgentWorkflow } from "./agent"
 export { logout, loginByPassword } from "./auth"
