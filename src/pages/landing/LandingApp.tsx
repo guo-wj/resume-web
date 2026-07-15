@@ -3,7 +3,7 @@ import React from "react"
 import { useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard } from "@/components"
 import { useAuth } from "@/store"
 
 const { useState, useRef, useEffect, useCallback } = React
@@ -541,6 +541,8 @@ export function LandingApp() {
   const userMenuRef = useRef(null)
   const authGateRef = useRef(null)
   const heroFileInputRef = useRef(null)
+  const chatInputRef = useRef(null)
+  const chatScrollRef = useRef(null)
   const resumeUploadInputRef = useRef(null)
   const materialUploadInputRef = useRef(null)
   const chatSessionIdRef = useRef("")
@@ -558,6 +560,13 @@ export function LandingApp() {
       chatAbortRef.current?.abort()
     }
   }, [])
+
+  useEffect(() => {
+    if (screen !== "chat") return
+    const el = chatScrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+  }, [screen, chat, chatStage, chatStreaming])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -1243,16 +1252,49 @@ export function LandingApp() {
   }
 
   /* ---------- 对话 ---------- */
-  const onChatChange = (e) => setChatInput(e.target.value)
+  const onChatChange = (e) => {
+    setChatInput(e.target.value)
+    const el = e.target
+    el.style.height = "auto"
+    el.style.height = `${Math.min(el.scrollHeight, 44)}px`
+  }
   const onChatKey = (e) => {
-    if (e.key === "Enter") chatSend()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      chatSend()
+    }
+  }
+  const hasChatContent = () => {
+    const v = chatInput.trim()
+    return !!(v || heroFiles.length || heroVoices.length)
   }
   const chatSend = () => {
+    if (chatStreaming || !hasChatContent()) return
     const v = chatInput.trim()
-    if (!v || chatStreaming) return
-    setChat((c) => [...c, { role: "user", text: v }])
+    const files = heroFiles.map((f) => ({ name: f.name, size: f.size }))
+    const voices = heroVoices.map((voice) => ({
+      id: voice.id,
+      url: voice.url,
+      duration: voice.duration,
+      bars: voice.bars,
+    }))
+    stopHeroVoiceRecording(true)
+    setChat((c) => [
+      ...c,
+      {
+        role: "user",
+        text: v,
+        files,
+        voices,
+      },
+    ])
     setChatInput("")
-    void sendChatMessage(v)
+    setHeroFiles([])
+    setHeroVoices([])
+    if (chatInputRef.current) {
+      chatInputRef.current.style.height = "auto"
+    }
+    void sendChatMessage(buildAgentChatMessage(v, files))
   }
   const generateResume = () => {
     if (!isLoggedIn) openAuth("chat")
@@ -1329,6 +1371,7 @@ export function LandingApp() {
     ";"
 
   const chatRows = chat.map((m) => ({
+    role: m.role,
     text: m.text,
     streaming: !!m.streaming,
     files: m.files || [],
@@ -1347,6 +1390,14 @@ export function LandingApp() {
     <AuthGateProvider ref={authGateRef} onRequireAuth={openAuth}>
     <div className="magic-landing" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: "'Plus Jakarta Sans','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif", color: "#1B1530", background: "#F6F4FF" }}>
       <style>{LANDING_CSS}</style>
+      <input
+        ref={heroFileInputRef}
+        type="file"
+        multiple
+        accept={HERO_FILE_ACCEPT}
+        style={{ display: "none" }}
+        onChange={handleHeroFiles}
+      />
 
       {/* ===================== LANDING ===================== */}
       {screen === "landing" && (
@@ -1486,14 +1537,6 @@ export function LandingApp() {
                     </button>
                   </div>
                 )}
-                <input
-                  ref={heroFileInputRef}
-                  type="file"
-                  multiple
-                  accept={HERO_FILE_ACCEPT}
-                  style={{ display: "none" }}
-                  onChange={handleHeroFiles}
-                />
                 {(heroFiles.length > 0 || heroVoices.length > 0) && (
                   <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;")}>
                     {heroVoices.map((voice) => (
@@ -1638,8 +1681,8 @@ export function LandingApp() {
 
       {/* ===================== CHAT ===================== */}
       {screen === "chat" && (
-        <div style={css("min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,#EBE4FF 0%,rgba(235,228,255,0) 60%),#F6F4FF;display:flex;flex-direction:column;")}>
-          <div style={css("max-width:780px;width:100%;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;")}>
+        <div style={{ height: "100dvh", background: "radial-gradient(900px 500px at 50% -10%,#EBE4FF 0%,rgba(235,228,255,0) 60%),#F6F4FF", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={css("flex:0 0 auto;max-width:780px;width:100%;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;")}>
             <E as="button" s="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#5B5470;" h="color:#6D5DF6;" onClick={gotoLanding}>‹ 返回首页</E>
             <div style={css("display:flex;align-items:center;gap:8px;font-weight:800;")}>
               <span style={css("color:#6D5DF6;")}>✦</span> AI 简历助手
@@ -1647,15 +1690,22 @@ export function LandingApp() {
             <div style={css("width:64px;")} />
           </div>
 
-          <div style={css("flex:1;max-width:780px;width:100%;margin:0 auto;padding:8px 24px 24px;display:flex;flex-direction:column;gap:16px;overflow:auto;")}>
+          <div
+            ref={chatScrollRef}
+            className="chat-scroll"
+            style={css("flex:1 1 auto;min-height:0;max-width:780px;width:100%;margin:0 auto;padding:8px 24px 16px;display:flex;flex-direction:column;gap:16px;overflow-x:hidden;overflow-y:auto;")}
+          >
             {chatRows.map((m, i) => (
               <div key={i} style={css(m.rowStyle)}>
                 <div style={css(m.bubbleStyle)}>
-                  {m.text || m.streaming ? (
-                    <div>
-                      {m.text}
-                      {m.streaming ? <span style={css("opacity:.55;")}>▍</span> : null}
+                  {m.streaming && !m.text ? (
+                    <div className="chat-think-dots" role="status" aria-label="正在回复">
+                      <span /><span /><span />
                     </div>
+                  ) : m.role === "ai" && m.text ? (
+                    <ChatTextCard content={m.text} />
+                  ) : m.text ? (
+                    <div>{m.text}</div>
                   ) : null}
                   {m.files.length > 0 && (
                     <div style={css(`display:flex;flex-direction:column;gap:6px;${m.text || m.voices.length ? "margin-top:10px;" : ""}`)}>
@@ -1715,16 +1765,121 @@ export function LandingApp() {
             )}
           </div>
 
-          <div style={css("max-width:780px;width:100%;margin:0 auto;padding:10px 24px 30px;")}>
+          <div style={css("flex:0 0 auto;max-width:780px;width:100%;margin:0 auto;padding:10px 24px calc(16px + env(safe-area-inset-bottom, 0px));background:linear-gradient(180deg,rgba(246,244,255,0),#F6F4FF 28%);")}>
             {chatStage === "ready" && (
-              <E as="button" s="width:100%;background:linear-gradient(135deg,#6D5DF6,#9B7BFF);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:16px;box-shadow:0 16px 34px -14px rgba(109,93,246,.9);animation:fadeUp .4s ease both;" h="filter:brightness(1.05);" onClick={generateResume}>✨ 生成我的简历</E>
+              <E as="button" s="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#6D5DF6,#9B7BFF);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:16px;box-shadow:0 16px 34px -14px rgba(109,93,246,.9);animation:fadeUp .4s ease both;" h="filter:brightness(1.05);" onClick={generateResume}>✨ 生成我的简历</E>
             )}
             {(chatStage === "intro" || chatStage === "ready") && (
-              <div style={css("background:#fff;border:1px solid #E9E3FA;border-radius:18px;padding:7px 7px 7px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 14px 36px -22px rgba(40,24,90,.5);")}>
-                <input value={chatInput} onChange={onChatChange} onKeyDown={onChatKey} disabled={chatStreaming} placeholder={chatStreaming ? "搭子正在回复…" : "输入你的回复…"} style={css("flex:1;border:none;font-size:15px;background:transparent;padding:10px 0;")} />
-                <E as="button" s={"width:42px;height:42px;border-radius:13px;background:" + (chatStreaming ? "#CFC8E0" : "#6D5DF6") + ";display:flex;align-items:center;justify-content:center;"} h={chatStreaming ? "" : "background:#5B4BE8;"} onClick={chatSend}>
-                  <SendIcon size={18} />
-                </E>
+              <div style={css("background:#fff;border:1px solid #E9E3FA;border-radius:16px;padding:8px 10px 8px 14px;box-shadow:0 14px 36px -22px rgba(40,24,90,.5);")}>
+                {heroRecording && (
+                  <div style={css("display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 10px;border-radius:12px;background:#fff4f4;border:1px solid #ffd5d5;")}>
+                    <span style={css("display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;font-size:12px;font-weight:600;color:#d64545;")}>
+                      <span style={css("width:8px;height:8px;border-radius:50%;background:#ff4d4f;animation:pulse 1.2s ease-in-out infinite;")} />
+                      录音中 {formatVoiceDuration(heroRecording.duration)}
+                    </span>
+                    <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" height={22} animate />
+                    <button
+                      type="button"
+                      onClick={() => stopHeroVoiceRecording(false)}
+                      disabled={chatStreaming}
+                      style={css("flex:0 0 auto;padding:4px 10px;border:0;border-radius:9999px;background:#ff6b6b;color:#fff;font-size:12px;font-weight:600;cursor:pointer;")}
+                    >
+                      完成
+                    </button>
+                  </div>
+                )}
+                {(heroFiles.length > 0 || heroVoices.length > 0) && (
+                  <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;")}>
+                    {heroVoices.map((voice) => (
+                      <VoiceClipRow
+                        key={voice.id}
+                        clip={voice}
+                        playing={voicePlayingId === voice.id}
+                        onPlay={playVoiceClip}
+                        onRemove={chatStreaming ? undefined : removeHeroVoice}
+                      />
+                    ))}
+                    {heroFiles.map((f) => (
+                      <span
+                        key={f.id}
+                        style={css("display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 8px 4px 10px;border-radius:9999px;background:#f3f0ff;border:1px solid #e4dcff;font-size:12px;color:#5B5470;")}
+                      >
+                        <span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>📎 {f.name}</span>
+                        <span style={css("flex:0 0 auto;font-size:11px;color:#9890AE;")}>{formatFileSize(f.size)}</span>
+                        {!chatStreaming && (
+                          <button
+                            type="button"
+                            onClick={() => removeHeroFile(f.id)}
+                            style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:#6D5DF6;cursor:pointer;font-size:12px;line-height:1;")}
+                            aria-label={`移除 ${f.name}`}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <textarea
+                  ref={chatInputRef}
+                  value={chatInput}
+                  onChange={onChatChange}
+                  onKeyDown={onChatKey}
+                  disabled={chatStreaming}
+                  rows={2}
+                  placeholder={chatStreaming ? "搭子正在回复…" : "输入你的回复…"}
+                  style={css("width:100%;height:44px;border:0;outline:0;resize:none;background:transparent;font-family:inherit;font-size:14.5px;line-height:1.5;color:#1B1530;padding:0;min-height:44px;max-height:44px;overflow-y:auto;")}
+                />
+                <div style={css("display:flex;align-items:center;justify-content:flex-end;gap:8px;")}>
+                  <E
+                    as="button"
+                    s={
+                      "width:32px;height:32px;flex:0 0 auto;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
+                      (chatStreaming
+                        ? "background:#F1EDFC;opacity:.55;cursor:not-allowed;"
+                        : heroRecording
+                          ? "background:#ffe3e3;box-shadow:0 0 0 3px rgba(255,77,79,.14);"
+                          : "background:#f3f0ff;")
+                    }
+                    h={chatStreaming ? "" : heroRecording ? "background:#ffd6d6;" : "background:#ece7ff;"}
+                    title={heroRecording ? "点击结束录音" : "语音说给搭子听"}
+                    onClick={() => {
+                      if (chatStreaming) return
+                      toggleHeroVoiceRecord()
+                    }}
+                  >
+                    <MicIcon size={15} color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
+                  </E>
+                  <E
+                    as="button"
+                    s={
+                      "width:32px;height:32px;flex:0 0 auto;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
+                      (chatStreaming ? "background:#F1EDFC;opacity:.55;cursor:not-allowed;" : "background:#f3f0ff;")
+                    }
+                    h={chatStreaming ? "" : "background:#ece7ff;"}
+                    title="添加材料"
+                    onClick={() => {
+                      if (chatStreaming) return
+                      openHeroFilePicker()
+                    }}
+                  >
+                    <ClipIcon size={15} />
+                  </E>
+                  <E
+                    as="button"
+                    s={
+                      "width:36px;height:36px;flex:0 0 auto;border-radius:12px;display:flex;align-items:center;justify-content:center;" +
+                      (chatStreaming || !hasChatContent()
+                        ? "background:#CFC8E0;cursor:not-allowed;"
+                        : "background:#6D5DF6;")
+                    }
+                    h={chatStreaming || !hasChatContent() ? "" : "background:#5B4BE8;"}
+                    title="发送"
+                    onClick={chatSend}
+                  >
+                    <SendIcon size={16} />
+                  </E>
+                </div>
               </div>
             )}
           </div>
@@ -1970,7 +2125,20 @@ const LANDING_CSS = `
     min-width: 0;
     width: 100%;
   }
+  .magic-landing textarea {
+    font-family: inherit;
+    outline: none;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 0;
+    width: 100%;
+  }
   .magic-landing input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  .magic-landing textarea:focus {
     outline: none;
     box-shadow: none;
   }
@@ -2041,6 +2209,33 @@ const LANDING_CSS = `
   @keyframes spin { to { transform: rotate(360deg) } }
   @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: .45; transform: scale(.88) } }
   @keyframes toastIn { from { opacity: 0; transform: translate(-50%,-14px) } to { opacity: 1; transform: translate(-50%,0) } }
+  @keyframes thinkDot {
+    0%, 80%, 100% { transform: translateY(0); opacity: .35; }
+    40% { transform: translateY(-5px); opacity: 1; }
+  }
+  .magic-landing .chat-think-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .magic-landing .chat-think-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #6D5DF6;
+    animation: thinkDot 1.05s ease-in-out infinite;
+  }
+  .magic-landing .chat-think-dots span:nth-child(2) { animation-delay: .15s; }
+  .magic-landing .chat-think-dots span:nth-child(3) { animation-delay: .3s; }
+  .magic-landing .chat-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .magic-landing .chat-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
   .magic-landing .user-menu-item {
     width: 100%;
     display: flex;
