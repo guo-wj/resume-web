@@ -2,14 +2,19 @@ import { getAccessToken } from "@/store/auth"
 import { resolveApiPath, API_ENDPOINT_MAP } from "./endpoints"
 import type { ApiResponse } from "./types"
 import { ApiError } from "./types"
+import { DEFAULT_TIMEOUT_MS, createTimeoutGate, throwIfAborted } from "./timeout"
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api"
+
+export { DEFAULT_TIMEOUT_MS }
 
 export interface RequestOptions extends Omit<RequestInit, "method" | "body"> {
   params?: Record<string, string | number>
   query?: Record<string, string | number | boolean | undefined>
   body?: unknown
   token?: string | null
+  /** 超时毫秒数；默认 10s，传 0 表示不超时 */
+  timeout?: number
 }
 
 function joinApiUrl(path: string): string {
@@ -38,33 +43,43 @@ export async function request<T = unknown>(
   const ep = API_ENDPOINT_MAP[key]
   if (!ep) throw new Error(`Unknown API key: ${key}`)
 
-  const { params, query, body, token, headers, ...rest } = options
+  const { params, query, body, token, headers, timeout = DEFAULT_TIMEOUT_MS, signal, ...rest } =
+    options
   const path = resolveApiPath(key, params)
   const url = buildUrl(path, query)
   const authToken = token ?? getAccessToken()
+  const gate = createTimeoutGate(timeout, signal ?? undefined)
 
-  const res = await fetch(url, {
-    method: ep.method,
-    headers: {
-      ...(body != null ? { "Content-Type": "application/json" } : {}),
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...headers,
-    },
-    body: body != null ? JSON.stringify(body) : undefined,
-    ...rest,
-  })
+  try {
+    const res = await fetch(url, {
+      method: ep.method,
+      headers: {
+        ...(body != null ? { "Content-Type": "application/json" } : {}),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...headers,
+      },
+      body: body != null ? JSON.stringify(body) : undefined,
+      ...rest,
+      signal: gate.signal,
+    })
 
-  const json = (await res.json().catch(() => null)) as ApiResponse<T> | null
+    const json = (await res.json().catch(() => null)) as ApiResponse<T> | null
 
-  if (!res.ok) {
-    throw new ApiError(res.status, json?.message || res.statusText)
+    if (!res.ok) {
+      throw new ApiError(res.status, json?.message || res.statusText)
+    }
+
+    if (json && typeof json.code === "number" && json.code !== 0) {
+      throw new ApiError(json.code, json.message || "请求失败")
+    }
+
+    return (json?.data ?? json) as T
+  } catch (err) {
+    if (err instanceof ApiError) throw err
+    throwIfAborted(err, gate.didTimeout())
+  } finally {
+    gate.dispose()
   }
-
-  if (json && typeof json.code === "number" && json.code !== 0) {
-    throw new ApiError(json.code, json.message || "请求失败")
-  }
-
-  return (json?.data ?? json) as T
 }
 
 export { API_BASE }

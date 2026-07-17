@@ -3,7 +3,7 @@
  *
  * - APP_ROUTES：React Router 页面级路由
  * - CONSOLE_NAV：工作台 /console 内 hash 子路由
- * - LANDING_SCREENS：首页 LandingApp 内部视图（非 URL 路由）
+ * - LANDING_SCREENS：首页 landing 内部视图（非 URL 路由）
  */
 
 export interface AppRoute {
@@ -53,6 +53,13 @@ export const APP_ROUTES: AppRoute[] = [
     component: "DashboardApp",
     description: "工作台 · 会员 / 积分 / 订单 / 设置",
     nav: true,
+  },
+  {
+    path: "/surprise",
+    name: "surprise",
+    component: "SurpriseApp",
+    description: "惊喜页 · 简历优化界面原型",
+    nav: false,
   },
 ]
 
@@ -152,7 +159,7 @@ export function consoleUrl(route: string): string {
   return `/console#${route}`
 }
 
-/** 侧边栏 NAV 使用的 subs 元组格式（兼容 DashboardApp） */
+/** 侧边栏 NAV 使用的 subs 元组格式（兼容 dashboard） */
 export function consoleNavForSidebar(): Array<
   Omit<ConsoleNavItem, "subs"> & { subs?: [string, string][] }
 > {

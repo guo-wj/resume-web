@@ -5,6 +5,7 @@ import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgen
 import { PersonalCenter } from "@/pages/personal"
 import { AuthGateProvider, RequireAuthAction, ChatTextCard } from "@/components"
 import { useAuth } from "@/store"
+import "./index.scss"
 
 const { useState, useRef, useEffect, useCallback } = React
 
@@ -32,10 +33,13 @@ function css(str) {
   return out
 }
 
-/* 通用元素：s = 基础内联样式字符串，h = hover 时叠加的样式字符串 */
+/* 通用元素：保留动态 s/h；静态样式已抽到 index.scss */
 function E({ as = "div", s, h, children, ...rest }) {
   const [hover, setHover] = useState(false)
   const As = as
+  if (!s && !h) {
+    return <As {...rest}>{children}</As>
+  }
   const style = h && hover ? { ...css(s), ...css(h) } : css(s)
   const hoverProps = h
     ? { onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false) }
@@ -332,7 +336,7 @@ function VoiceClipRow({ clip, tone = "input", playing = false, onPlay, onRemove 
         <button
           type="button"
           onClick={() => onRemove(clip.id)}
-          style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:#7b61ff;cursor:pointer;font-size:12px;line-height:1;")}
+          className="ld-160"
           aria-label="移除语音"
         >
           ×
@@ -436,25 +440,25 @@ function LegalModal({ docKey, onClose }) {
 
   return (
     <div
-      style={css("position:fixed;inset:0;z-index:510;background:rgba(22,17,45,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;")}
+      className="ld-159"
       onClick={onClose}
     >
       <div
         onClick={stopProp}
-        style={css("width:min(520px,100%);max-height:min(78vh,640px);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(40,24,90,.55);animation:popIn .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;")}
+        className="ld-158"
       >
-        <div style={css("padding:22px 24px 16px;border-bottom:1px solid #ECE7F7;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0;")}>
+        <div className="ld-157">
           <div>
-            <div style={css("font-size:18px;font-weight:800;color:#1B1530;")}>{doc.title}</div>
-            <div style={css("font-size:12px;color:#A7A0BC;margin-top:4px;")}>更新日期：{doc.updated}</div>
+            <div className="ld-156">{doc.title}</div>
+            <div className="ld-155">更新日期：{doc.updated}</div>
           </div>
-          <button type="button" className="legal-close" style={css("width:30px;height:30px;border-radius:50%;background:#F2EFFB;color:#6B6483;font-size:15px;flex-shrink:0;")} onClick={onClose}>✕</button>
+          <button type="button" className="legal-close ld-154"  onClick={onClose}>✕</button>
         </div>
-        <div className="legal-body" style={css("flex:1;overflow-y:auto;padding:20px 24px 24px;")}>
+        <div className="legal-body ld-153" >
           {doc.sections.map((s, i) => (
             <div key={i} style={css(i > 0 ? "margin-top:18px;" : "")}>
-              <div style={css("font-size:14px;font-weight:700;color:#1B1530;margin-bottom:6px;")}>{s.heading}</div>
-              <div style={css("font-size:13px;color:#5B5470;line-height:1.7;")}>{s.body}</div>
+              <div className="ld-152">{s.heading}</div>
+              <div className="ld-151">{s.body}</div>
             </div>
           ))}
         </div>
@@ -1388,42 +1392,42 @@ export function LandingApp() {
 
   return (
     <AuthGateProvider ref={authGateRef} onRequireAuth={openAuth}>
-    <div className="magic-landing" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden", fontFamily: "'Plus Jakarta Sans','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif", color: "#1B1530", background: "#F6F4FF" }}>
-      <style>{LANDING_CSS}</style>
+    <div className="magic-landing">
       <input
         ref={heroFileInputRef}
         type="file"
         multiple
         accept={HERO_FILE_ACCEPT}
-        style={{ display: "none" }}
+        className="ld-extra-0"
         onChange={handleHeroFiles}
       />
 
       {/* ===================== LANDING ===================== */}
       {screen === "landing" && (
-        <div style={css("--accent:#9875ff;--accent-strong:#7b61ff;--accent-press:#6a4ff0;--accent-tint:#f0ecff;--on-accent:#ffffff;--ink-1:#1f1f1f;--ink-2:rgba(31,31,31,.64);--ink-3:rgba(31,31,31,.40);--border:rgba(17,24,39,.07);--border-strong:rgba(17,24,39,.13);--font-sans:'Inter','HarmonyOS Sans SC',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'PingFang SC','Microsoft YaHei',sans-serif;--font-sans-sc:'HarmonyOS Sans SC','PingFang SC','Microsoft YaHei','Hiragino Sans GB',sans-serif;position:relative;min-height:100vh;background:#f3f1fb;font-family:var(--font-sans);color:var(--ink-1);overflow:hidden;padding-bottom:56px;")}>
+        <div className="ld-150">
 
           {/* header */}
-          <header style={css("height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.78);backdrop-filter:blur(10px);position:sticky;top:0;z-index:30;")}>
-            <div style={css("display:flex;align-items:center;gap:9px;")}>
+          <header className="ld-149">
+            <div className="ld-148">
               <Mascot size={30} />
-              <span style={css("font-family:var(--font-sans-sc);font-weight:800;font-size:19px;letter-spacing:.5px;")}>不写简历</span>
-              <span style={css("font-size:11px;color:var(--ink-3);border:1px solid var(--border-strong);border-radius:99px;padding:2px 8px;margin-left:2px;")}>求职搭子</span>
+              <span className="ld-147">不写简历</span>
+              <span className="ld-146">求职搭子</span>
+              <E as="button" className="ld-180" onClick={() => navigate("/surprise")}>✦ 惊喜</E>
             </div>
             {isLoggedIn ? (
-              <div ref={userMenuRef} style={css("position:relative;z-index:1;")}>
+              <div ref={userMenuRef} className="ld-145">
                 <button
                   type="button"
-                  style={css("display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border-strong);padding:4px 12px 4px 4px;border-radius:999px;cursor:pointer;font-family:inherit;color:inherit;")}
+                  className="ld-144"
                   onClick={() => setUserMenuOpen((v) => !v)}
                 >
-                  <div style={css("width:30px;height:30px;border-radius:99px;background:var(--accent-tint);color:var(--accent-strong);display:grid;place-items:center;font-weight:700;font-size:13px;")}>{user?.nickname?.slice(0, 1) || "你"}</div>
-                  <span style={css("font-size:13px;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>{user?.nickname || "用户"}</span>
+                  <div className="ld-143">{user?.nickname?.slice(0, 1) || "你"}</div>
+                  <span className="ld-142">{user?.nickname || "用户"}</span>
                   <ChevronDownIcon color={userMenuOpen ? "#7b61ff" : "#9890AE"} />
                 </button>
                 {userMenuOpen && (
-                  <div style={css("position:absolute;top:100%;right:0;padding-top:8px;z-index:10;")}>
-                    <div style={css("min-width:168px;background:#fff;border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 16px 40px -16px rgba(40,24,90,.35);padding:6px;animation:popIn .2s ease both;")}>
+                  <div className="ld-141">
+                    <div className="ld-140">
                       <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
                         个人中心
                       </button>
@@ -1435,41 +1439,41 @@ export function LandingApp() {
                 )}
               </div>
             ) : (
-              <div style={css("display:flex;align-items:center;gap:10px;")}>
-                <E as="button" s="height:34px;padding:0 14px;border:0;background:transparent;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-1);" h="background:var(--accent-tint);" onClick={openAuthLogin}>登录</E>
-                <E as="button" s="height:34px;padding:0 18px;border:0;background:var(--accent);color:#fff;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(123,97,255,.28);" h="background:var(--accent-press);" onClick={openAuthCreate}>免费注册</E>
+              <div className="ld-139">
+                <E as="button" className="ld-179" onClick={openAuthLogin}>登录</E>
+                <E as="button" className="ld-178" onClick={openAuthCreate}>免费注册</E>
               </div>
             )}
           </header>
 
           {/* home / 落地页 */}
-          <main style={css("position:relative;max-width:960px;margin:0 auto;padding:44px 24px 56px;overflow:visible;")}>
+          <main className="ld-138">
             {/* 装饰色块 */}
-            <div aria-hidden="true" style={css("position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:0;")}>
-              <span style={css("position:absolute;top:44px;left:7%;width:86px;height:86px;border-radius:52% 48% 46% 54% / 54% 46% 54% 46%;background:#bff0d6;animation:wzfloat 4.5s ease-in-out infinite;")} />
-              <span style={css("position:absolute;top:14px;left:23%;width:40px;height:40px;border-radius:50%;background:#dcd0ff;")} />
-              <span style={css("position:absolute;top:96px;right:8%;width:74px;height:74px;border-radius:50%;background:#ffd8e8;animation:wzfloat 5.5s ease-in-out infinite;")} />
-              <span style={css("position:absolute;top:26px;right:23%;width:30px;height:30px;border-radius:11px;background:#ffe6a3;transform:rotate(16deg);")} />
-              <span style={css("position:absolute;top:168px;left:3%;width:24px;height:24px;border-radius:50%;background:#c7dbff;")} />
-              <span style={css("position:absolute;top:150px;right:3%;width:18px;height:18px;border-radius:50%;background:#bff0d6;")} />
+            <div aria-hidden="true" className="ld-137">
+              <span className="ld-136" />
+              <span className="ld-135" />
+              <span className="ld-134" />
+              <span className="ld-133" />
+              <span className="ld-132" />
+              <span className="ld-131" />
             </div>
 
             {/* 标题 + 吉祥物 */}
-            <div style={css("position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:15px;")}>
-              <div style={css("filter:drop-shadow(0 10px 20px rgba(47,174,112,.26));animation:wzfloat 4s ease-in-out infinite;")}>
+            <div className="ld-130">
+              <div className="ld-129">
                 <Mascot size={98} />
               </div>
-              <h1 style={css("font-family:var(--font-sans-sc);font-weight:800;font-size:46px;line-height:1.2;letter-spacing:.005em;margin:0;")}>
-                不止简历，<span style={css("color:var(--accent-strong);")}>解决一切求职卡点</span>
+              <h1 className="ld-128">
+                不止简历，<span className="ld-127">解决一切求职卡点</span>
               </h1>
-              <p style={css("font-size:16px;line-height:1.75;color:var(--ink-2);max-width:500px;margin:0;")}>
+              <p className="ld-126">
                 没实习憋不出简历？海投却石沉大海？简历太丑？<br />让「求职搭子」陪你，一个一个搞定 🌱
               </p>
             </div>
 
             {/* 目标胶囊 */}
-            <div style={css("position:relative;z-index:1;display:flex;justify-content:center;margin-top:26px;")}>
-              <div style={css("display:inline-flex;gap:5px;background:#efeaff;padding:5px;border-radius:9999px;")}>
+            <div className="ld-125">
+              <div className="ld-124">
                 {[
                   { key: "explore", label: "职业探索" },
                   { key: "revise", label: "简历修改" },
@@ -1502,11 +1506,11 @@ export function LandingApp() {
             </div>
 
             {/* 友好输入区 */}
-            <div style={css("position:relative;z-index:1;max-width:660px;margin:16px auto 0;")}>
-              <div style={css("background:#fff;border:1.5px solid var(--accent);border-radius:24px;box-shadow:0 14px 34px rgba(123,97,255,.14);padding:14px 16px 12px;")}>
-                <div style={css("display:flex;align-items:center;gap:8px;margin-bottom:2px;")}>
-                  <span style={css("display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#1f8a57;background:#e6f7ef;padding:3px 9px;border-radius:9999px;")}>
-                    <span style={css("width:6px;height:6px;border-radius:50%;background:#22c06b;")} />求职搭子在线
+            <div className="ld-123">
+              <div className="ld-122">
+                <div className="ld-121">
+                  <span className="ld-120">
+                    <span className="ld-119" />求职搭子在线
                   </span>
                 </div>
                 <textarea
@@ -1519,26 +1523,26 @@ export function LandingApp() {
                     }
                   }}
                   placeholder="把烦恼丢给搭子就行，比如「0 经验想转产品经理，怎么写简历？」"
-                  style={css("width:100%;border:0;outline:0;resize:none;background:transparent;font-family:inherit;font-size:15px;line-height:1.6;color:var(--ink-1);min-height:44px;padding:6px 2px 4px;")}
+                  className="ld-118"
                 />
                 {heroRecording && (
-                  <div style={css("display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 12px;border-radius:16px;background:#fff4f4;border:1px solid #ffd5d5;")}>
-                    <span style={css("display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;font-size:12px;font-weight:600;color:#d64545;")}>
-                      <span style={css("width:8px;height:8px;border-radius:50%;background:#ff4d4f;animation:pulse 1.2s ease-in-out infinite;")} />
+                  <div className="ld-117">
+                    <span className="ld-73">
+                      <span className="ld-72" />
                       录音中 {formatVoiceDuration(heroRecording.duration)}
                     </span>
                     <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" animate />
                     <button
                       type="button"
                       onClick={() => stopHeroVoiceRecording(false)}
-                      style={css("flex:0 0 auto;padding:5px 10px;border:0;border-radius:9999px;background:#ff6b6b;color:#fff;font-size:12px;font-weight:600;cursor:pointer;")}
+                      className="ld-116"
                     >
                       完成
                     </button>
                   </div>
                 )}
                 {(heroFiles.length > 0 || heroVoices.length > 0) && (
-                  <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;")}>
+                  <div className="ld-115">
                     {heroVoices.map((voice) => (
                       <VoiceClipRow
                         key={voice.id}
@@ -1551,14 +1555,14 @@ export function LandingApp() {
                     {heroFiles.map((f) => (
                       <span
                         key={f.id}
-                        style={css("display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 8px 4px 10px;border-radius:9999px;background:#f3f0ff;border:1px solid #e4dcff;font-size:12px;color:var(--ink-2);")}
+                        className="ld-114"
                       >
-                        <span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>📎 {f.name}</span>
-                        <span style={css("flex:0 0 auto;font-size:11px;color:var(--ink-3);")}>{formatFileSize(f.size)}</span>
+                        <span className="ld-68">📎 {f.name}</span>
+                        <span className="ld-113">{formatFileSize(f.size)}</span>
                         <button
                           type="button"
                           onClick={() => removeHeroFile(f.id)}
-                          style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:var(--accent-strong);cursor:pointer;font-size:12px;line-height:1;")}
+                          className="ld-112"
                           aria-label={`移除 ${f.name}`}
                         >
                           ×
@@ -1567,8 +1571,8 @@ export function LandingApp() {
                     ))}
                   </div>
                 )}
-                <div style={css("display:flex;align-items:center;gap:8px;flex-wrap:wrap;")}>
-                  <span style={css("font-size:12.5px;color:var(--ink-3);")}>我是</span>
+                <div className="ld-111">
+                  <span className="ld-108">我是</span>
                   {[
                     { key: "student", label: "大学生" },
                     { key: "intern", label: "实习生" },
@@ -1590,7 +1594,7 @@ export function LandingApp() {
                       {it.label}
                     </button>
                   ))}
-                  <span style={css("flex:1;min-width:8px;")} />
+                  <span className="ld-110" />
                   <E
                     as="button"
                     s={
@@ -1605,11 +1609,11 @@ export function LandingApp() {
                   >
                     <MicIcon color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
                   </E>
-                  <E as="button" s="width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center;" h="background:var(--accent-tint);" title="添加材料" onClick={openHeroFilePicker}>
+                  <E as="button" className="ld-177" title="添加材料" onClick={openHeroFilePicker}>
                     <ClipIcon />
                   </E>
                   <RequireAuthAction returnTo="heroSubmit" shouldRun={hasHeroContent} onAuthorized={heroSubmitCore}>
-                    <E as="button" s="width:40px;height:40px;border-radius:99px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(123,97,255,.32);" h="background:var(--accent-press);" title="发送">
+                    <E as="button" className="ld-176" title="发送">
                       <ArrowUpIcon />
                     </E>
                   </RequireAuthAction>
@@ -1618,14 +1622,13 @@ export function LandingApp() {
             </div>
 
             {/* 提示词参考 */}
-            <div style={css("position:relative;z-index:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;")}>
-              <span style={css("font-size:12.5px;color:var(--ink-3);")}>大家都在问</span>
+            <div className="ld-109">
+              <span className="ld-108">大家都在问</span>
               {HERO_GOAL_PROMPTS[heroGoal].map((p) => (
                 <E
                   key={p}
                   as="button"
-                  s="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9999px;border:1px solid var(--border-strong);background:#fff;color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer;transition:all .16s;"
-                  h="border-color:var(--accent);color:var(--accent-strong);"
+                  className="ld-175"
                   onClick={() => addPrompt(p)}
                 >
                   {p}
@@ -1635,26 +1638,26 @@ export function LandingApp() {
             </div>
 
             {/* 快捷启动 / 入口二、三 */}
-            <div style={css("position:relative;z-index:1;display:flex;align-items:center;gap:14px;width:100%;max-width:660px;margin:36px auto 14px;")}>
-              <span style={css("flex:1;height:1px;background:var(--border-strong);")} />
-              <span style={css("font-size:12px;color:var(--ink-3);")}>手上有材料？一步到位</span>
-              <span style={css("flex:1;height:1px;background:var(--border-strong);")} />
+            <div className="ld-107">
+              <span className="ld-105" />
+              <span className="ld-106">手上有材料？一步到位</span>
+              <span className="ld-105" />
             </div>
-            <div style={css("position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:660px;margin:0 auto;text-align:left;")}>
+            <div className="ld-104">
               <input
                 ref={resumeUploadInputRef}
                 type="file"
                 accept={RESUME_FILE_ACCEPT}
-                style={{ display: "none" }}
+                className="ld-extra-1"
                 onChange={handleResumeUpload}
               />
-              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #e4dcff;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(123,97,255,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(123,97,255,.14);" onClick={openResumeUploadPicker}>
-                  <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-tint);")}>
+              <E as="button" className="ld-174" onClick={openResumeUploadPicker}>
+                  <span className="ld-103">
                     <UploadIcon />
                   </span>
-                  <span style={css("display:flex;flex-direction:column;gap:3px;")}>
-                    <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>已有简历，直接上传</span>
-                    <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>搭子秒读、诊断打分，告诉你哪儿能更好</span>
+                  <span className="ld-101">
+                    <span className="ld-100">已有简历，直接上传</span>
+                    <span className="ld-99">搭子秒读、诊断打分，告诉你哪儿能更好</span>
                   </span>
                 </E>
               <input
@@ -1662,16 +1665,16 @@ export function LandingApp() {
                 type="file"
                 multiple
                 accept={MATERIAL_FILE_ACCEPT}
-                style={{ display: "none" }}
+                className="ld-extra-2"
                 onChange={handleMaterialUpload}
               />
-              <E as="button" s="display:flex;align-items:flex-start;gap:14px;padding:18px;border-radius:20px;border:1.5px solid #cdeedd;background:#fff;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(34,168,106,.06);transition:transform .16s,box-shadow .16s;" h="transform:translateY(-3px);box-shadow:0 12px 26px rgba(34,168,106,.14);" onClick={openMaterialUploadPicker}>
-                  <span style={css("width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:grid;place-items:center;background:#e6f7ef;")}>
+              <E as="button" className="ld-173" onClick={openMaterialUploadPicker}>
+                  <span className="ld-102">
                     <PiecesIcon />
                   </span>
-                  <span style={css("display:flex;flex-direction:column;gap:3px;")}>
-                    <span style={css("font-size:14.5px;font-weight:700;color:var(--ink-1);")}>只有零散材料，帮我拼</span>
-                    <span style={css("font-size:12.5px;line-height:1.55;color:var(--ink-3);")}>丢进项目 / 作品 / JD，自动拼出简历骨架</span>
+                  <span className="ld-101">
+                    <span className="ld-100">只有零散材料，帮我拼</span>
+                    <span className="ld-99">丢进项目 / 作品 / JD，自动拼出简历骨架</span>
                   </span>
                 </E>
             </div>
@@ -1681,19 +1684,19 @@ export function LandingApp() {
 
       {/* ===================== CHAT ===================== */}
       {screen === "chat" && (
-        <div style={{ height: "100dvh", background: "radial-gradient(900px 500px at 50% -10%,#EBE4FF 0%,rgba(235,228,255,0) 60%),#F6F4FF", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={css("flex:0 0 auto;max-width:780px;width:100%;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;")}>
-            <E as="button" s="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#5B5470;" h="color:#6D5DF6;" onClick={gotoLanding}>‹ 返回首页</E>
-            <div style={css("display:flex;align-items:center;gap:8px;font-weight:800;")}>
-              <span style={css("color:#6D5DF6;")}>✦</span> AI 简历助手
+        <div className="ld-extra-3">
+          <div className="ld-98">
+            <E as="button" className="ld-172" onClick={gotoLanding}>‹ 返回首页</E>
+            <div className="ld-97">
+              <span className="ld-96">✦</span> AI 简历助手
             </div>
-            <div style={css("width:64px;")} />
+            <div className="ld-95" />
           </div>
 
           <div
             ref={chatScrollRef}
-            className="chat-scroll"
-            style={css("flex:1 1 auto;min-height:0;max-width:780px;width:100%;margin:0 auto;padding:8px 24px 16px;display:flex;flex-direction:column;gap:16px;overflow-x:hidden;overflow-y:auto;")}
+            className="chat-scroll ld-94"
+            
           >
             {chatRows.map((m, i) => (
               <div key={i} style={css(m.rowStyle)}>
@@ -1712,10 +1715,10 @@ export function LandingApp() {
                       {m.files.map((f) => (
                         <span
                           key={`${f.name}-${f.size}`}
-                          style={css("display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.16);font-size:12.5px;")}
+                          className="ld-93"
                         >
                           📎 {f.name}
-                          <span style={css("opacity:.75;")}>{formatFileSize(f.size)}</span>
+                          <span className="ld-92">{formatFileSize(f.size)}</span>
                         </span>
                       ))}
                     </div>
@@ -1738,84 +1741,81 @@ export function LandingApp() {
             ))}
 
             {chatStage === "generating" && (
-              <div style={css("display:flex;justify-content:flex-start;animation:msgIn .3s ease both;")}>
-                <div style={css("background:#fff;border:1px solid #EDE7FA;border-radius:18px 18px 18px 4px;padding:14px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px -16px rgba(40,24,90,.5);")}>
-                  <div style={css("width:18px;height:18px;border:2px solid #E0D8F5;border-top-color:#6D5DF6;border-radius:50%;animation:spin .8s linear infinite;")} />
-                  <span style={css("font-size:14.5px;color:#5B5470;font-weight:600;")}>正在为你生成简历…</span>
+              <div className="ld-91">
+                <div className="ld-90">
+                  <div className="ld-89" />
+                  <span className="ld-88">正在为你生成简历…</span>
                 </div>
               </div>
             )}
 
             {chatStage === "done" && (
-              <div style={css("align-self:flex-start;max-width:88%;background:#fff;border:1px solid #EDE7FA;border-radius:18px;padding:18px;box-shadow:0 16px 40px -24px rgba(40,24,90,.5);animation:fadeUp .45s ease both;")}>
-                <div style={css("display:flex;align-items:center;gap:8px;font-weight:800;color:#5A8A1A;margin-bottom:14px;")}>🎉 简历已生成</div>
-                <div style={css("border:1px dashed #D9D2EE;border-radius:12px;padding:18px;")}>
-                  <div style={css("height:14px;width:40%;background:#1B1530;border-radius:5px;")} />
-                  <div style={css("height:9px;width:60%;background:#D9D3EC;border-radius:5px;margin-top:9px;")} />
-                  <div style={css("height:1px;background:#F0ECFA;margin:14px 0;")} />
-                  <div style={css("height:8px;width:90%;background:#EDE9F8;border-radius:5px;")} />
-                  <div style={css("height:8px;width:82%;background:#EDE9F8;border-radius:5px;margin-top:7px;")} />
-                  <div style={css("height:8px;width:70%;background:#EDE9F8;border-radius:5px;margin-top:7px;")} />
+              <div className="ld-87">
+                <div className="ld-86">🎉 简历已生成</div>
+                <div className="ld-85">
+                  <div className="ld-84" />
+                  <div className="ld-83" />
+                  <div className="ld-82" />
+                  <div className="ld-81" />
+                  <div className="ld-80" />
+                  <div className="ld-79" />
                 </div>
-                <div style={css("display:flex;gap:10px;margin-top:14px;")}>
-                  <E as="button" s="background:#6D5DF6;color:#fff;font-weight:700;font-size:14px;padding:10px 18px;border-radius:12px;" h="background:#5B4BE8;" onClick={enterEditor}>进入编辑器</E>
-                  <button style={css("background:#F1EDFC;color:#6D5DF6;font-weight:700;font-size:14px;padding:10px 18px;border-radius:12px;")} onClick={() => toast("开始下载 PDF（原型示意）")}>下载 PDF</button>
+                <div className="ld-78">
+                  <E as="button" className="ld-171" onClick={enterEditor}>进入编辑器</E>
+                  <button className="ld-77" onClick={() => toast("开始下载 PDF（原型示意）")}>下载 PDF</button>
                 </div>
               </div>
             )}
           </div>
 
-          <div style={css("flex:0 0 auto;max-width:780px;width:100%;margin:0 auto;padding:10px 24px calc(16px + env(safe-area-inset-bottom, 0px));background:linear-gradient(180deg,rgba(246,244,255,0),#F6F4FF 28%);")}>
+          <div className="ld-76">
             {chatStage === "ready" && (
-              <E as="button" s="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#6D5DF6,#9B7BFF);color:#fff;font-weight:800;font-size:16px;padding:16px;border-radius:16px;box-shadow:0 16px 34px -14px rgba(109,93,246,.9);animation:fadeUp .4s ease both;" h="filter:brightness(1.05);" onClick={generateResume}>✨ 生成我的简历</E>
+              <E as="button" className="ld-170" onClick={generateResume}>✨ 生成我的简历</E>
             )}
             {(chatStage === "intro" || chatStage === "ready") && (
-              <div style={css("background:#fff;border:1px solid #E9E3FA;border-radius:16px;padding:8px 10px 8px 14px;box-shadow:0 14px 36px -22px rgba(40,24,90,.5);")}>
+              <div className="ld-75">
                 {heroRecording && (
-                  <div style={css("display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 10px;border-radius:12px;background:#fff4f4;border:1px solid #ffd5d5;")}>
-                    <span style={css("display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;font-size:12px;font-weight:600;color:#d64545;")}>
-                      <span style={css("width:8px;height:8px;border-radius:50%;background:#ff4d4f;animation:pulse 1.2s ease-in-out infinite;")} />
+                  <div className="ld-74">
+                    <span className="ld-73">
+                      <span className="ld-72" />
                       录音中 {formatVoiceDuration(heroRecording.duration)}
                     </span>
                     <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" height={22} animate />
                     <button
                       type="button"
                       onClick={() => stopHeroVoiceRecording(false)}
-                      disabled={chatStreaming}
-                      style={css("flex:0 0 auto;padding:4px 10px;border:0;border-radius:9999px;background:#ff6b6b;color:#fff;font-size:12px;font-weight:600;cursor:pointer;")}
+                      className="ld-71"
                     >
                       完成
                     </button>
                   </div>
                 )}
                 {(heroFiles.length > 0 || heroVoices.length > 0) && (
-                  <div style={css("display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;")}>
+                  <div className="ld-70">
                     {heroVoices.map((voice) => (
                       <VoiceClipRow
                         key={voice.id}
                         clip={voice}
                         playing={voicePlayingId === voice.id}
                         onPlay={playVoiceClip}
-                        onRemove={chatStreaming ? undefined : removeHeroVoice}
+                        onRemove={removeHeroVoice}
                       />
                     ))}
                     {heroFiles.map((f) => (
                       <span
                         key={f.id}
-                        style={css("display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 8px 4px 10px;border-radius:9999px;background:#f3f0ff;border:1px solid #e4dcff;font-size:12px;color:#5B5470;")}
+                        className="ld-69"
                       >
-                        <span style={css("overflow:hidden;text-overflow:ellipsis;white-space:nowrap;")}>📎 {f.name}</span>
-                        <span style={css("flex:0 0 auto;font-size:11px;color:#9890AE;")}>{formatFileSize(f.size)}</span>
-                        {!chatStreaming && (
-                          <button
-                            type="button"
-                            onClick={() => removeHeroFile(f.id)}
-                            style={css("display:grid;place-items:center;flex:0 0 auto;width:18px;height:18px;border:0;border-radius:50%;background:#e8e2ff;color:#6D5DF6;cursor:pointer;font-size:12px;line-height:1;")}
-                            aria-label={`移除 ${f.name}`}
-                          >
-                            ×
-                          </button>
-                        )}
+                        <span className="ld-68">📎 {f.name}</span>
+                        <span className="ld-67">{formatFileSize(f.size)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeHeroFile(f.id)}
+                          className="ld-66"
+                          aria-label={`移除 ${f.name}`}
+                        >
+                          ×
+                        </button>
                       </span>
                     ))}
                   </div>
@@ -1825,43 +1825,30 @@ export function LandingApp() {
                   value={chatInput}
                   onChange={onChatChange}
                   onKeyDown={onChatKey}
-                  disabled={chatStreaming}
                   rows={2}
-                  placeholder={chatStreaming ? "搭子正在回复…" : "输入你的回复…"}
-                  style={css("width:100%;height:44px;border:0;outline:0;resize:none;background:transparent;font-family:inherit;font-size:14.5px;line-height:1.5;color:#1B1530;padding:0;min-height:44px;max-height:44px;overflow-y:auto;")}
+                  placeholder={chatStreaming ? "搭子回复中，可先输入…" : "输入你的回复…"}
+                  className="ld-65"
                 />
-                <div style={css("display:flex;align-items:center;justify-content:flex-end;gap:8px;")}>
+                <div className="ld-64">
                   <E
                     as="button"
                     s={
                       "width:32px;height:32px;flex:0 0 auto;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
-                      (chatStreaming
-                        ? "background:#F1EDFC;opacity:.55;cursor:not-allowed;"
-                        : heroRecording
-                          ? "background:#ffe3e3;box-shadow:0 0 0 3px rgba(255,77,79,.14);"
-                          : "background:#f3f0ff;")
+                      (heroRecording
+                        ? "background:#ffe3e3;box-shadow:0 0 0 3px rgba(255,77,79,.14);"
+                        : "background:#f3f0ff;")
                     }
-                    h={chatStreaming ? "" : heroRecording ? "background:#ffd6d6;" : "background:#ece7ff;"}
+                    h={heroRecording ? "background:#ffd6d6;" : "background:#ece7ff;"}
                     title={heroRecording ? "点击结束录音" : "语音说给搭子听"}
-                    onClick={() => {
-                      if (chatStreaming) return
-                      toggleHeroVoiceRecord()
-                    }}
+                    onClick={toggleHeroVoiceRecord}
                   >
                     <MicIcon size={15} color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
                   </E>
                   <E
                     as="button"
-                    s={
-                      "width:32px;height:32px;flex:0 0 auto;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
-                      (chatStreaming ? "background:#F1EDFC;opacity:.55;cursor:not-allowed;" : "background:#f3f0ff;")
-                    }
-                    h={chatStreaming ? "" : "background:#ece7ff;"}
+                    className="ld-169"
                     title="添加材料"
-                    onClick={() => {
-                      if (chatStreaming) return
-                      openHeroFilePicker()
-                    }}
+                    onClick={openHeroFilePicker}
                   >
                     <ClipIcon size={15} />
                   </E>
@@ -1891,50 +1878,50 @@ export function LandingApp() {
         <div style={css(authWrapStyle)} onClick={onBackdrop}>
           <div style={css(authCardStyle)} onClick={stopProp}>
             {/* LEFT brand panel */}
-            <div style={css("flex:0 0 42%;position:relative;overflow:hidden;background:linear-gradient(160deg,#7C66FF 0%,#6D5DF6 55%,#5B4BE8 100%);padding:40px 36px;display:flex;flex-direction:column;color:#fff;")}>
-              <div style={css("position:absolute;top:-50px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(203,243,94,.85);opacity:.55;animation:floatA 9s ease-in-out infinite;")} />
-              <div style={css("position:absolute;bottom:-30px;left:-30px;width:150px;height:150px;border-radius:44% 56% 60% 40%/50% 44% 56% 50%;background:rgba(255,179,209,.6);animation:floatB 11s ease-in-out infinite;")} />
-              <div style={css("position:absolute;top:140px;left:30px;width:54px;height:54px;border-radius:50%;border:10px solid rgba(255,255,255,.25);animation:floatA 7s ease-in-out infinite;")} />
-              <div style={css("position:relative;z-index:2;display:flex;align-items:center;gap:10px;")}>
-                <div style={css("width:30px;height:30px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;")}>
-                  <div style={css("width:11px;height:11px;border-radius:3px;background:#6D5DF6;transform:rotate(12deg);")} />
+            <div className="ld-63">
+              <div className="ld-62" />
+              <div className="ld-61" />
+              <div className="ld-60" />
+              <div className="ld-59">
+                <div className="ld-58">
+                  <div className="ld-57" />
                 </div>
-                <span style={css("font-weight:800;font-size:16px;")}>Magic Resume</span>
+                <span className="ld-56">Magic Resume</span>
               </div>
-              <div style={css("position:relative;z-index:2;margin-top:auto;")}>
-                <div style={css("font-size:30px;font-weight:800;line-height:1.18;letter-spacing:-.5px;")}>几分钟，<br />搞定一份<br />打动 HR 的简历。</div>
-                <p style={css("font-size:14px;line-height:1.6;color:rgba(255,255,255,.82);margin:16px 0 0;max-width:240px;")}>登录即注册 —— 无需繁琐步骤，直接开始你的求职之旅。</p>
+              <div className="ld-55">
+                <div className="ld-54">几分钟，<br />搞定一份<br />打动 HR 的简历。</div>
+                <p className="ld-53">登录即注册 —— 无需繁琐步骤，直接开始你的求职之旅。</p>
               </div>
-              <div style={css("position:relative;z-index:2;margin-top:26px;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:11px;")}>
-                <div style={css("width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;color:#6D5DF6;font-weight:800;")}>★</div>
-                <span style={css("font-size:13px;line-height:1.45;color:#fff;font-weight:600;")}>“10 分钟做完简历，第二天就约了面试。”</span>
+              <div className="ld-52">
+                <div className="ld-51">★</div>
+                <span className="ld-50">“10 分钟做完简历，第二天就约了面试。”</span>
               </div>
             </div>
 
             {/* RIGHT content */}
-            <div style={css("flex:1;position:relative;display:flex;flex-direction:column;padding:34px 44px;overflow-y:auto;")}>
+            <div className="ld-49">
               {/* top control */}
-              <div style={css("position:absolute;top:20px;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;min-height:30px;")}>
+              <div className="ld-48">
                 {showBack && (
-                  <E as="button" s="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;color:#5B5470;" h="color:#6D5DF6;" onClick={backToMethod}>‹ 返回</E>
+                  <E as="button" className="ld-168" onClick={backToMethod}>‹ 返回</E>
                 )}
                 {showHome && (
-                  <E as="button" s="display:flex;align-items:center;gap:5px;font-size:14px;font-weight:700;color:#5B5470;" h="color:#6D5DF6;" onClick={gotoLanding}>‹ 返回首页</E>
+                  <E as="button" className="ld-168" onClick={gotoLanding}>‹ 返回首页</E>
                 )}
-                <div style={css("flex:1;")} />
+                <div className="ld-47" />
                 {showClose && (
-                  <E as="button" s="width:32px;height:32px;border-radius:50%;background:#F2EFFB;color:#6B6483;font-size:16px;display:flex;align-items:center;justify-content:center;" h="background:#E7E1F8;" onClick={closeAuth}>✕</E>
+                  <E as="button" className="ld-167" onClick={closeAuth}>✕</E>
                 )}
               </div>
 
               {/* ===== METHOD STEP ===== */}
               {stepMethod && (
-                <div style={css("margin-top:34px;display:flex;flex-direction:column;flex:1;animation:fadeUp .4s ease both;")}>
-                  <h2 style={css("font-size:25px;font-weight:800;letter-spacing:-.4px;margin:0;")}>欢迎来到 Magic Resume ✦</h2>
-                  <p style={css("font-size:14px;color:#7A7390;margin:8px 0 0;")}>登录即注册，丝滑开始 —— 首次登录将自动为你创建账号。</p>
+                <div className="ld-46">
+                  <h2 className="ld-18">欢迎来到 Magic Resume ✦</h2>
+                  <p className="ld-17">登录即注册，丝滑开始 —— 首次登录将自动为你创建账号。</p>
 
                   {/* segmented tabs */}
-                  <div style={css("position:relative;margin-top:22px;background:#F2EFFB;border-radius:14px;padding:4px;display:flex;")}>
+                  <div className="ld-45">
                     <div style={css("position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);background:#fff;border-radius:11px;box-shadow:0 4px 12px -6px rgba(40,24,90,.35);transition:left .28s cubic-bezier(.4,0,.2,1);left:" + (isAccountTab ? "4px" : "50%") + ";")} />
                     <button style={css(tabBtn(isAccountTab))} onClick={setTabAccount}>账密登录</button>
                     <button style={css(tabBtn(isWechatTab))} onClick={setTabWechat}>微信登录</button>
@@ -1942,29 +1929,29 @@ export function LandingApp() {
 
                   {/* ACCOUNT tab */}
                   {isAccountTab && (
-                    <div style={css("margin-top:20px;animation:slideIn .3s ease both;")}>
+                    <div className="ld-44">
                       {/* login-mode switch */}
-                      <div style={css("display:flex;gap:22px;margin-bottom:14px;")}>
+                      <div className="ld-43">
                         <button className="mode-tab" style={css(modeTab(loginMode === "code"))} onClick={setModeCode}>验证码登录</button>
                         <button className="mode-tab" style={css(modeTab(loginMode === "password"))} onClick={setModePassword}>密码登录</button>
                       </div>
 
-                      <div className={accountError ? "auth-field error" : "auth-field"} style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 16px;display:flex;align-items:center;")}>
-                        <input value={account} onChange={onAccountChange} onBlur={onAccountBlur} placeholder="请输入手机号 / 邮箱" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
+                      <div className={accountError ? "auth-field error" : "auth-field"} className="ld-42">
+                        <input value={account} onChange={onAccountChange} onBlur={onAccountBlur} placeholder="请输入手机号 / 邮箱" className="ld-13" />
                       </div>
                       {accountError && (
-                        <div style={css("font-size:12.5px;color:#E5484D;font-weight:600;margin-top:7px;padding-left:4px;")}>{accountError}</div>
+                        <div className="ld-12">{accountError}</div>
                       )}
 
                       {/* CODE mode */}
                       {loginMode === "code" && (
-                        <div style={css("animation:slideIn .25s ease both;")}>
-                          <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
-                            <input value={code} onChange={onCodeChange} placeholder="输入验证码" inputMode="numeric" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;letter-spacing:2px;")} />
+                        <div className="ld-39">
+                          <div className="auth-field ld-38" >
+                            <input value={code} onChange={onCodeChange} placeholder="输入验证码" inputMode="numeric" className="ld-41" />
                             <button style={css(codeBtnStyle)} onClick={sendCode}>{codeBtnLabel}</button>
                           </div>
                           {codeSent && (
-                            <div style={css("font-size:12px;color:#6D5DF6;font-weight:600;margin-top:7px;padding-left:4px;")}>验证码已发送，请查收</div>
+                            <div className="ld-40">验证码已发送，请查收</div>
                           )}
                           <E as="button" s={"width:100%;margin-top:18px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitAccount}>{loggingIn ? "登录中…" : "登录 / 注册"}</E>
                         </div>
@@ -1972,21 +1959,21 @@ export function LandingApp() {
 
                       {/* PASSWORD mode */}
                       {loginMode === "password" && (
-                        <div style={css("animation:slideIn .25s ease both;")}>
-                          <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:12px;")}>
-                            <input value={loginPw} onChange={onLoginPw} onKeyDown={onLoginPwKey} type={showLoginPw ? "text" : "password"} placeholder="请输入登录密码" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
-                            <button style={css("font-size:12px;font-weight:700;color:#6D5DF6;padding:6px 10px;")} onClick={toggleShowLoginPw}>{showLoginPw ? "隐藏" : "显示"}</button>
+                        <div className="ld-39">
+                          <div className="auth-field ld-38" >
+                            <input value={loginPw} onChange={onLoginPw} onKeyDown={onLoginPwKey} type={showLoginPw ? "text" : "password"} placeholder="请输入登录密码" className="ld-13" />
+                            <button className="ld-15" onClick={toggleShowLoginPw}>{showLoginPw ? "隐藏" : "显示"}</button>
                           </div>
                           {loginPwError && (
-                            <div style={css("font-size:12.5px;color:#E5484D;font-weight:600;margin-top:7px;padding-left:4px;")}>
+                            <div className="ld-12">
                               {loginPwError}
                             </div>
                           )}
                           {pwNeedSwitch && (
-                            <E as="button" s="width:100%;margin-top:10px;background:#F1EDFC;color:#6D5DF6;font-weight:700;font-size:13.5px;padding:11px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:6px;" h="background:#E7E1F8;" onClick={switchToCodeFromPw}>切换验证码登录 →</E>
+                            <E as="button" className="ld-166" onClick={switchToCodeFromPw}>切换验证码登录 →</E>
                           )}
-                          <div style={css("display:flex;align-items:center;justify-content:flex-end;margin-top:9px;")}>
-                            <E as="button" s="font-size:12.5px;font-weight:600;color:#9890AE;" h="color:#6D5DF6;" onClick={forgotPw}>忘记密码？</E>
+                          <div className="ld-37">
+                            <E as="button" className="ld-165" onClick={forgotPw}>忘记密码？</E>
                           </div>
                           <E as="button" s={"width:100%;margin-top:10px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitPassword}>{loggingIn ? "登录中…" : "登录"}</E>
                         </div>
@@ -1996,48 +1983,48 @@ export function LandingApp() {
 
                   {/* WECHAT tab */}
                   {isWechatTab && (
-                    <div style={css("margin-top:18px;display:flex;flex-direction:column;align-items:center;animation:slideIn .3s ease both;")}>
-                      <div style={css("position:relative;width:172px;height:172px;background:#fff;border:1.5px solid #ECE7F7;border-radius:16px;padding:12px;box-shadow:0 10px 30px -18px rgba(40,24,90,.5);")}>
-                        <div style={css("display:grid;grid-template-columns:repeat(21,1fr);grid-template-rows:repeat(21,1fr);width:100%;height:100%;")}>
+                    <div className="ld-36">
+                      <div className="ld-35">
+                        <div className="ld-34">
                           {QR_CELLS.map((c, i) => (
                             <div key={i} style={css(c.style)} />
                           ))}
                         </div>
-                        <div style={css("position:absolute;top:12px;left:12px;width:38px;height:38px;border:6px solid #1B1530;border-radius:9px;")} />
-                        <div style={css("position:absolute;top:22px;left:22px;width:18px;height:18px;background:#1B1530;border-radius:4px;")} />
-                        <div style={css("position:absolute;top:12px;right:12px;width:38px;height:38px;border:6px solid #1B1530;border-radius:9px;")} />
-                        <div style={css("position:absolute;top:22px;right:22px;width:18px;height:18px;background:#1B1530;border-radius:4px;")} />
-                        <div style={css("position:absolute;bottom:12px;left:12px;width:38px;height:38px;border:6px solid #1B1530;border-radius:9px;")} />
-                        <div style={css("position:absolute;bottom:22px;left:22px;width:18px;height:18px;background:#1B1530;border-radius:4px;")} />
-                        <div style={css("position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:10px;background:#07C160;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px #fff;")}>
-                          <div style={css("width:18px;height:13px;background:#fff;border-radius:7px 7px 7px 2px;position:relative;")} />
+                        <div className="ld-33" />
+                        <div className="ld-32" />
+                        <div className="ld-31" />
+                        <div className="ld-30" />
+                        <div className="ld-29" />
+                        <div className="ld-28" />
+                        <div className="ld-27">
+                          <div className="ld-26" />
                         </div>
                       </div>
-                      <div style={css("font-size:14px;color:#5B5470;font-weight:600;margin-top:16px;")}>打开微信扫一扫，立即登录 / 注册</div>
-                      <E as="button" s="margin-top:14px;background:#07C160;color:#fff;font-weight:800;font-size:14px;padding:11px 24px;border-radius:12px;box-shadow:0 12px 24px -12px rgba(7,193,96,.8);" h="filter:brightness(1.05);" onClick={wechatScan}>模拟扫码成功 →</E>
+                      <div className="ld-25">打开微信扫一扫，立即登录 / 注册</div>
+                      <E as="button" className="ld-164" onClick={wechatScan}>模拟扫码成功 →</E>
                     </div>
                   )}
 
                   {/* quick login (apple) */}
-                  <div style={css("margin-top:auto;padding-top:22px;")}>
-                    <div style={css("display:flex;align-items:center;gap:12px;color:#A7A0BC;font-size:12px;font-weight:600;")}>
-                      <div style={css("flex:1;height:1px;background:#ECE7F7;")} />其他方式<div style={css("flex:1;height:1px;background:#ECE7F7;")} />
+                  <div className="ld-24">
+                    <div className="ld-23">
+                      <div className="ld-10" />其他方式<div className="ld-10" />
                     </div>
-                    <div style={css("display:flex;justify-content:center;margin-top:14px;")}>
-                      <E as="button" s="width:46px;height:46px;border-radius:50%;background:#fff;border:1.5px solid #ECE7F7;display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s;" h="transform:translateY(-2px);box-shadow:0 10px 22px -12px rgba(40,24,90,.5);" onClick={openApple}>
+                    <div className="ld-22">
+                      <E as="button" className="ld-163" onClick={openApple}>
                         <AppleIcon />
                       </E>
                     </div>
                   </div>
 
                   {/* agreement */}
-                  <div style={{ ...css("margin-top:18px;display:flex;align-items:center;gap:8px;"), ...(agreeShake ? css("animation:shake .5s;") : {}) }}>
+                  <div className={agreeShake ? "ld-agree-row is-shaking" : "ld-agree-row"}>
                     <button style={css(checkboxStyle)} onClick={toggleAgree}>{agreed ? "✓" : ""}</button>
-                    <div style={css("font-size:12px;color:#9890AE;line-height:1.5;")}>
+                    <div className="ld-21">
                       我已阅读并同意 Magic Resume
-                      <button type="button" className="legal-link" style={css("color:#6D5DF6;font-weight:600;")} onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
+                      <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
                       和
-                      <button type="button" className="legal-link" style={css("color:#6D5DF6;font-weight:600;")} onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
+                      <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
                     </div>
                   </div>
                 </div>
@@ -2045,27 +2032,27 @@ export function LandingApp() {
 
               {/* ===== SET PASSWORD STEP ===== */}
               {stepSetpw && (
-                <div style={css("margin-top:34px;display:flex;flex-direction:column;flex:1;animation:slideIn .35s ease both;")}>
-                  <h2 style={css("font-size:25px;font-weight:800;letter-spacing:-.4px;margin:0;")}>设置登录密码</h2>
-                  <p style={css("font-size:14px;color:#7A7390;margin:8px 0 0;")}>方便下次用密码快速登录 —— 也可以稍后再说。</p>
+                <div className="ld-19">
+                  <h2 className="ld-18">设置登录密码</h2>
+                  <p className="ld-17">方便下次用密码快速登录 —— 也可以稍后再说。</p>
 
-                  <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 8px 0 16px;display:flex;align-items:center;margin-top:24px;")}>
-                    <input value={pw1} onChange={onPw1} type={showPw ? "text" : "password"} placeholder="设置新密码（至少 8 位）" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
-                    <button style={css("font-size:12px;font-weight:700;color:#6D5DF6;padding:6px 10px;")} onClick={toggleShowPw}>{showPw ? "隐藏" : "显示"}</button>
+                  <div className="auth-field ld-16" >
+                    <input value={pw1} onChange={onPw1} type={showPw ? "text" : "password"} placeholder="设置新密码（至少 8 位）" className="ld-13" />
+                    <button className="ld-15" onClick={toggleShowPw}>{showPw ? "隐藏" : "显示"}</button>
                   </div>
-                  <div className="auth-field" style={css("background:#F4F2FB;border:1.5px solid #ECE7F7;border-radius:14px;padding:0 16px;display:flex;align-items:center;margin-top:12px;")}>
-                    <input value={pw2} onChange={onPw2} type={showPw ? "text" : "password"} placeholder="确认新密码" style={css("flex:1;border:none;background:transparent;font-size:15px;padding:15px 0;")} />
+                  <div className="auth-field ld-14" >
+                    <input value={pw2} onChange={onPw2} type={showPw ? "text" : "password"} placeholder="确认新密码" className="ld-13" />
                   </div>
                   {pwError && (
-                    <div style={css("font-size:12.5px;color:#E5484D;font-weight:600;margin-top:7px;padding-left:4px;")}>{pwError}</div>
+                    <div className="ld-12">{pwError}</div>
                   )}
 
                   <E as="button" s={"width:100%;margin-top:20px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);" + (settingPw ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={confirmPw}>{settingPw ? "提交中…" : "确认并进入"}</E>
 
-                  <div style={css("display:flex;align-items:center;gap:12px;color:#A7A0BC;font-size:12px;font-weight:600;margin-top:24px;")}>
-                    <div style={css("flex:1;height:1px;background:#ECE7F7;")} />或<div style={css("flex:1;height:1px;background:#ECE7F7;")} />
+                  <div className="ld-11">
+                    <div className="ld-10" />或<div className="ld-10" />
                   </div>
-                  <E as="button" s="margin:14px auto 0;font-size:14px;font-weight:700;color:#6B6483;display:flex;align-items:center;gap:5px;" h="color:#6D5DF6;" onClick={skipPw}>稍后在个人中心设置，先进去逛逛 →</E>
+                  <E as="button" className="ld-162" onClick={skipPw}>稍后在个人中心设置，先进去逛逛 →</E>
                 </div>
               )}
             </div>
@@ -2075,18 +2062,18 @@ export function LandingApp() {
 
       {/* ===================== APPLE SHEET ===================== */}
       {appleOpen && (
-        <div style={css("position:fixed;inset:0;z-index:520;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;")} onClick={closeApple}>
-          <div onClick={stopProp} style={css("width:380px;max-width:100%;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.6);animation:popIn .3s cubic-bezier(.2,.8,.2,1);")}>
-            <div style={css("padding:26px 26px 0;display:flex;flex-direction:column;align-items:center;text-align:center;")}>
+        <div className="ld-9" onClick={closeApple}>
+          <div onClick={stopProp} className="ld-8">
+            <div className="ld-7">
               <AppleIcon size={34} />
-              <div style={css("font-size:17px;font-weight:700;margin-top:14px;")}>使用 Apple ID 登录</div>
-              <div style={css("font-size:13px;color:#8A8A8E;margin-top:4px;")}>登录「Magic Resume」</div>
+              <div className="ld-6">使用 Apple ID 登录</div>
+              <div className="ld-5">登录「Magic Resume」</div>
             </div>
-            <div style={css("padding:20px 26px 26px;")}>
-              <div style={css("background:#F2F2F4;border-radius:12px;padding:13px 14px;font-size:14px;color:#6B6B70;")}>Apple ID（演示）</div>
-              <div style={css("background:#F2F2F4;border-radius:12px;padding:13px 14px;font-size:14px;color:#6B6B70;margin-top:10px;")}>密码</div>
-              <E as="button" s="width:100%;margin-top:18px;background:#1B1530;color:#fff;font-weight:700;font-size:15px;padding:13px;border-radius:12px;" h="background:#000;" onClick={appleConfirm}>继续</E>
-              <button style={css("width:100%;margin-top:10px;color:#6B6B70;font-size:14px;font-weight:600;padding:8px;")} onClick={closeApple}>取消</button>
+            <div className="ld-4">
+              <div className="ld-3">Apple ID（演示）</div>
+              <div className="ld-2">密码</div>
+              <E as="button" className="ld-161" onClick={appleConfirm}>继续</E>
+              <button className="ld-1" onClick={closeApple}>取消</button>
             </div>
           </div>
         </div>
@@ -2099,173 +2086,10 @@ export function LandingApp() {
 
       {/* ===================== TOAST ===================== */}
       {toastMsg && (
-        <div style={css("position:fixed;top:34px;left:50%;z-index:600;transform:translateX(-50%);background:#1B1530;color:#fff;font-size:14px;font-weight:600;padding:13px 22px;border-radius:14px;box-shadow:0 18px 40px -16px rgba(0,0,0,.5);animation:toastIn .3s ease both;")}>{toastMsg}</div>
+        <div className="ld-0">{toastMsg}</div>
       )}
 
     </div>
     </AuthGateProvider>
   )
 }
-
-const LANDING_CSS = `
-  .magic-landing button {
-    -webkit-tap-highlight-color: transparent;
-  }
-  .magic-landing button:focus,
-  .magic-landing button:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing input {
-    font-family: inherit;
-    outline: none;
-    box-shadow: none;
-    appearance: none;
-    -webkit-appearance: none;
-    min-width: 0;
-    width: 100%;
-  }
-  .magic-landing textarea {
-    font-family: inherit;
-    outline: none;
-    box-shadow: none;
-    appearance: none;
-    -webkit-appearance: none;
-    min-width: 0;
-    width: 100%;
-  }
-  .magic-landing input:focus {
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing textarea:focus {
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing input:-webkit-autofill,
-  .magic-landing input:-webkit-autofill:hover,
-  .magic-landing input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px #F4F2FB inset;
-    -webkit-text-fill-color: #1B1530;
-    caret-color: #1B1530;
-  }
-  .magic-landing .auth-field {
-    overflow: hidden;
-    transition: border-color .2s;
-  }
-  .magic-landing .auth-field:focus-within:not(.error) {
-    border-color: #6D5DF6;
-  }
-  .magic-landing .auth-field.error {
-    border-color: #F3B5B7;
-  }
-  .magic-landing .mode-tab,
-  .magic-landing .mode-tab:focus,
-  .magic-landing .mode-tab:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing .legal-link {
-    outline: none;
-    border: none;
-    background: none;
-    padding: 0;
-    font: inherit;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  .magic-landing .legal-link:hover,
-  .magic-landing .legal-link:focus,
-  .magic-landing .legal-link:focus-visible {
-    text-decoration: none;
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing .legal-close {
-    outline: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  .magic-landing .legal-close:hover,
-  .magic-landing .legal-close:focus,
-  .magic-landing .legal-close:focus-visible {
-    text-decoration: none;
-    outline: none;
-    box-shadow: none;
-    background: #E7E1F8;
-  }
-  .magic-landing .legal-body::-webkit-scrollbar { width: 6px; }
-  .magic-landing .legal-body::-webkit-scrollbar-thumb { background: #D9D3EC; border-radius: 6px; }
-  ::placeholder { color: #A7A0BC; }
-  @keyframes floatA { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-16px) } }
-  @keyframes floatB { 0%,100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(12px) rotate(8deg) } }
-  @keyframes wzfloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-7px) } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
-  @keyframes popIn { from { opacity: 0; transform: scale(.95) translateY(12px) } to { opacity: 1; transform: none } }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(14px) } to { opacity: 1; transform: none } }
-  @keyframes msgIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
-  @keyframes shake { 10%,90% { transform: translateX(-2px) } 20%,80% { transform: translateX(3px) } 30%,50%,70% { transform: translateX(-5px) } 40%,60% { transform: translateX(5px) } }
-  @keyframes spin { to { transform: rotate(360deg) } }
-  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: .45; transform: scale(.88) } }
-  @keyframes toastIn { from { opacity: 0; transform: translate(-50%,-14px) } to { opacity: 1; transform: translate(-50%,0) } }
-  @keyframes thinkDot {
-    0%, 80%, 100% { transform: translateY(0); opacity: .35; }
-    40% { transform: translateY(-5px); opacity: 1; }
-  }
-  .magic-landing .chat-think-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .magic-landing .chat-think-dots span {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #6D5DF6;
-    animation: thinkDot 1.05s ease-in-out infinite;
-  }
-  .magic-landing .chat-think-dots span:nth-child(2) { animation-delay: .15s; }
-  .magic-landing .chat-think-dots span:nth-child(3) { animation-delay: .3s; }
-  .magic-landing .chat-scroll {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .magic-landing .chat-scroll::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-  .magic-landing .user-menu-item {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: #1B1530;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
-    border: none;
-    background: transparent;
-    transition: background .15s;
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing .user-menu-item:focus,
-  .magic-landing .user-menu-item:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-  .magic-landing .user-menu-item:hover {
-    background: #F4F2FB;
-  }
-  .magic-landing .user-menu-item.danger {
-    color: #E5484D;
-  }
-  .magic-landing .user-menu-item.danger:hover {
-    background: #FEF2F2;
-  }
-`

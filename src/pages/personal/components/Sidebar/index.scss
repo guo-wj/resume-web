@@ -1,7 +1,7 @@
 @use 'variables' as *;
 
 .sidebar-root {
-  flex: 0 0 264px;
+  flex: 0 0 r(264);
   background: $pc-sidebar-bg;
   border-right: 1px solid $pc-border;
   display: flex;
@@ -10,30 +10,30 @@
 }
 
 .sidebar-header {
-  padding: 30px 24px 18px;
+  padding: r(30) r(24) r(18);
 }
 
 .sidebar-title {
-  font-size: 19px;
+  font-size: r(19);
   font-weight: 800;
-  letter-spacing: -0.3px;
+  letter-spacing: r(-0.3);
 }
 
 .sidebar-nav {
-  padding: 2px 16px;
+  padding: r(2) r(16);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: r(3);
 }
 
 .sidebar-navBtn {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: r(12);
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-size: 14.5px;
+  padding: r(12) r(14);
+  border-radius: r(12);
+  font-size: r(14.5);
   transition: all 0.15s;
 }
 
@@ -48,8 +48,8 @@
 }
 
 .sidebar-navIcon {
-  width: 20px;
-  height: 20px;
+  width: r(20);
+  height: r(20);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,16 +71,16 @@
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 16px;
+  padding: r(16);
 }
 
 .sidebar-backBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: r(8);
+  font-size: r(13);
   font-weight: 600;
   color: $pc-text-soft;
-  padding: 11px 12px;
+  padding: r(11) r(12);
   width: 100%;
 }

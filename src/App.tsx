@@ -1,12 +1,14 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
-import { DashboardApp } from "@/pages/dashboard/DashboardApp"
-import { LandingApp } from "@/pages/landing/LandingApp"
+import { DashboardApp } from "@/pages/dashboard"
+import { LandingApp } from "@/pages/landing"
+import { SurpriseApp } from "@/pages/surprise"
 import { APP_ROUTES } from "@/config/routes"
 import { AuthProvider } from "@/store"
 
 const routeElements = {
   LandingApp: <LandingApp />,
   DashboardApp: <DashboardApp />,
+  SurpriseApp: <SurpriseApp />,
 } as const
 
 export function App() {

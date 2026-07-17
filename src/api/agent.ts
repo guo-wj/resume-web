@@ -1,5 +1,6 @@
 import { getAccessToken } from "@/store/auth"
 import { ApiError } from "./types"
+import { DEFAULT_TIMEOUT_MS, createTimeoutGate, isAbortError } from "./timeout"
 
 /** Agent 服务独立前缀，不走 VITE_API_BASE */
 const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, "")
@@ -78,47 +79,52 @@ function handleStreamEvent(data: Record<string, unknown>, callbacks: AgentChatSt
   }
 }
 
-/** POST /agent/chat，解析 SSE / 逐行 JSON 流式响应 */
+/** POST /agent/chat，解析 SSE / 逐行 JSON 流式响应；首包默认 10s 超时 */
 export async function streamAgentChat(
   body: AgentChatRequest,
   callbacks: AgentChatStreamCallbacks,
   signal?: AbortSignal,
+  timeout: number = DEFAULT_TIMEOUT_MS,
 ): Promise<void> {
   const url = resolveAgentChatUrl()
   const token = getAccessToken()
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream, application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      stream_output: true,
-      ...body,
-    }),
-    signal,
-  })
-
-  if (!res.ok) {
-    const json = await res.json().catch(() => null)
-    const message =
-      (json && typeof json === "object" && "message" in json && String(json.message)) ||
-      res.statusText ||
-      "对话请求失败"
-    throw new ApiError(res.status, message)
-  }
-
-  if (!res.body) {
-    throw new ApiError(0, "响应不支持流式读取")
-  }
-
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ""
+  const gate = createTimeoutGate(timeout, signal)
 
   try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream, application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        stream_output: true,
+        ...body,
+      }),
+      signal: gate.signal,
+    })
+
+    // 已拿到响应头，进入流式读取，不再套首包超时
+    gate.clearTimer()
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => null)
+      const message =
+        (json && typeof json === "object" && "message" in json && String(json.message)) ||
+        res.statusText ||
+        "对话请求失败"
+      throw new ApiError(res.status, message)
+    }
+
+    if (!res.body) {
+      throw new ApiError(0, "响应不支持流式读取")
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -136,10 +142,15 @@ export async function streamAgentChat(
     const tail = parseStreamLine(buffer)
     if (tail) handleStreamEvent(tail, callbacks)
   } catch (err) {
-    if (signal?.aborted) return
+    if (signal?.aborted && !gate.didTimeout()) return
+    if (gate.didTimeout()) throw new ApiError(0, "请求超时，请稍后重试")
+    if (isAbortError(err)) throw new ApiError(0, "请求已取消")
+    if (err instanceof ApiError) throw err
     const error = err instanceof Error ? err : new Error("流式对话中断")
     callbacks.onError?.(error)
     throw error
+  } finally {
+    gate.dispose()
   }
 }
 

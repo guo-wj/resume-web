@@ -1,0 +1,8 @@
+<svg width="1" height="180" viewBox="0 0 1 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Rectangle">
+<mask id="path-1-inside-1_277_199" fill="white">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0 0H0.343511V180H0V0Z"/>
+</mask>
+<path d="M0 0V-1H-1V0H0ZM0.343511 0H1.34351V-1H0.343511V0ZM0.343511 180V181H1.34351V180H0.343511ZM0 180H-1V181H0V180ZM0 0V1H0.343511V0V-1H0V0ZM0.343511 0H-0.656489V180H0.343511H1.34351V0H0.343511ZM0.343511 180V179H0V180V181H0.343511V180ZM0 180H1V0H0H-1V180H0Z" fill="#E9EBF1" mask="url(#path-1-inside-1_277_199)"/>
+</g>
+</svg>

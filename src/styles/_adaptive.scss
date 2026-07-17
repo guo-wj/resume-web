@@ -1,0 +1,35 @@
+// PC 自适应（设计稿 1920×1097，关注区间 1280–1920）
+//
+// 约定：
+// - 视觉页四周页边距写死 40px（真实 px），不进 rem
+// - html.fontSize = min(视口宽 − 80, 1840) / 1840 × 100
+//   · 1920：1rem = 100px（内容区 1:1）
+//   · 1440：1rem ≈ 73.91px（内容落在固定 40 边距内）
+//   · >1920：保持 100px，不再放大
+// - 视觉页用 r(设计稿 px)；禁止 transform:scale；不做断点改布局
+
+@use "sass:math";
+
+$design-width: 1920;
+$design-height: 1097;
+$rem-base: 100;
+$page-pad: 40;
+$content-width: 1840;
+$pc-min-width: 1280;
+$pc-max-width: 1920;
+
+@function r($px) {
+  @return math.div($px, $rem-base) * 1rem;
+}
+
+@mixin pc-down($width) {
+  @media (max-width: #{$width}) {
+    @content;
+  }
+}
+
+@mixin pc-up($width) {
+  @media (min-width: #{$width}) {
+    @content;
+  }
+}

@@ -11,14 +11,14 @@
 
 .pricingOverlay-closeBtn {
   position: absolute;
-  top: 24px;
-  right: 26px;
-  width: 38px;
-  height: 38px;
+  top: r(24);
+  right: r(26);
+  width: r(38);
+  height: r(38);
   border-radius: 50%;
   background: $pc-chip-bg;
   color: #6b6483;
-  font-size: 18px;
+  font-size: r(18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,9 +26,9 @@
 }
 
 .pricingOverlay-inner {
-  max-width: 980px;
+  max-width: r(980);
   margin: 0 auto;
-  padding: 54px 40px 60px;
+  padding: r(54) r(40) r(60);
   animation: pcSlideUp 0.4s ease both;
 }
 
@@ -37,38 +37,38 @@
 }
 
 .pricingOverlay-heroTitle {
-  font-size: 34px;
+  font-size: r(34);
   font-weight: 800;
-  letter-spacing: -0.6px;
+  letter-spacing: r(-0.6);
   margin: 0;
 }
 
 .pricingOverlay-heroDesc {
-  font-size: 15px;
+  font-size: r(15);
   color: $pc-text-muted;
-  margin: 12px 0 0;
+  margin: r(12) 0 0;
 }
 
 .pricingOverlay-cycleWrap {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: r(24);
 }
 
 .pricingOverlay-cycleToggle {
   display: flex;
   background: #efeafe;
-  border-radius: 13px;
-  padding: 4px;
+  border-radius: r(13);
+  padding: r(4);
 }
 
 .pricingOverlay-cycleBtn {
   position: relative;
   z-index: 1;
-  font-size: 13.5px;
+  font-size: r(13.5);
   font-weight: 700;
-  padding: 9px 20px;
-  border-radius: 9px;
+  padding: r(9) r(20);
+  border-radius: r(9);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -77,7 +77,7 @@
 .pricingOverlay-cycleBtnOn {
   background: $pc-white;
   color: $pc-primary;
-  box-shadow: 0 3px 8px -4px rgba(40, 24, 90, 0.3);
+  box-shadow: 0 r(3) r(8) r(-4) rgba(40, 24, 90, 0.3);
 }
 
 .pricingOverlay-cycleBtnOff {
@@ -85,93 +85,93 @@
 }
 
 .pricingOverlay-saveBadge {
-  font-size: 10px;
+  font-size: r(10);
   background: #cbf35e;
   color: #3e5a0e;
-  padding: 1px 6px;
-  border-radius: 999px;
-  margin-left: 3px;
+  padding: r(1) r(6);
+  border-radius: r(999);
+  margin-left: r(3);
 }
 
 .pricingOverlay-plansGrid {
-  margin-top: 34px;
+  margin-top: r(34);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: r(18);
   align-items: start;
 }
 
 .pricingOverlay-plansLoading {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 40px 0;
+  padding: r(40) 0;
   color: $pc-text-soft;
-  font-size: 14px;
+  font-size: r(14);
 }
 
 .pricingOverlay-planCard {
   position: relative;
   background: $pc-white;
-  border: 1.5px solid $pc-border;
-  border-radius: 20px;
-  padding: 26px 22px;
+  border: r(1.5) solid $pc-border;
+  border-radius: r(20);
+  padding: r(26) r(22);
   display: flex;
   flex-direction: column;
 }
 
 .pricingOverlay-planCardHighlight {
   border-color: $pc-primary;
-  box-shadow: 0 22px 50px -26px rgba(109, 93, 246, 0.6);
+  box-shadow: 0 r(22) r(50) r(-26) rgba(109, 93, 246, 0.6);
 }
 
 .pricingOverlay-recommendBadge {
   position: absolute;
-  top: -12px;
+  top: r(-12);
   left: 50%;
   transform: translateX(-50%);
   background: #cbf35e;
   color: #3e5a0e;
-  font-size: 11px;
+  font-size: r(11);
   font-weight: 800;
-  padding: 5px 14px;
-  border-radius: 999px;
+  padding: r(5) r(14);
+  border-radius: r(999);
 }
 
 .pricingOverlay-planName {
-  font-size: 20px;
+  font-size: r(20);
   font-weight: 800;
 }
 
 .pricingOverlay-planPriceRow {
-  margin-top: 14px;
+  margin-top: r(14);
   display: flex;
   align-items: baseline;
-  gap: 5px;
+  gap: r(5);
 }
 
 .pricingOverlay-planPrice {
-  font-size: 38px;
+  font-size: r(38);
   font-weight: 800;
-  letter-spacing: -1.5px;
+  letter-spacing: r(-1.5);
 }
 
 .pricingOverlay-planUnit {
-  font-size: 14px;
+  font-size: r(14);
   color: $pc-text-soft;
 }
 
 .pricingOverlay-planSave {
-  font-size: 12.5px;
-  margin-top: 6px;
-  min-height: 18px;
+  font-size: r(12.5);
+  margin-top: r(6);
+  min-height: r(18);
 }
 
 .pricingOverlay-planBtn {
   width: 100%;
-  margin-top: 18px;
-  font-size: 14px;
-  padding: 13px;
-  border-radius: 12px;
+  margin-top: r(18);
+  font-size: r(14);
+  padding: r(13);
+  border-radius: r(12);
 }
 
 .pricingOverlay-planBtnUp {
@@ -197,31 +197,31 @@
 .pricingOverlay-dailyCredits {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-top: 18px;
+  gap: r(7);
+  margin-top: r(18);
   background: #f6f4ff;
-  border-radius: 10px;
-  padding: 10px 13px;
+  border-radius: r(10);
+  padding: r(10) r(13);
 }
 
 .pricingOverlay-dailyCreditsText {
-  font-size: 13px;
+  font-size: r(13);
   font-weight: 700;
   color: #4a4360;
 }
 
 .pricingOverlay-features {
-  margin-top: 16px;
+  margin-top: r(16);
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: r(11);
 }
 
 .pricingOverlay-feature {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  font-size: 13.5px;
+  gap: r(9);
+  font-size: r(13.5);
   color: #4a4360;
   line-height: 1.45;
 }
@@ -233,26 +233,26 @@
 }
 
 .pricingOverlay-faqSection {
-  margin-top: 64px;
+  margin-top: r(64);
 }
 
 .pricingOverlay-faqTitle {
   text-align: center;
-  font-size: 26px;
+  font-size: r(26);
   font-weight: 800;
-  letter-spacing: -0.4px;
-  margin: 0 0 8px;
+  letter-spacing: r(-0.4);
+  margin: 0 0 r(8);
 }
 
 .pricingOverlay-faqDesc {
   text-align: center;
-  font-size: 14px;
+  font-size: r(14);
   color: $pc-text-soft;
-  margin: 0 0 28px;
+  margin: 0 0 r(28);
 }
 
 .pricingOverlay-faqList {
-  max-width: 760px;
+  max-width: r(760);
   margin: 0 auto;
   border-top: 1px solid $pc-border;
 }
@@ -266,13 +266,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 6px;
+  gap: r(16);
+  padding: r(22) r(6);
   text-align: left;
 }
 
 .pricingOverlay-faqQuestionText {
-  font-size: 16px;
+  font-size: r(16);
   font-weight: 700;
   color: $pc-text;
 }
@@ -288,15 +288,15 @@
 }
 
 .pricingOverlay-faqAnswer {
-  padding: 0 6px 24px;
+  padding: 0 r(6) r(24);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: r(14);
   animation: pcFadeIn 0.25s ease both;
 }
 
 .pricingOverlay-faqPara {
-  font-size: 14.5px;
+  font-size: r(14.5);
   line-height: 1.75;
   color: #6b6483;
 }
@@ -310,29 +310,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
-  margin-top: 44px;
+  gap: r(22);
+  margin-top: r(44);
 }
 
 .pricingOverlay-footerLink {
-  font-size: 13.5px;
+  font-size: r(13.5);
   font-weight: 700;
   color: $pc-primary;
 }
 
 .pricingOverlay-footerLinkMuted {
-  font-size: 13.5px;
+  font-size: r(13.5);
   color: $pc-text-soft;
 }
 
 .pricingOverlay-footerDivider {
-  width: 1px;
-  height: 14px;
+  width: r(1);
+  height: r(14);
   background: #d8d2ec;
 }
 
 .pricingOverlay-cancelLink {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: r(4);
 }

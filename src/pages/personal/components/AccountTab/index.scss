@@ -5,28 +5,28 @@
 }
 
 .accountTab-pageTitle {
-  font-size: 32px;
+  font-size: r(32);
   font-weight: 800;
-  letter-spacing: -0.6px;
+  letter-spacing: r(-0.6);
   margin: 0;
 }
 
 .accountTab-pageDesc {
-  font-size: 15px;
+  font-size: r(15);
   color: $pc-text-muted;
-  margin: 10px 0 0;
+  margin: r(10) 0 0;
 }
 
 .accountTab-profileRow {
-  margin-top: 20px;
+  margin-top: r(20);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: r(16);
 }
 
 .accountTab-avatar {
-  width: 56px;
-  height: 56px;
+  width: r(56);
+  height: r(56);
   border-radius: 50%;
   flex: 0 0 auto;
   background: linear-gradient(135deg, $pc-primary, #8b6ffb);
@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: r(22);
   font-weight: 800;
   overflow: hidden;
 }
@@ -51,7 +51,7 @@
 }
 
 .accountTab-displayName {
-  font-size: 18px;
+  font-size: r(18);
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -59,24 +59,24 @@
 }
 
 .accountTab-displayAccount {
-  font-size: 13.5px;
+  font-size: r(13.5);
   color: $pc-text-soft;
-  margin-top: 3px;
+  margin-top: r(3);
 }
 
 .accountTab-card {
-  margin-top: 18px;
+  margin-top: r(18);
   background: $pc-white;
   border: 1px solid $pc-border;
-  border-radius: 18px;
+  border-radius: r(18);
   overflow: hidden;
 }
 
 .accountTab-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 22px;
+  gap: r(14);
+  padding: r(18) r(22);
   border-bottom: 1px solid $pc-border-soft;
 }
 
@@ -90,20 +90,20 @@
 }
 
 .accountTab-rowTitle {
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 600;
   color: $pc-text;
 }
 
 .accountTab-rowValue {
-  font-size: 13px;
+  font-size: r(13);
   color: $pc-text-soft;
-  margin-top: 4px;
+  margin-top: r(4);
 }
 
 .accountTab-rowAction {
   flex: 0 0 auto;
-  font-size: 14px;
+  font-size: r(14);
 }
 
 .accountTab-rowActionStrong {

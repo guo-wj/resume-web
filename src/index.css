@@ -75,6 +75,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
+/* 与 setRootFontSize 一致：扣除两侧固定 40px 后按 1840 内容宽缩放，最大 100px */
+html {
+  font-size: min(100px, calc((100vw - 80px) / 18.4));
+}
 body {
   font-family: var(--sans);
   background: var(--bg);

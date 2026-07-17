@@ -1,51 +1,51 @@
 @use 'variables' as *;
 
 .personalModals-inputWrap {
-  margin-top: 20px;
+  margin-top: r(20);
   background: $pc-bg-input;
-  border: 1.5px solid #ece7f7;
-  border-radius: 13px;
-  padding: 0 16px;
+  border: r(1.5) solid #ece7f7;
+  border-radius: r(13);
+  padding: 0 r(16);
   display: flex;
   align-items: center;
 }
 
 .personalModals-prefix {
-  font-size: 14px;
+  font-size: r(14);
   color: #6b6483;
   font-weight: 700;
-  margin-right: 10px;
+  margin-right: r(10);
 }
 
 .personalModals-textInput {
   flex: 1;
-  font-size: 15px;
-  padding: 14px 0;
+  font-size: r(15);
+  padding: r(14) 0;
 }
 
 .personalModals-codeWrap {
   background: $pc-bg-input;
-  border: 1.5px solid #ece7f7;
-  border-radius: 13px;
-  padding: 0 6px 0 16px;
+  border: r(1.5) solid #ece7f7;
+  border-radius: r(13);
+  padding: 0 r(6) 0 r(16);
   display: flex;
   align-items: center;
-  margin-top: 11px;
+  margin-top: r(11);
 }
 
 .personalModals-codeInput {
   flex: 1;
-  font-size: 15px;
-  padding: 14px 0;
-  letter-spacing: 2px;
+  font-size: r(15);
+  padding: r(14) 0;
+  letter-spacing: r(2);
 }
 
 .personalModals-codeBtn {
   flex: 0 0 auto;
-  font-size: 13px;
+  font-size: r(13);
   font-weight: 700;
-  padding: 8px 13px;
-  border-radius: 9px;
+  padding: r(8) r(13);
+  border-radius: r(9);
 }
 
 .personalModals-codeBtnDisabled {
@@ -60,13 +60,13 @@
 
 .personalModals-qrBox {
   position: relative;
-  width: 170px;
-  height: 170px;
-  margin: 20px auto 0;
+  width: r(170);
+  height: r(170);
+  margin: r(20) auto 0;
   background: $pc-white;
   border: 1px solid #ece7f7;
-  border-radius: 16px;
-  padding: 12px;
+  border-radius: r(16);
+  padding: r(12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,54 +83,54 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: r(36);
+  height: r(36);
+  border-radius: r(10);
   background: #07c160;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 4px $pc-white;
+  box-shadow: 0 0 0 r(4) $pc-white;
 }
 
 .personalModals-wechatIcon {
-  width: 16px;
-  height: 12px;
+  width: r(16);
+  height: r(12);
   background: $pc-white;
-  border-radius: 6px 6px 6px 2px;
+  border-radius: r(6) r(6) r(6) r(2);
 }
 
 .personalModals-qrHint {
-  font-size: 13px;
+  font-size: r(13);
   color: $pc-text-soft;
-  margin-top: 14px;
+  margin-top: r(14);
 }
 
 .personalModals-cancelLink {
-  margin-top: 16px;
-  font-size: 13.5px;
+  margin-top: r(16);
+  font-size: r(13.5);
   color: $pc-text-soft;
 }
 
 .personalModals-previewBox {
-  margin-top: 20px;
+  margin-top: r(20);
   background: $pc-bg;
   border: 1px solid $pc-border;
-  border-radius: 14px;
-  padding: 18px;
+  border-radius: r(14);
+  padding: r(18);
 }
 
 .personalModals-previewLoading {
-  font-size: 14px;
+  font-size: r(14);
   color: $pc-text-soft;
   text-align: center;
-  padding: 12px 0;
+  padding: r(12) 0;
 }
 
 .personalModals-previewRow {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: r(14);
 }
 
 .personalModals-previewLabel {
@@ -147,15 +147,15 @@
 }
 
 .personalModals-previewDivider {
-  height: 1px;
+  height: r(1);
   background: $pc-border;
-  margin: 14px 0;
+  margin: r(14) 0;
 }
 
 .personalModals-previewTotal {
   display: flex;
   justify-content: space-between;
-  font-size: 15px;
+  font-size: r(15);
 }
 
 .personalModals-previewTotalLabel {
@@ -164,54 +164,54 @@
 
 .personalModals-previewTotalValue {
   font-weight: 800;
-  font-size: 19px;
+  font-size: r(19);
   color: $pc-primary;
 }
 
 .personalModals-paySection {
-  margin-top: 18px;
+  margin-top: r(18);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .personalModals-payQrImg {
-  width: 148px;
-  height: 148px;
-  border-radius: 14px;
+  width: r(148);
+  height: r(148);
+  border-radius: r(14);
   border: 1px solid #ece7f7;
 }
 
 .personalModals-payQrBox {
   position: relative;
-  width: 148px;
-  height: 148px;
+  width: r(148);
+  height: r(148);
   background: $pc-white;
   border: 1px solid #ece7f7;
-  border-radius: 14px;
-  padding: 10px;
+  border-radius: r(14);
+  padding: r(10);
 }
 
 .personalModals-payHint {
-  font-size: 12.5px;
+  font-size: r(12.5);
   color: $pc-text-soft;
-  margin-top: 10px;
+  margin-top: r(10);
 }
 
 .personalModals-addonList {
-  margin-top: 18px;
+  margin-top: r(18);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: r(10);
 }
 
 .personalModals-addonBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
-  border-radius: 14px;
-  border: 1.5px solid $pc-border;
+  padding: r(16) r(18);
+  border-radius: r(14);
+  border: r(1.5) solid $pc-border;
   background: $pc-white;
   transition: all 0.15s;
 }
@@ -222,53 +222,53 @@
 }
 
 .personalModals-addonCredits {
-  font-size: 16px;
+  font-size: r(16);
   font-weight: 800;
   text-align: left;
 }
 
 .personalModals-addonNote {
-  font-size: 12px;
+  font-size: r(12);
   color: $pc-text-soft;
-  margin-top: 2px;
+  margin-top: r(2);
 }
 
 .personalModals-addonPrice {
-  font-size: 18px;
+  font-size: r(18);
   font-weight: 800;
 }
 
 .personalModals-cancelBody {
-  font-size: 14px;
+  font-size: r(14);
   color: #6b6483;
-  margin: 12px 0 0;
+  margin: r(12) 0 0;
   line-height: 1.6;
 }
 
 .personalModals-cancelActions {
   display: flex;
-  gap: 10px;
-  margin-top: 22px;
+  gap: r(10);
+  margin-top: r(22);
 }
 
 .personalModals-keepBtn {
   flex: 1;
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 800;
   color: $pc-white;
   background: $pc-primary;
-  padding: 13px;
-  border-radius: 12px;
+  padding: r(13);
+  border-radius: r(12);
 }
 
 .personalModals-confirmCancelBtn {
   flex: 1;
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 700;
   color: $pc-danger;
   background: #fdecec;
-  padding: 13px;
-  border-radius: 12px;
+  padding: r(13);
+  border-radius: r(12);
 }
 
 .personalModals-invoiceHeader {
@@ -278,34 +278,34 @@
 }
 
 .personalModals-invoiceCloseBtn {
-  width: 30px;
-  height: 30px;
+  width: r(30);
+  height: r(30);
   border-radius: 50%;
   background: #f2effb;
   color: #6b6483;
-  font-size: 15px;
+  font-size: r(15);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .personalModals-invoiceDesc {
-  margin: 7px 0 0;
+  margin: r(7) 0 0;
 }
 
 .personalModals-invoiceSummary {
-  margin-top: 18px;
+  margin-top: r(18);
   background: $pc-bg;
   border: 1px solid $pc-border;
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: r(14);
+  padding: r(16) r(18);
 }
 
 .personalModals-invoiceSummaryLabel {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
+  gap: r(6);
+  font-size: r(13.5);
   color: $pc-text-muted;
   font-weight: 600;
 }
@@ -315,21 +315,21 @@
 }
 
 .personalModals-invoiceAmount {
-  font-size: 24px;
+  font-size: r(24);
   font-weight: 800;
-  margin-top: 3px;
+  margin-top: r(3);
 }
 
 .personalModals-invoiceDivider {
-  height: 1px;
+  height: r(1);
   background: $pc-border;
-  margin: 13px 0;
+  margin: r(13) 0;
 }
 
 .personalModals-invoiceMeta {
   display: flex;
-  gap: 24px;
-  font-size: 12.5px;
+  gap: r(24);
+  font-size: r(12.5);
   color: $pc-text-soft;
 }
 
@@ -339,108 +339,108 @@
 }
 
 .personalModals-invoiceForm {
-  margin-top: 18px;
+  margin-top: r(18);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: r(16);
 }
 
 .personalModals-noteRow {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
+  gap: r(18);
 }
 
 .personalModals-noteLabel {
-  font-size: 14px;
+  font-size: r(14);
   font-weight: 700;
-  flex: 0 0 72px;
-  padding-top: 13px;
+  flex: 0 0 r(72);
+  padding-top: r(13);
 }
 
 .personalModals-noteField {
   flex: 1;
   background: $pc-bg-input;
-  border: 1.5px solid #ece7f7;
-  border-radius: 12px;
-  padding: 11px 16px;
+  border: r(1.5) solid #ece7f7;
+  border-radius: r(12);
+  padding: r(11) r(16);
   position: relative;
 }
 
 .personalModals-noteTextarea {
   width: 100%;
-  font-size: 14.5px;
-  height: 54px;
+  font-size: r(14.5);
+  height: r(54);
 }
 
 .personalModals-noteCounter {
   position: absolute;
-  right: 12px;
-  bottom: 8px;
-  font-size: 11px;
+  right: r(12);
+  bottom: r(8);
+  font-size: r(11);
   color: $pc-text-faint;
 }
 
 .personalModals-invoiceActions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 22px;
+  gap: r(10);
+  margin-top: r(22);
 }
 
 .personalModals-invoiceCancelBtn {
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 700;
   color: #6b6483;
   background: #f2effb;
-  padding: 12px 26px;
-  border-radius: 12px;
+  padding: r(12) r(26);
+  border-radius: r(12);
 }
 
 .personalModals-invoiceSubmitBtn {
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 800;
   color: $pc-white;
   background: $pc-primary;
-  padding: 12px 28px;
-  border-radius: 12px;
+  padding: r(12) r(28);
+  border-radius: r(12);
 }
 
 .personalModals-viewInvoiceBox {
-  margin-top: 18px;
+  margin-top: r(18);
   background: $pc-bg;
   border: 1px solid $pc-border;
-  border-radius: 14px;
-  padding: 22px;
+  border-radius: r(14);
+  padding: r(22);
 }
 
 .personalModals-viewInvoiceRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: r(12);
 }
 
 .personalModals-pdfIcon {
-  width: 44px;
-  height: 54px;
-  border-radius: 8px;
+  width: r(44);
+  height: r(54);
+  border-radius: r(8);
   background: $pc-white;
   border: 1px solid #e4def4;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: r(11);
   font-weight: 800;
   color: $pc-danger;
 }
 
 .personalModals-viewInvoiceName {
-  font-size: 15px;
+  font-size: r(15);
   font-weight: 700;
 }
 
 .personalModals-viewInvoiceMeta {
-  font-size: 12.5px;
+  font-size: r(12.5);
   color: $pc-text-soft;
-  margin-top: 2px;
+  margin-top: r(2);
 }

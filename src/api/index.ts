@@ -4,7 +4,8 @@ export {
   groupEndpointsByModule,
   resolveApiPath,
 } from "./endpoints"
-export { request, API_BASE } from "./request"
+export { request, API_BASE, DEFAULT_TIMEOUT_MS } from "./request"
+export type { RequestOptions } from "./request"
 export {
   streamAgentChat,
   buildAgentChatMessage,

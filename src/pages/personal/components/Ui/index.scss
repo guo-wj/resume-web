@@ -1,28 +1,28 @@
 @use 'variables' as *;
 
 .ui-sectionTitle {
-  font-size: 16px;
+  font-size: r(16);
   font-weight: 800;
-  letter-spacing: -0.2px;
-  padding-bottom: 13px;
+  letter-spacing: r(-0.2);
+  padding-bottom: r(13);
   border-bottom: 1px solid $pc-border;
 }
 
 .ui-legend {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: r(9);
 }
 
 .ui-legendDot {
-  width: 11px;
-  height: 11px;
-  border-radius: 4px;
+  width: r(11);
+  height: r(11);
+  border-radius: r(4);
   flex: 0 0 auto;
 }
 
 .ui-legendName {
-  font-size: 14px;
+  font-size: r(14);
   color: #4a4360;
   font-weight: 500;
   flex: 1;
@@ -33,7 +33,7 @@
 }
 
 .ui-legendValue {
-  font-size: 14px;
+  font-size: r(14);
   font-weight: 600;
   color: #6b6483;
   white-space: nowrap;
@@ -42,16 +42,16 @@
 
 .ui-toast {
   position: fixed;
-  top: 30px;
+  top: r(30);
   left: 50%;
   z-index: 1200;
   transform: translateX(-50%);
   background: $pc-text;
   color: $pc-white;
-  font-size: 14px;
+  font-size: r(14);
   font-weight: 600;
-  padding: 13px 22px;
-  border-radius: 14px;
-  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.5);
+  padding: r(13) r(22);
+  border-radius: r(14);
+  box-shadow: 0 r(18) r(40) r(-16) rgba(0, 0, 0, 0.5);
   animation: pcPopIn 0.3s ease both;
 }
