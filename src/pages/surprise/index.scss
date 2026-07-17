@@ -17,21 +17,35 @@
   --sp-font: "PingFang SC", "OPPOSans", "Plus Jakarta Sans", "Microsoft YaHei",
     system-ui, sans-serif;
 
+  position: relative;
   box-sizing: border-box;
-  width: 100%;  
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: r(40) 0 0;
   display: flex;
   justify-content: center;
-  background-color: #f5f4f1;
-  background-image: url("/surprise/assets/page-bg.png");
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 100% 100%;
   font-family: var(--sp-font);
   color: var(--sp-ink);
 }
 
+/* 背景 fixed 铺满视口，避免内容不够高时底部露白 */
+.surprise-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #f5f4f1;
+  background-image: url("/surprise/assets/page-bg.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 100% 100%;
+}
+
 .surprise-page__inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   box-sizing: border-box;
   display: flex;
