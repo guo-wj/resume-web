@@ -18,6 +18,7 @@ export function SurpriseApp({ data = SURPRISE_MOCK }: { data?: SurprisePageData 
 
   return (
     <div className="surprise-page">
+      <div className="surprise-page__bg" aria-hidden />
       <div className="surprise-page__inner">
         <SurpriseHeader
           title={data.header.title}

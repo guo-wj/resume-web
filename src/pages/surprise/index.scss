@@ -25,22 +25,57 @@
   padding: r(40) 0 0;
   display: flex;
   justify-content: center;
+  background-color: #f7f6f2;
   font-family: var(--sp-font);
   color: var(--sp-ink);
 }
 
-/* 背景 fixed 铺满视口，避免内容不够高时底部露白 */
-.surprise-page::before {
-  content: "";
+/*
+ * 背景：CSS 径向渐变还原设计稿色位（不用 page-bg.png）。
+ * page-bg 左中实测偏青绿 (218,229,229)；稿面同区是暖白 (~252,249,218)。
+ */
+.surprise-page__bg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: #f5f4f1;
-  background-image: url("/surprise/assets/page-bg.png");
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 100% 100%;
+  /* 暖白底，避免整页发青 */
+  background-color: #faf9f5;
+  background-image:
+    /* 左侧整列暖白铺底 — 盖住任何发绿感 */
+    linear-gradient(
+      90deg,
+      #faf9f5 0%,
+      #faf9f5 28%,
+      rgba(250, 249, 245, 0.35) 48%,
+      transparent 62%
+    ),
+    /* 顶左青绿 — 只贴顶角，范围小、很快淡出 */
+    radial-gradient(
+      ellipse 28% 22% at 4% -2%,
+      rgba(175, 205, 200, 0.4) 0%,
+      rgba(175, 205, 200, 0.12) 40%,
+      transparent 68%
+    ),
+    /* 顶右青绿 */
+    radial-gradient(
+      ellipse 26% 20% at 96% 0%,
+      rgba(175, 210, 200, 0.32) 0%,
+      transparent 65%
+    ),
+    /* 底右淡紫 */
+    radial-gradient(
+      ellipse 36% 32% at 90% 100%,
+      rgba(220, 210, 240, 0.22) 0%,
+      transparent 65%
+    ),
+    /* 中心白 */
+    radial-gradient(
+      ellipse 75% 65% at 52% 45%,
+      #ffffff 0%,
+      rgba(250, 249, 245, 0.5) 70%,
+      transparent 100%
+    );
 }
 
 .surprise-page__inner {
