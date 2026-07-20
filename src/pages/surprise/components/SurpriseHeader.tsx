@@ -1,3 +1,5 @@
+import { StatusBadge } from "./StatusBadge"
+
 interface SurpriseHeaderProps {
   title: string
   subtitle: string
@@ -22,15 +24,7 @@ export function SurpriseHeader({
           <span className="sp-header__avatar" aria-hidden />
           <div className="sp-header__title-row">
             <h1 className="sp-header__title">{title}</h1>
-            <span className="sp-header__status">
-              <img
-                src="/surprise/assets/img13.svg"
-                alt=""
-                width={16}
-                height={16}
-              />
-              {statusBadge}
-            </span>
+            <StatusBadge label={statusBadge} />
           </div>
         </div>
         <p className="sp-header__subtitle">{subtitle}</p>

@@ -14,24 +14,32 @@ const TONE_ICON: Partial<Record<Tone, string>> = {
   purple: "/surprise/assets/img30.svg",
 }
 
-const TONE_BORDER: Partial<Record<Tone, string>> = {
-  coral: "rgba(255, 95, 64, 0.35)",
-  teal: "rgba(28, 93, 95, 0.35)",
-  purple: "rgba(135, 104, 226, 0.35)",
+/** 边框色与卡片主题一致 */
+const FRAME_COLOR: Record<Tone, string> = {
+  coral: "#ff5f40",
+  teal: "#1c5d5f",
+  purple: "#8768e2",
+  gold: "#e8a200",
 }
 
 interface InsightSectionCardProps {
   section: InsightSection
 }
 
-/** 洞察卡 — Figma 潜藏优势/市场认可/差异化信息：504×142 */
+/** 洞察卡 — card2.svg 手绘边框 · 504×142 */
 export function InsightSectionCard({ section }: InsightSectionCardProps) {
   const color = TONE_COLOR[section.tone]
   const icon = TONE_ICON[section.tone]
-  const border = TONE_BORDER[section.tone] ?? "rgba(0,0,0,0.08)"
+  const frameColor = FRAME_COLOR[section.tone] ?? "rgba(0,0,0,0.35)"
 
   return (
-    <section className="sp-insight" style={{ borderColor: border }}>
+    <section className="sp-insight">
+      <span
+        className="sp-insight__frame"
+        style={{ backgroundColor: frameColor }}
+        aria-hidden
+      />
+
       <header className="sp-insight__head">
         <h3 className="sp-insight__title" style={{ color }}>
           {section.title}

@@ -22,16 +22,31 @@ const CONNECTOR: Partial<Record<Tone, { curve: string; tip: string }>> = {
   },
 }
 
+/** 边框色与卡片主题一致 */
+const FRAME_COLOR: Record<Tone, string> = {
+  coral: "#ff6b6b",
+  gold: "#e8a200",
+  purple: "#a78bfa",
+  teal: "#1c5d5f",
+}
+
 interface ActionCardProps {
   card: ActionCardData
 }
 
-/** 左侧行动卡 — Figma Group 11/12/14：481×199、3px 边框、色染白底 */
+/** 左侧行动卡 — card1.svg 手绘边框 · 481×199 */
 export function ActionCard({ card }: ActionCardProps) {
   const connector = CONNECTOR[card.tone]
+  const frameColor = FRAME_COLOR[card.tone] ?? FRAME_COLOR.coral
 
   return (
     <article className={`sp-action sp-action--${card.tone}`}>
+      <span
+        className="sp-action__frame"
+        style={{ backgroundColor: frameColor }}
+        aria-hidden
+      />
+
       <div className="sp-action__body">
         <h3 className="sp-action__title">{card.title}</h3>
         <p className="sp-action__desc">{card.description}</p>

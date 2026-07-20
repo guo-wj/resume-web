@@ -1,4 +1,5 @@
 import type { ReviewPanelData } from "../types"
+import { StatusBadge } from "./StatusBadge"
 
 interface ReviewPanelProps {
   data: ReviewPanelData
@@ -12,14 +13,7 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
   return (
     <section className="sp-review">
       <div className="sp-review__head">
-        <div className="sp-review__badge">
-          <img
-            className="sp-review__badge-icon"
-            src="/surprise/assets/img13.svg"
-            alt=""
-          />
-          <span>{data.badge}</span>
-        </div>
+        <StatusBadge label={data.badge} />
         <h3 className="sp-review__title">{data.title}</h3>
       </div>
 
@@ -57,11 +51,9 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
           </div>
 
           <div className="sp-radar__hover">
-            <img
-              className="sp-radar__dot"
-              src="/surprise/assets/radar-dot.svg"
-              alt=""
-            />
+            <span className="sp-radar__dot" aria-hidden>
+              <span className="sp-radar__dot-face" />
+            </span>
             <span className="sp-radar__bubble">{data.delta}</span>
           </div>
         </div>
