@@ -5,6 +5,17 @@ import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgen
 import { PersonalCenter } from "@/pages/personal"
 import { AuthGateProvider, RequireAuthAction, ChatTextCard } from "@/components"
 import { useAuth } from "@/store"
+import chatBackArrow from "@/assets/chat/back-arrow.svg"
+import chatBoltIcon from "@/assets/chat/bolt.svg"
+import chatProfileBook from "@/assets/chat/profile-book.svg"
+import chatProfileUser from "@/assets/chat/profile-user.svg"
+import chatProfilePhone from "@/assets/chat/profile-phone.svg"
+import chatProfileTarget from "@/assets/chat/profile-target.svg"
+import chatProfileCheck from "@/assets/chat/profile-check.svg"
+import chatFileDoc from "@/assets/chat/file-doc.svg"
+import chatComposerPlus from "@/assets/chat/composer-plus.svg"
+import chatComposerDash from "@/assets/chat/composer-dash.svg"
+import chatComposerSend from "@/assets/chat/composer-send.svg"
 import "./index.scss"
 
 const { useState, useRef, useEffect, useCallback } = React
@@ -51,11 +62,88 @@ function E({ as = "div", s, h, children, ...rest }) {
   )
 }
 
-const SendIcon = ({ size = 19 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path d="M4 12l16-8-6 8 6 8-16-8z" fill="#fff" />
-  </svg>
-)
+
+const formatChatTime = (ts) => {
+  const d = ts ? new Date(ts) : new Date()
+  let h = d.getHours()
+  const m = String(d.getMinutes()).padStart(2, "0")
+  const ampm = h >= 12 ? "PM" : "AM"
+  h = h % 12 || 12
+  return `${h}:${m} ${ampm}`
+}
+
+const formatFileSizeLabel = (size) => {
+  if (size == null || Number.isNaN(Number(size))) return ""
+  const n = Number(size)
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function ChatProfileCard({ profile }) {
+  if (!profile) return null
+  const rows = [
+    { key: "name", label: "姓名", value: profile.name, icon: chatProfileUser },
+    { key: "phone", label: "电话", value: profile.phone, icon: chatProfilePhone },
+    { key: "goal", label: "求职目标", value: profile.goal, icon: chatProfileTarget },
+  ].filter((row) => row.value)
+  if (!rows.length) return null
+  return (
+    <div className="chat-profile-card">
+      <div className="chat-profile-card__head">
+        <span className="chat-profile-card__head-icon">
+          <img src={chatProfileBook} alt="" width={18} height={18} />
+        </span>
+        <div>
+          <div className="chat-profile-card__title">用户画像</div>
+          <div className="chat-profile-card__sub">AI 已识别以下基本信息</div>
+        </div>
+      </div>
+      <div className="chat-profile-card__body">
+        {rows.map((row, i) => (
+          <React.Fragment key={row.key}>
+            {i > 0 ? <div className="chat-profile-card__divider" /> : null}
+            <div className="chat-profile-card__row">
+              <span className="chat-profile-card__row-icon">
+                <img src={row.icon} alt="" width={13} height={13} />
+              </span>
+              <div>
+                <div className="chat-profile-card__label">{row.label}</div>
+                <div className="chat-profile-card__value">{row.value}</div>
+              </div>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="chat-profile-card__foot">
+        <span className="chat-profile-card__foot-icon">
+          <img src={chatProfileCheck} alt="" width={13} height={13} />
+        </span>
+        <span>信息已同步写入个人简历库，可在主页面随时查看</span>
+      </div>
+    </div>
+  )
+}
+
+function ChatFileCard({ file }) {
+  return (
+    <div className="chat-file-card">
+      <span className="chat-file-card__icon">
+        <img src={chatFileDoc} alt="" width={15} height={15} />
+      </span>
+      <div className="chat-file-card__meta">
+        <div className="chat-file-card__top">
+          <span className="chat-file-card__name">{file.name}</span>
+          <span className="chat-file-card__status">Done</span>
+        </div>
+        <div className="chat-file-card__bar" aria-hidden>
+          <span className="chat-file-card__bar-fill" />
+        </div>
+        <div className="chat-file-card__size">{formatFileSizeLabel(file.size)}</div>
+      </div>
+    </div>
+  )
+}
 
 const AppleIcon = ({ size = 20, fill = "#1B1530" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}>
@@ -351,7 +439,8 @@ const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
 const INTRO_MSG = {
   role: "ai",
-  text: "嗨，我是 Magic Resume 助手 ✦ 简单聊两句，我就能帮你生成简历。先说说你想投递什么岗位？",
+  text: "你好！我是你的 AI 简历助手，可以帮你生成、优化和管理个人简历。请告诉我你的基本信息，我们从姓名和求职目标开始吧。",
+  at: Date.now(),
 }
 
 const LEGAL_DOCS = {
@@ -1098,7 +1187,7 @@ export function LandingApp() {
       setChatStreaming(true)
 
       let aiText = ""
-      setChat((c) => [...c, { role: "ai", text: "", streaming: true }])
+      setChat((c) => [...c, { role: "ai", text: "", streaming: true, at: Date.now() }])
 
       const patchAiText = (text) => {
         aiText = text
@@ -1120,7 +1209,7 @@ export function LandingApp() {
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i].role === "ai" && next[i].streaming) {
               if (!aiText) next.splice(i, 1)
-              else next[i] = { role: "ai", text: aiText, streaming: false }
+              else next[i] = { role: "ai", text: aiText, streaming: false, at: next[i].at || Date.now(), profile: next[i].profile }
               break
             }
           }
@@ -1149,15 +1238,20 @@ export function LandingApp() {
               if (ev.session_id) chatSessionIdRef.current = ev.session_id
               finishAi(!!ev.ready_generate)
             },
-            onError: (err) => toast(err.message || "对话失败，请稍后重试"),
+            onError: (err) => {
+              if (err instanceof ApiError && err.handled) return
+              toast(err.message || "对话失败，请稍后重试")
+            },
           },
           ac.signal,
         )
         if (!ac.signal.aborted && !doneReceived) finishAi(false)
       } catch (err) {
         if (ac.signal.aborted) return
-        const msg = err instanceof ApiError ? err.message : "对话失败，请稍后重试"
-        toast(msg)
+        if (!(err instanceof ApiError && err.handled)) {
+          const msg = err instanceof ApiError ? err.message : "对话失败，请稍后重试"
+          toast(msg)
+        }
         finishAi(false)
       }
     },
@@ -1177,6 +1271,7 @@ export function LandingApp() {
         text,
         files,
         voices,
+        at: Date.now(),
       },
     ])
     setChatStage("intro")
@@ -1260,7 +1355,7 @@ export function LandingApp() {
     setChatInput(e.target.value)
     const el = e.target
     el.style.height = "auto"
-    el.style.height = `${Math.min(el.scrollHeight, 44)}px`
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }
   const onChatKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1290,6 +1385,7 @@ export function LandingApp() {
         text: v,
         files,
         voices,
+        at: Date.now(),
       },
     ])
     setChatInput("")
@@ -1374,21 +1470,27 @@ export function LandingApp() {
     (agreed ? "#6D5DF6" : "#fff") +
     ";"
 
-  const chatRows = chat.map((m) => ({
-    role: m.role,
-    text: m.text,
-    streaming: !!m.streaming,
-    files: m.files || [],
-    voices: m.voices || [],
-    rowStyle:
-      "display:flex;animation:msgIn .3s ease both;justify-content:" +
-      (m.role === "user" ? "flex-end" : "flex-start") +
-      ";",
-    bubbleStyle:
-      m.role === "user"
-        ? "max-width:78%;background:#6D5DF6;color:#fff;font-size:14.5px;line-height:1.55;padding:13px 17px;border-radius:18px 18px 4px 18px;box-shadow:0 8px 20px -12px rgba(109,93,246,.7);"
-        : "max-width:84%;background:#fff;border:1px solid #EDE7FA;color:#1B1530;font-size:14.5px;line-height:1.55;padding:13px 17px;border-radius:18px 18px 18px 4px;box-shadow:0 8px 24px -18px rgba(40,24,90,.5);",
-  }))
+  const chatRows = chat.map((m) => {
+    const thinking = m.role === "ai" && !!m.streaming && !m.text
+    return {
+      role: m.role,
+      text: m.text,
+      streaming: !!m.streaming,
+      thinking,
+      profile: m.profile || null,
+      timeLabel: formatChatTime(m.at),
+      files: m.files || [],
+      voices: m.voices || [],
+      rowClass:
+        "chat-row" +
+        (m.role === "user" ? " is-user" : " is-ai") +
+        (thinking ? " is-thinking" : ""),
+      bubbleClass:
+        "chat-bubble" +
+        (m.role === "user" ? " is-user" : " is-ai") +
+        (thinking ? " is-thinking" : ""),
+    }
+  })
 
   return (
     <AuthGateProvider ref={authGateRef} onRequireAuth={openAuth}>
@@ -1684,191 +1786,218 @@ export function LandingApp() {
 
       {/* ===================== CHAT ===================== */}
       {screen === "chat" && (
-        <div className="ld-extra-3">
-          <div className="ld-98">
-            <E as="button" className="ld-172" onClick={gotoLanding}>‹ 返回首页</E>
-            <div className="ld-97">
-              <span className="ld-96">✦</span> AI 简历助手
+        <div className="ld-extra-3 chat-page">
+          <header className="chat-page__header">
+            <div className="chat-page__header-left">
+              <E
+                as="button"
+                className="chat-page__back"
+                onClick={gotoLanding}
+                aria-label="返回首页"
+              >
+                <span className="chat-page__back-icon">
+                  <img src={chatBackArrow} alt="" width={18} height={18} />
+                </span>
+              </E>
+              <div className="chat-page__avatar" aria-hidden>
+                AI
+              </div>
+              <div className="chat-page__identity">
+                <div className="chat-page__name">简历助手</div>
+                <div className="chat-page__meta">
+                  <span className="chat-page__online-dot" />
+                  <span className="chat-page__online">Online</span>
+                  <span className="chat-page__meta-sep">·</span>
+                  <span className="chat-page__subtitle">随时为你生成专业简历</span>
+                </div>
+              </div>
             </div>
-            <div className="ld-95" />
-          </div>
+            <div className="chat-page__badge">
+              <span className="chat-page__badge-icon">
+                <img src={chatBoltIcon} alt="" width={11} height={11} />
+              </span>
+              <span className="chat-page__badge-text">AI Powered</span>
+            </div>
+          </header>
 
           <div
             ref={chatScrollRef}
-            className="chat-scroll ld-94"
-            
+            className="chat-scroll ld-94 chat-page__messages"
           >
-            {chatRows.map((m, i) => (
-              <div key={i} style={css(m.rowStyle)}>
-                <div style={css(m.bubbleStyle)}>
-                  {m.streaming && !m.text ? (
-                    <div className="chat-think-dots" role="status" aria-label="正在回复">
-                      <span /><span /><span />
-                    </div>
-                  ) : m.role === "ai" && m.text ? (
-                    <ChatTextCard content={m.text} />
-                  ) : m.text ? (
-                    <div>{m.text}</div>
+            <div className="chat-page__thread">
+              {chatRows.map((m, i) => (
+                <div key={i} className={m.rowClass}>
+                  <div className={m.bubbleClass}>
+                    {m.thinking ? (
+                      <div className="chat-think-dots" role="status" aria-label="正在回复">
+                        <span /><span /><span />
+                      </div>
+                    ) : m.role === "ai" && m.text ? (
+                      <ChatTextCard content={m.text} />
+                    ) : m.text ? (
+                      <div className="chat-bubble__text">{m.text}</div>
+                    ) : null}
+                    {m.files.length > 0 && (
+                      <div className={"chat-bubble__files" + (m.text || m.voices.length ? " has-prev" : "")}>
+                        {m.files.map((f) => (
+                          <ChatFileCard key={`${f.name}-${f.size}`} file={f} />
+                        ))}
+                      </div>
+                    )}
+                    {m.voices.length > 0 && (
+                      <div className={"chat-bubble__voices" + (m.text || m.files.length ? " has-prev" : "")}>
+                        {m.voices.map((voice) => (
+                          <VoiceClipRow
+                            key={voice.id}
+                            clip={voice}
+                            tone="chat"
+                            playing={voicePlayingId === voice.id}
+                            onPlay={playVoiceClip}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {m.role === "ai" && m.profile ? <ChatProfileCard profile={m.profile} /> : null}
+                  </div>
+                  {!m.thinking && (m.text || m.files.length > 0 || m.voices.length > 0 || m.profile) ? (
+                    <div className="chat-row__time">{m.timeLabel}</div>
                   ) : null}
-                  {m.files.length > 0 && (
-                    <div style={css(`display:flex;flex-direction:column;gap:6px;${m.text || m.voices.length ? "margin-top:10px;" : ""}`)}>
-                      {m.files.map((f) => (
+                </div>
+              ))}
+
+              {chatStage === "generating" && (
+                <div className="ld-91">
+                  <div className="ld-90">
+                    <div className="ld-89" />
+                    <span className="ld-88">正在为你生成简历…</span>
+                  </div>
+                </div>
+              )}
+
+              {chatStage === "done" && (
+                <div className="ld-87">
+                  <div className="ld-86">🎉 简历已生成</div>
+                  <div className="ld-85">
+                    <div className="ld-84" />
+                    <div className="ld-83" />
+                    <div className="ld-82" />
+                    <div className="ld-81" />
+                    <div className="ld-80" />
+                    <div className="ld-79" />
+                  </div>
+                  <div className="ld-78">
+                    <E as="button" className="ld-171" onClick={enterEditor}>进入编辑器</E>
+                    <button className="ld-77" onClick={() => toast("开始下载 PDF（原型示意）")}>下载 PDF</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="chat-page__composer-wrap">
+            <div className="chat-page__composer-inner">
+              {chatStage === "ready" && (
+                <E as="button" className="ld-170 chat-page__generate" onClick={generateResume}>✨ 生成我的简历</E>
+              )}
+              {(chatStage === "intro" || chatStage === "ready") && (
+                <div className="chat-composer">
+                  {heroRecording && (
+                    <div className="ld-74">
+                      <span className="ld-73">
+                        <span className="ld-72" />
+                        录音中 {formatVoiceDuration(heroRecording.duration)}
+                      </span>
+                      <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" height={22} animate />
+                      <button
+                        type="button"
+                        onClick={() => stopHeroVoiceRecording(false)}
+                        className="ld-71"
+                      >
+                        完成
+                      </button>
+                    </div>
+                  )}
+                  {(heroFiles.length > 0 || heroVoices.length > 0) && (
+                    <div className="ld-70">
+                      {heroVoices.map((voice) => (
+                        <VoiceClipRow
+                          key={voice.id}
+                          clip={voice}
+                          playing={voicePlayingId === voice.id}
+                          onPlay={playVoiceClip}
+                          onRemove={removeHeroVoice}
+                        />
+                      ))}
+                      {heroFiles.map((f) => (
                         <span
-                          key={`${f.name}-${f.size}`}
-                          className="ld-93"
+                          key={f.id}
+                          className="ld-69"
                         >
-                          📎 {f.name}
-                          <span className="ld-92">{formatFileSize(f.size)}</span>
+                          <span className="ld-68">📎 {f.name}</span>
+                          <span className="ld-67">{formatFileSize(f.size)}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeHeroFile(f.id)}
+                            className="ld-66"
+                            aria-label={`移除 ${f.name}`}
+                          >
+                            ×
+                          </button>
                         </span>
                       ))}
                     </div>
                   )}
-                  {m.voices.length > 0 && (
-                    <div style={css(`display:flex;flex-direction:column;gap:8px;${m.text || m.files.length ? "margin-top:10px;" : ""}`)}>
-                      {m.voices.map((voice) => (
-                        <VoiceClipRow
-                          key={voice.id}
-                          clip={voice}
-                          tone="chat"
-                          playing={voicePlayingId === voice.id}
-                          onPlay={playVoiceClip}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {chatStage === "generating" && (
-              <div className="ld-91">
-                <div className="ld-90">
-                  <div className="ld-89" />
-                  <span className="ld-88">正在为你生成简历…</span>
-                </div>
-              </div>
-            )}
-
-            {chatStage === "done" && (
-              <div className="ld-87">
-                <div className="ld-86">🎉 简历已生成</div>
-                <div className="ld-85">
-                  <div className="ld-84" />
-                  <div className="ld-83" />
-                  <div className="ld-82" />
-                  <div className="ld-81" />
-                  <div className="ld-80" />
-                  <div className="ld-79" />
-                </div>
-                <div className="ld-78">
-                  <E as="button" className="ld-171" onClick={enterEditor}>进入编辑器</E>
-                  <button className="ld-77" onClick={() => toast("开始下载 PDF（原型示意）")}>下载 PDF</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="ld-76">
-            {chatStage === "ready" && (
-              <E as="button" className="ld-170" onClick={generateResume}>✨ 生成我的简历</E>
-            )}
-            {(chatStage === "intro" || chatStage === "ready") && (
-              <div className="ld-75">
-                {heroRecording && (
-                  <div className="ld-74">
-                    <span className="ld-73">
-                      <span className="ld-72" />
-                      录音中 {formatVoiceDuration(heroRecording.duration)}
-                    </span>
-                    <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" height={22} animate />
-                    <button
-                      type="button"
-                      onClick={() => stopHeroVoiceRecording(false)}
-                      className="ld-71"
+                  <textarea
+                    ref={chatInputRef}
+                    value={chatInput}
+                    onChange={onChatChange}
+                    onKeyDown={onChatKey}
+                    rows={1}
+                    placeholder={chatStreaming ? "助手回复中，可先输入…" : "告诉我你的信息，我来帮你生成简历…"}
+                    className="chat-composer__input"
+                  />
+                  <div className="chat-composer__toolbar">
+                    <E
+                      as="button"
+                      className="chat-composer__tool-btn"
+                      title="添加材料"
+                      onClick={openHeroFilePicker}
                     >
-                      完成
-                    </button>
-                  </div>
-                )}
-                {(heroFiles.length > 0 || heroVoices.length > 0) && (
-                  <div className="ld-70">
-                    {heroVoices.map((voice) => (
-                      <VoiceClipRow
-                        key={voice.id}
-                        clip={voice}
-                        playing={voicePlayingId === voice.id}
-                        onPlay={playVoiceClip}
-                        onRemove={removeHeroVoice}
-                      />
-                    ))}
-                    {heroFiles.map((f) => (
-                      <span
-                        key={f.id}
-                        className="ld-69"
-                      >
-                        <span className="ld-68">📎 {f.name}</span>
-                        <span className="ld-67">{formatFileSize(f.size)}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeHeroFile(f.id)}
-                          className="ld-66"
-                          aria-label={`移除 ${f.name}`}
-                        >
-                          ×
-                        </button>
+                      <span className="chat-composer__tool-icon">
+                        <img src={chatComposerPlus} alt="" width={14} height={14} />
                       </span>
-                    ))}
+                    </E>
+                    <div className="chat-composer__toolbar-right">
+                      <span className="chat-composer__hint">Enter 发送</span>
+                      <E
+                        as="button"
+                        className={"chat-composer__tool-btn" + (heroRecording ? " is-recording" : "")}
+                        title={heroRecording ? "点击结束录音" : "语音输入"}
+                        onClick={toggleHeroVoiceRecord}
+                      >
+                        <span className="chat-composer__tool-icon">
+                          <img src={chatComposerDash} alt="" width={14} height={14} />
+                        </span>
+                      </E>
+                      <E
+                        as="button"
+                        className={
+                          "chat-composer__send" +
+                          (chatStreaming || !hasChatContent() ? " is-disabled" : "")
+                        }
+                        title="发送"
+                        onClick={chatSend}
+                      >
+                        <span className="chat-composer__send-icon">
+                          <img src={chatComposerSend} alt="" width={13} height={13} />
+                        </span>
+                      </E>
+                    </div>
                   </div>
-                )}
-                <textarea
-                  ref={chatInputRef}
-                  value={chatInput}
-                  onChange={onChatChange}
-                  onKeyDown={onChatKey}
-                  rows={2}
-                  placeholder={chatStreaming ? "搭子回复中，可先输入…" : "输入你的回复…"}
-                  className="ld-65"
-                />
-                <div className="ld-64">
-                  <E
-                    as="button"
-                    s={
-                      "width:32px;height:32px;flex:0 0 auto;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
-                      (heroRecording
-                        ? "background:#ffe3e3;box-shadow:0 0 0 3px rgba(255,77,79,.14);"
-                        : "background:#f3f0ff;")
-                    }
-                    h={heroRecording ? "background:#ffd6d6;" : "background:#ece7ff;"}
-                    title={heroRecording ? "点击结束录音" : "语音说给搭子听"}
-                    onClick={toggleHeroVoiceRecord}
-                  >
-                    <MicIcon size={15} color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
-                  </E>
-                  <E
-                    as="button"
-                    className="ld-169"
-                    title="添加材料"
-                    onClick={openHeroFilePicker}
-                  >
-                    <ClipIcon size={15} />
-                  </E>
-                  <E
-                    as="button"
-                    s={
-                      "width:36px;height:36px;flex:0 0 auto;border-radius:12px;display:flex;align-items:center;justify-content:center;" +
-                      (chatStreaming || !hasChatContent()
-                        ? "background:#CFC8E0;cursor:not-allowed;"
-                        : "background:#6D5DF6;")
-                    }
-                    h={chatStreaming || !hasChatContent() ? "" : "background:#5B4BE8;"}
-                    title="发送"
-                    onClick={chatSend}
-                  >
-                    <SendIcon size={16} />
-                  </E>
                 </div>
-              </div>
-            )}
+              )}
+              <p className="chat-page__credit">Made with Claude Design ✕</p>
+            </div>
           </div>
         </div>
       )}

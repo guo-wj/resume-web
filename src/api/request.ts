@@ -3,6 +3,7 @@ import { resolveApiPath, API_ENDPOINT_MAP } from "./endpoints"
 import type { ApiResponse } from "./types"
 import { ApiError } from "./types"
 import { DEFAULT_TIMEOUT_MS, createTimeoutGate, throwIfAborted } from "./timeout"
+import { extractErrorMessage, handleUnauthorized } from "./unauthorized"
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api"
 
@@ -13,7 +14,7 @@ export interface RequestOptions extends Omit<RequestInit, "method" | "body"> {
   query?: Record<string, string | number | boolean | undefined>
   body?: unknown
   token?: string | null
-  /** 超时毫秒数；默认 10s，传 0 表示不超时 */
+  /** 超时毫秒数；默认 20s，传 0 表示不超时 */
   timeout?: number
 }
 
@@ -66,10 +67,15 @@ export async function request<T = unknown>(
     const json = (await res.json().catch(() => null)) as ApiResponse<T> | null
 
     if (!res.ok) {
-      throw new ApiError(res.status, json?.message || res.statusText)
+      if (res.status === 401) throw handleUnauthorized()
+      throw new ApiError(
+        res.status,
+        extractErrorMessage(json, json?.message || res.statusText || "请求失败"),
+      )
     }
 
     if (json && typeof json.code === "number" && json.code !== 0) {
+      if (json.code === 401) throw handleUnauthorized()
       throw new ApiError(json.code, json.message || "请求失败")
     }
 

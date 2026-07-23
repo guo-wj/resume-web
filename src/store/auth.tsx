@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,6 +12,7 @@ import { clearAccountCache } from "./accountCache"
 import { clearPersonalCenterCache } from "./personalCenterCache"
 
 const STORAGE_KEY = "auth_session"
+export const AUTH_SESSION_CLEARED_EVENT = "auth:session-cleared"
 
 function loadSession(): AuthSession | null {
   try {
@@ -37,6 +39,16 @@ function loginResultToSession(data: LoginResult): AuthSession {
     tokenType: data.token_type,
     hasPassword: data.has_password,
     user: data.user ?? null,
+  }
+}
+
+/** 供非 React 模块（如 request）在 401 时清空登录态 */
+export function clearAuthSession() {
+  persistSession(null)
+  clearAccountCache()
+  clearPersonalCenterCache()
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(AUTH_SESSION_CLEARED_EVENT))
   }
 }
 
@@ -72,10 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearSession = useCallback(() => {
-    persistSession(null)
+    clearAuthSession()
     setSessionState(null)
-    clearAccountCache()
-    clearPersonalCenterCache()
+  }, [])
+
+  useEffect(() => {
+    const onCleared = () => setSessionState(null)
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, onCleared)
+    return () => window.removeEventListener(AUTH_SESSION_CLEARED_EVENT, onCleared)
   }, [])
 
   const value = useMemo<AuthContextValue>(

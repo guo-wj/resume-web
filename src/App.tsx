@@ -4,6 +4,7 @@ import { LandingApp } from "@/pages/landing"
 import { SurpriseApp } from "@/pages/surprise"
 import { APP_ROUTES } from "@/config/routes"
 import { AuthProvider } from "@/store"
+import { GlobalAuthToast } from "@/components/GlobalAuthToast"
 
 const routeElements = {
   LandingApp: <LandingApp />,
@@ -15,6 +16,7 @@ export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <GlobalAuthToast />
         <Routes>
           {APP_ROUTES.map((route) => (
             <Route

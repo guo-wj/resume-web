@@ -77,10 +77,13 @@ export interface LoginResult {
 
 export class ApiError extends Error {
   code: number
+  /** 已在请求层处理（如 401 全局提示），业务层勿再 toast */
+  handled: boolean
 
-  constructor(code: number, message: string) {
+  constructor(code: number, message: string, handled = false) {
     super(message)
     this.name = "ApiError"
     this.code = code
+    this.handled = handled
   }
 }

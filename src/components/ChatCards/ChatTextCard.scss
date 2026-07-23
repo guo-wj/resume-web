@@ -1,7 +1,6 @@
-@use "adaptive" as *;
-
+/* 聊天页用固定 px，与气泡 font-size:14.5px 对齐；勿用 r()（rem 在非 1920 宽会缩小） */
 .chat-text-card {
-  font-size: r(14.5);
+  font-size: inherit;
   line-height: 1.55;
   color: inherit;
   word-break: break-word;
@@ -72,14 +71,14 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.9em;
     padding: 0.1em 0.35em;
-    border-radius: r(4);
+    border-radius: 4px;
     background: rgba(109, 93, 246, 0.08);
   }
 
   pre {
     margin: 0.55em 0;
-    padding: r(10) r(12);
-    border-radius: r(10);
+    padding: 10px 12px;
+    border-radius: 10px;
     overflow-x: auto;
     background: rgba(27, 21, 48, 0.04);
     border: 1px solid rgba(237, 231, 250, 0.9);
@@ -94,13 +93,13 @@
   a {
     color: #6d5df6;
     text-decoration: underline;
-    text-underline-offset: r(2);
+    text-underline-offset: 2px;
   }
 
   blockquote {
     margin: 0.5em 0;
     padding: 0.15em 0 0.15em 0.85em;
-    border-left: r(3) solid #d9d0f5;
+    border-left: 3px solid #d9d0f5;
     color: #5b5470;
   }
 

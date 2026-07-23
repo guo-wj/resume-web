@@ -1,7 +1,7 @@
 import { ApiError } from "./types"
 
 /** 默认请求超时（毫秒），传 `0` 可关闭 */
-export const DEFAULT_TIMEOUT_MS = 10_000
+export const DEFAULT_TIMEOUT_MS = 20_000
 
 export function isAbortError(err: unknown): boolean {
   return (

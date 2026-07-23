@@ -1,6 +1,7 @@
 import { getAccessToken } from "@/store/auth"
 import { ApiError } from "./types"
 import { DEFAULT_TIMEOUT_MS, createTimeoutGate, isAbortError } from "./timeout"
+import { extractErrorMessage, handleUnauthorized } from "./unauthorized"
 
 /** Agent 服务独立前缀，不走 VITE_API_BASE */
 const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, "")
@@ -79,7 +80,7 @@ function handleStreamEvent(data: Record<string, unknown>, callbacks: AgentChatSt
   }
 }
 
-/** POST /agent/chat，解析 SSE / 逐行 JSON 流式响应；首包默认 10s 超时 */
+/** POST /agent/chat，解析 SSE / 逐行 JSON 流式响应；首包默认 20s 超时 */
 export async function streamAgentChat(
   body: AgentChatRequest,
   callbacks: AgentChatStreamCallbacks,
@@ -109,12 +110,12 @@ export async function streamAgentChat(
     gate.clearTimer()
 
     if (!res.ok) {
+      if (res.status === 401) throw handleUnauthorized()
       const json = await res.json().catch(() => null)
-      const message =
-        (json && typeof json === "object" && "message" in json && String(json.message)) ||
-        res.statusText ||
-        "对话请求失败"
-      throw new ApiError(res.status, message)
+      throw new ApiError(
+        res.status,
+        extractErrorMessage(json, res.statusText || "对话请求失败"),
+      )
     }
 
     if (!res.body) {

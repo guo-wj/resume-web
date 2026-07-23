@@ -1,4 +1,4 @@
-export { AuthProvider, useAuth, getAccessToken } from "./auth"
+export { AuthProvider, useAuth, getAccessToken, clearAuthSession } from "./auth"
 export { getAccountCache, clearAccountCache } from "./accountCache"
 export { getPersonalCenterCache, clearPersonalCenterCache } from "./personalCenterCache"
 export type { AccountData } from "./accountCache"

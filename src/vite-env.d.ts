@@ -10,6 +10,11 @@ declare module "*.scss" {
   export default css
 }
 
+declare module "*.svg" {
+  const src: string
+  export default src
+}
+
 interface ImportMetaEnv {
   readonly VITE_ENV: string
   readonly VITE_API_BASE: string
