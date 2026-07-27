@@ -1,0 +1,158 @@
+/* 模板选择卡片 — Figma 27:195 */
+.chat-template-card {
+  width: min(648px, 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #1c5d5f;
+  box-shadow: 0 2px 24px rgba(28, 93, 95, 0.08);
+  box-sizing: border-box;
+}
+
+.chat-template-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #f7f9f9;
+}
+
+.chat-template-card__head-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2d7a7c 0%, #1c5d5f 100%);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: clip;
+}
+
+.chat-template-card__head-icon img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.chat-template-card__head-text {
+  min-width: 0;
+}
+
+.chat-template-card__title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.chat-template-card__sub {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.chat-template-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 16px;
+  padding: 16px 20px 20px;
+  box-sizing: border-box;
+}
+
+.chat-template-card__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  min-width: 0;
+}
+
+.chat-template-card__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 191 / 192;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.chat-template-card__item.is-selected .chat-template-card__preview {
+  border-color: #1c5d5f;
+  box-shadow: 0 0 4px rgba(28, 93, 95, 0.5);
+}
+
+.chat-template-card__preview-banner {
+  height: 31.25%;
+  border-radius: 15px 15px 0 0;
+}
+
+.chat-template-card__preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.chat-template-card__preview-line {
+  display: block;
+  height: 12px;
+  border-radius: 16px;
+  flex: 0 0 auto;
+}
+
+.chat-template-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  line-height: 0;
+}
+
+.chat-template-card__badge img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.chat-template-card__item-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.chat-template-card__palette {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-template-card__chip {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .chat-template-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .chat-template-card__grid {
+    grid-template-columns: 1fr;
+  }
+}

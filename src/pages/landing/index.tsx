@@ -3,16 +3,13 @@ import React from "react"
 import { useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard } from "@/components"
-import { useAuth } from "@/store"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData } from "@/components"
+import { useAuth, getAuthSession } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
-import chatProfileBook from "@/assets/chat/profile-book.svg"
-import chatProfileUser from "@/assets/chat/profile-user.svg"
-import chatProfilePhone from "@/assets/chat/profile-phone.svg"
-import chatProfileTarget from "@/assets/chat/profile-target.svg"
-import chatProfileCheck from "@/assets/chat/profile-check.svg"
-import chatFileDoc from "@/assets/chat/file-doc.svg"
+import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
+import chatFileChipFail from "@/assets/chat/file-chip-fail.svg"
+import chatFileChipClose from "@/assets/chat/file-chip-close.svg"
 import chatComposerPlus from "@/assets/chat/composer-plus.svg"
 import chatComposerDash from "@/assets/chat/composer-dash.svg"
 import chatComposerSend from "@/assets/chat/composer-send.svg"
@@ -63,15 +60,6 @@ function E({ as = "div", s, h, children, ...rest }) {
 }
 
 
-const formatChatTime = (ts) => {
-  const d = ts ? new Date(ts) : new Date()
-  let h = d.getHours()
-  const m = String(d.getMinutes()).padStart(2, "0")
-  const ampm = h >= 12 ? "PM" : "AM"
-  h = h % 12 || 12
-  return `${h}:${m} ${ampm}`
-}
-
 const formatFileSizeLabel = (size) => {
   if (size == null || Number.isNaN(Number(size))) return ""
   const n = Number(size)
@@ -80,67 +68,130 @@ const formatFileSizeLabel = (size) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function ChatProfileCard({ profile }) {
-  if (!profile) return null
-  const rows = [
-    { key: "name", label: "姓名", value: profile.name, icon: chatProfileUser },
-    { key: "phone", label: "电话", value: profile.phone, icon: chatProfilePhone },
-    { key: "goal", label: "求职目标", value: profile.goal, icon: chatProfileTarget },
-  ].filter((row) => row.value)
-  if (!rows.length) return null
+function ChatFileCard({ file }) {
   return (
-    <div className="chat-profile-card">
-      <div className="chat-profile-card__head">
-        <span className="chat-profile-card__head-icon">
-          <img src={chatProfileBook} alt="" width={18} height={18} />
-        </span>
-        <div>
-          <div className="chat-profile-card__title">用户画像</div>
-          <div className="chat-profile-card__sub">AI 已识别以下基本信息</div>
-        </div>
-      </div>
-      <div className="chat-profile-card__body">
-        {rows.map((row, i) => (
-          <React.Fragment key={row.key}>
-            {i > 0 ? <div className="chat-profile-card__divider" /> : null}
-            <div className="chat-profile-card__row">
-              <span className="chat-profile-card__row-icon">
-                <img src={row.icon} alt="" width={13} height={13} />
-              </span>
-              <div>
-                <div className="chat-profile-card__label">{row.label}</div>
-                <div className="chat-profile-card__value">{row.value}</div>
-              </div>
-            </div>
-          </React.Fragment>
-        ))}
-      </div>
-      <div className="chat-profile-card__foot">
-        <span className="chat-profile-card__foot-icon">
-          <img src={chatProfileCheck} alt="" width={13} height={13} />
-        </span>
-        <span>信息已同步写入个人简历库，可在主页面随时查看</span>
+    <div className="chat-file-card">
+      <span className="chat-file-card__icon" aria-hidden />
+      <div className="chat-file-card__meta">
+        <span className="chat-file-card__name" title={file.name}>{file.name}</span>
+        <div className="chat-file-card__size">{formatFileSizeLabel(file.size)}</div>
       </div>
     </div>
   )
 }
 
-function ChatFileCard({ file }) {
+function formatFileSizeCompact(bytes) {
+  if (bytes == null || Number.isNaN(Number(bytes))) return ""
+  const n = Number(bytes)
+  if (n < 1024) return `${n}B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)}KB`
+  return `${(n / (1024 * 1024)).toFixed(1)}MB`
+}
+
+/** 输入框内上传文件 chip：成功 / 失败 */
+function ComposerFileChip({ file, onRemove }) {
+  const isError = file.status === "error"
   return (
-    <div className="chat-file-card">
-      <span className="chat-file-card__icon">
-        <img src={chatFileDoc} alt="" width={15} height={15} />
+    <div className={"composer-file-chip" + (isError ? " is-error" : "")}>
+      <span className="composer-file-chip__icon" aria-hidden>
+        <img src={isError ? chatFileChipFail : chatFileChipDoc} alt="" width={16} height={16} />
       </span>
-      <div className="chat-file-card__meta">
-        <div className="chat-file-card__top">
-          <span className="chat-file-card__name">{file.name}</span>
-          <span className="chat-file-card__status">Done</span>
-        </div>
-        <div className="chat-file-card__bar" aria-hidden>
-          <span className="chat-file-card__bar-fill" />
-        </div>
-        <div className="chat-file-card__size">{formatFileSizeLabel(file.size)}</div>
+      {isError ? (
+        <span className="composer-file-chip__name">{file.errorMessage || "简历解析失败"}</span>
+      ) : (
+        <>
+          <span className="composer-file-chip__name" title={file.name}>{file.name}</span>
+          <span className="composer-file-chip__size">{formatFileSizeCompact(file.size)}</span>
+        </>
+      )}
+      <button
+        type="button"
+        className="composer-file-chip__close"
+        onClick={() => onRemove?.(file.id)}
+        aria-label={`移除 ${file.name}`}
+      >
+        <img src={chatFileChipClose} alt="" width={16} height={16} />
+      </button>
+    </div>
+  )
+}
+
+/** 多文件单行横向滑动，两侧淡出 + 箭头 */
+function ComposerFileRail({ files, onRemove }) {
+  const trackRef = useRef(null)
+  const [fadeLeft, setFadeLeft] = useState(false)
+  const [fadeRight, setFadeRight] = useState(false)
+
+  const syncFade = useCallback(() => {
+    const el = trackRef.current
+    if (!el) return
+    const max = el.scrollWidth - el.clientWidth
+    setFadeLeft(el.scrollLeft > 2)
+    setFadeRight(max > 2 && el.scrollLeft < max - 2)
+  }, [])
+
+  const scrollByDir = (dir) => {
+    const el = trackRef.current
+    if (!el) return
+    const step = Math.max(160, Math.floor(el.clientWidth * 0.7))
+    el.scrollBy({ left: dir * step, behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const tick = () => syncFade()
+    tick()
+    requestAnimationFrame(tick)
+    const onScroll = () => syncFade()
+    el.addEventListener("scroll", onScroll, { passive: true })
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncFade) : null
+    ro?.observe(el)
+    return () => {
+      el.removeEventListener("scroll", onScroll)
+      ro?.disconnect()
+    }
+  }, [files.length, syncFade])
+
+  if (!files?.length) return null
+
+  return (
+    <div className="composer-file-rail">
+      <div ref={trackRef} className="composer-file-rail__track">
+        {files.map((f) => (
+          <ComposerFileChip key={f.id} file={f} onRemove={onRemove} />
+        ))}
       </div>
+      {fadeLeft && (
+        <>
+          <div className="composer-file-rail__edge composer-file-rail__edge--left" aria-hidden />
+          <button
+            type="button"
+            className="composer-file-rail__arrow composer-file-rail__arrow--left"
+            aria-label="向左查看更多文件"
+            onClick={() => scrollByDir(-1)}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </>
+      )}
+      {fadeRight && (
+        <>
+          <div className="composer-file-rail__edge composer-file-rail__edge--right" aria-hidden />
+          <button
+            type="button"
+            className="composer-file-rail__arrow composer-file-rail__arrow--right"
+            aria-label="向右查看更多文件"
+            onClick={() => scrollByDir(1)}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -246,8 +297,10 @@ const RESUME_FILE_ACCEPT = RESUME_FILE_TYPES.join(",")
 const MATERIAL_FILE_TYPES = [".pdf", ".doc", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg", ".webp"]
 const MATERIAL_FILE_ACCEPT = MATERIAL_FILE_TYPES.join(",")
 const MATERIAL_FILE_MAX_COUNT = 5
-const HERO_FILE_MAX_SIZE = 10 * 1024 * 1024
-const HERO_FILE_MAX_COUNT = 5
+const HERO_FILE_MAX_COUNT = 10
+const HERO_FILE_MAX_SIZE_MB = 50
+const HERO_FILE_MAX_SIZE = HERO_FILE_MAX_SIZE_MB * 1024 * 1024
+const HERO_FILE_UPLOAD_TIP = `最多 ${HERO_FILE_MAX_COUNT} 个文件，每个不超过 ${HERO_FILE_MAX_SIZE_MB} MB`
 
 function isHeroFileAllowed(file) {
   const ext = `.${file.name.split(".").pop()?.toLowerCase() || ""}`
@@ -264,18 +317,13 @@ function isMaterialFileAllowed(file) {
   return MATERIAL_FILE_TYPES.includes(ext)
 }
 
-function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function createHeroFileItem(file) {
+function createHeroFileItem(file, status = "success") {
   return {
     id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     file,
     name: file.name,
     size: file.size,
+    status,
   }
 }
 
@@ -1137,7 +1185,13 @@ export function LandingApp() {
       return trimmed + sep + text
     })
   const onHeroChange = (e) => setHeroInput(e.target.value)
-  const openHeroFilePicker = () => heroFileInputRef.current?.click()
+  const openHeroFilePicker = () => {
+    if (heroFiles.length >= HERO_FILE_MAX_COUNT) {
+      toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
+      return
+    }
+    heroFileInputRef.current?.click()
+  }
   const handleHeroFiles = (e) => {
     const picked = Array.from(e.target.files || [])
     e.target.value = ""
@@ -1155,7 +1209,7 @@ export function LandingApp() {
           continue
         }
         if (file.size > HERO_FILE_MAX_SIZE) {
-          toast(`${file.name} 超过 10MB`)
+          toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
           continue
         }
         if (next.some((item) => item.name === file.name && item.size === file.size)) continue
@@ -1171,7 +1225,8 @@ export function LandingApp() {
       const trimmed = message.trim()
       if (!trimmed) return
 
-      const userId = user?.id
+      // 登录后 resume 的 pending action 可能持有旧闭包，需从 store 读最新 user
+      const userId = getAuthSession()?.user?.id ?? user?.id
       if (!userId) {
         toast("请先登录后再对话")
         return
@@ -1255,7 +1310,7 @@ export function LandingApp() {
         finishAi(false)
       }
     },
-    [heroGoal, toast, user?.id],
+    [toast, user?.id],
   )
 
   const enterChatWithContent = ({ text = "", files = [], voices = [] }) => {
@@ -1299,7 +1354,7 @@ export function LandingApp() {
       return
     }
     if (file.size > HERO_FILE_MAX_SIZE) {
-      toast(`${file.name} 超过 10MB`)
+      toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
       return
     }
     const submitResume = () =>
@@ -1326,7 +1381,7 @@ export function LandingApp() {
         continue
       }
       if (file.size > HERO_FILE_MAX_SIZE) {
-        toast(`${file.name} 超过 10MB`)
+        toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
         continue
       }
       if (files.some((item) => item.name === file.name && item.size === file.size)) continue
@@ -1478,7 +1533,6 @@ export function LandingApp() {
       streaming: !!m.streaming,
       thinking,
       profile: m.profile || null,
-      timeLabel: formatChatTime(m.at),
       files: m.files || [],
       voices: m.voices || [],
       rowClass:
@@ -1654,23 +1708,7 @@ export function LandingApp() {
                         onRemove={removeHeroVoice}
                       />
                     ))}
-                    {heroFiles.map((f) => (
-                      <span
-                        key={f.id}
-                        className="ld-114"
-                      >
-                        <span className="ld-68">📎 {f.name}</span>
-                        <span className="ld-113">{formatFileSize(f.size)}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeHeroFile(f.id)}
-                          className="ld-112"
-                          aria-label={`移除 ${f.name}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                    <ComposerFileRail files={heroFiles} onRemove={removeHeroFile} />
                   </div>
                 )}
                 <div className="ld-111">
@@ -1711,9 +1749,14 @@ export function LandingApp() {
                   >
                     <MicIcon color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
                   </E>
-                  <E as="button" className="ld-177" title="添加材料" onClick={openHeroFilePicker}>
-                    <ClipIcon />
-                  </E>
+                  <span className="upload-tip">
+                    <E as="button" className="ld-177" aria-label="添加材料" onClick={openHeroFilePicker}>
+                      <ClipIcon />
+                    </E>
+                    <span className="upload-tip__bubble" role="tooltip">
+                      {HERO_FILE_UPLOAD_TIP}
+                    </span>
+                  </span>
                   <RequireAuthAction returnTo="heroSubmit" shouldRun={hasHeroContent} onAuthorized={heroSubmitCore}>
                     <E as="button" className="ld-176" title="发送">
                       <ArrowUpIcon />
@@ -1857,11 +1900,10 @@ export function LandingApp() {
                         ))}
                       </div>
                     )}
-                    {m.role === "ai" && m.profile ? <ChatProfileCard profile={m.profile} /> : null}
+                    {m.role === "ai" && m.profile ? (
+                      <ChatProfileCard data={buildChatProfileCardData(m.profile)} />
+                    ) : null}
                   </div>
-                  {!m.thinking && (m.text || m.files.length > 0 || m.voices.length > 0 || m.profile) ? (
-                    <div className="chat-row__time">{m.timeLabel}</div>
-                  ) : null}
                 </div>
               ))}
 
@@ -1928,23 +1970,7 @@ export function LandingApp() {
                           onRemove={removeHeroVoice}
                         />
                       ))}
-                      {heroFiles.map((f) => (
-                        <span
-                          key={f.id}
-                          className="ld-69"
-                        >
-                          <span className="ld-68">📎 {f.name}</span>
-                          <span className="ld-67">{formatFileSize(f.size)}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeHeroFile(f.id)}
-                            className="ld-66"
-                            aria-label={`移除 ${f.name}`}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                      <ComposerFileRail files={heroFiles} onRemove={removeHeroFile} />
                     </div>
                   )}
                   <textarea
@@ -1957,16 +1983,21 @@ export function LandingApp() {
                     className="chat-composer__input"
                   />
                   <div className="chat-composer__toolbar">
-                    <E
-                      as="button"
-                      className="chat-composer__tool-btn"
-                      title="添加材料"
-                      onClick={openHeroFilePicker}
-                    >
-                      <span className="chat-composer__tool-icon">
-                        <img src={chatComposerPlus} alt="" width={14} height={14} />
+                    <span className="upload-tip">
+                      <E
+                        as="button"
+                        className="chat-composer__tool-btn"
+                        aria-label="添加材料"
+                        onClick={openHeroFilePicker}
+                      >
+                        <span className="chat-composer__tool-icon">
+                          <img src={chatComposerPlus} alt="" width={14} height={14} />
+                        </span>
+                      </E>
+                      <span className="upload-tip__bubble" role="tooltip">
+                        {HERO_FILE_UPLOAD_TIP}
                       </span>
-                    </E>
+                    </span>
                     <div className="chat-composer__toolbar-right">
                       <span className="chat-composer__hint">Enter 发送</span>
                       <E
@@ -1996,7 +2027,6 @@ export function LandingApp() {
                   </div>
                 </div>
               )}
-              <p className="chat-page__credit">Made with Claude Design ✕</p>
             </div>
           </div>
         </div>

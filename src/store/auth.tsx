@@ -121,3 +121,8 @@ export function useAuth() {
 export function getAccessToken(): string | null {
   return loadSession()?.accessToken ?? null
 }
+
+/** 供回调/闭包场景读取最新登录态（避免 resume 时 React state 未刷新） */
+export function getAuthSession(): AuthSession | null {
+  return loadSession()
+}
