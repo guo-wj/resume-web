@@ -40,9 +40,7 @@ export async function uploadFile(file: File, options: UploadFileOptions = {}) {
   try {
     const res = await fetch(resolveAgentUploadUrl(), {
       method: "POST",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: form,
       signal: gate.signal,
     })
