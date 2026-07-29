@@ -16,14 +16,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version-file: '.nvmrc'
+          node-version: '22.14.0'
           cache: 'npm'
 
       - name: Verify Node.js version
         run: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
-          test "$(node --version)" = "v$(cat .nvmrc)"
+          test "$(node --version)" = "v22.14.0"
 
       - name: Deploy
         env:
