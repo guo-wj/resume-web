@@ -1,11 +1,9 @@
 /* 模板选择卡片 — Figma 27:195 */
 .chat-template-card {
   width: min(648px, 100%);
-  border-radius: 16px;
+  border-radius: calc(100% * 26 / 380) / calc(100% * 16.5 / 187);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid #1c5d5f;
-  box-shadow: 0 2px 24px rgba(28, 93, 95, 0.08);
   box-sizing: border-box;
 }
 

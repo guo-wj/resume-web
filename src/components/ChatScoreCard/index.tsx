@@ -1,5 +1,6 @@
 import headIcon from "@/assets/chat/score-book.svg"
 import checkIcon from "@/assets/chat/score-check.svg"
+import { ChatCardFrame } from "../ChatCardFrame"
 import type { ChatScoreCardData, ChatScoreTier } from "./types"
 import { getChatScoreTier } from "./types"
 import "./index.scss"
@@ -31,7 +32,7 @@ export function ChatScoreCard({ data, className }: ChatScoreCardProps) {
   const suggestions = data.suggestions || []
 
   return (
-    <div className={`chat-score-card${className ? ` ${className}` : ""}`}>
+    <ChatCardFrame className={`chat-score-card${className ? ` ${className}` : ""}`}>
       <div className="chat-score-card__head">
         <span className="chat-score-card__head-icon">
           <img src={headIcon} alt="" width={18} height={18} />
@@ -64,7 +65,7 @@ export function ChatScoreCard({ data, className }: ChatScoreCardProps) {
           <span className="chat-score-card__foot-text">{data.footer}</span>
         </div>
       ) : null}
-    </div>
+    </ChatCardFrame>
   )
 }
 

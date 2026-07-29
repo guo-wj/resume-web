@@ -362,13 +362,38 @@
 .magic-landing .ld-175 { display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:9999px;border:1px solid var(--border-strong);background:#fff;color:var(--ink-2);font-family:inherit;font-size:12.5px;cursor:pointer;transition:all .16s; }
 .magic-landing .ld-175:hover { border-color:var(--accent);color:var(--accent-strong); }
 .magic-landing .ld-176 { width:40px;height:40px;border-radius:99px;border:0;background:var(--accent);cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(123,97,255,.32); }
-.magic-landing .ld-176:hover { background:var(--accent-press); }
+.magic-landing .ld-176:hover:not(:disabled):not(.is-disabled) { background:var(--accent-press); }
+.magic-landing .ld-176.is-disabled,
+.magic-landing .ld-176:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 .magic-landing .ld-177 { width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center; }
 .magic-landing .ld-177:hover { background:var(--accent-tint); }
 .magic-landing .ld-178 { height:34px;padding:0 18px;border:0;background:var(--accent);color:#fff;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(123,97,255,.28); }
 .magic-landing .ld-178:hover { background:var(--accent-press); }
 .magic-landing .ld-179 { height:34px;padding:0 14px;border:0;background:transparent;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-1); }
 .magic-landing .ld-179:hover { background:var(--accent-tint); }
+.magic-landing .ld-workbench {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--ink-1);
+  border-radius: 99px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.magic-landing .ld-workbench:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+}
 .magic-landing .ld-180 { height:28px;padding:0 12px;margin-left:6px;border:0;background:var(--accent-tint);color:var(--accent-strong);border-radius:99px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px; }
 .magic-landing .ld-180:hover { background:var(--accent);color:#fff; }
 
@@ -676,10 +701,16 @@
 
 .magic-landing .chat-bubble__files {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  width: fit-content;
+  max-width: min(100%, 536px);
+  grid-template-columns: minmax(0, max-content);
+}
+
+/* 2 个及以上：拉满最大宽度，两列均分 */
+.magic-landing .chat-bubble__files:has(> :nth-child(2)) {
   width: min(100%, 536px);
-  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .magic-landing .chat-bubble__voices {
@@ -723,18 +754,24 @@
   }
 }
 
-/* File card — Figma 27:345（暂留左侧 icon 位） */
+/* File card — Figma 27:345；边框用 chat-card.svg 手绘描边 */
 .magic-landing .chat-file-card {
-  width: 100%;
+  position: relative;
+  width: auto;
+  max-width: 100%;
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12.444px 16.445px;
-  border-radius: 16px;
+  /* 圆角跟随 .chat-card-frame（与 SVG 边框一致） */
+  border-radius: calc(100% * 26 / 380) / calc(100% * 16.5 / 187);
   background: rgba(28, 93, 95, 0.06);
-  border: 0.889px solid #1c5d5f;
   box-sizing: border-box;
+}
+
+.magic-landing .chat-bubble__files:has(> :only-child) .chat-file-card {
+  max-width: min(100%, 320px);
 }
 
 .magic-landing .chat-file-card__icon {
@@ -742,6 +779,16 @@
   height: 32px;
   border-radius: 20px;
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: #22c55e;
+  line-height: 0;
+}
+
+.magic-landing .chat-file-card__icon img {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 
 .magic-landing .chat-file-card__meta {
@@ -886,7 +933,7 @@
   transform: translateY(-50%);
 }
 
-/* Composer file chip — Figma 27:562 success / 27:578 error */
+/* Composer file chip — Figma 27:562 success / 27:578 error / uploading */
 .magic-landing .composer-file-chip {
   display: inline-flex;
   align-items: center;
@@ -905,19 +952,56 @@
   background: rgba(255, 95, 64, 0.1);
 }
 
+.magic-landing .composer-file-chip.is-uploading {
+  height: auto;
+  min-height: 52px;
+  max-width: 220px;
+  padding: 8px 10px 8px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  gap: 10px;
+  align-items: center;
+}
+
 .magic-landing .composer-file-chip__icon {
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
   overflow: clip;
-  display: block;
+  display: grid;
+  place-items: center;
   line-height: 0;
+}
+
+.magic-landing .composer-file-chip.is-uploading .composer-file-chip__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .magic-landing .composer-file-chip__icon img {
   width: 16px;
   height: 16px;
   display: block;
+}
+
+.magic-landing .composer-file-chip__spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-top-color: rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+  animation: composer-file-spin 0.7s linear infinite;
+}
+
+.magic-landing .composer-file-chip__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .magic-landing .composer-file-chip__name {
@@ -932,6 +1016,20 @@
   white-space: nowrap;
 }
 
+.magic-landing .composer-file-chip.is-uploading .composer-file-chip__name {
+  flex: 0 1 auto;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.magic-landing .composer-file-chip__status {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
 .magic-landing .composer-file-chip__size {
   flex: 0 0 auto;
   font-size: 12px;
@@ -939,6 +1037,20 @@
   line-height: 16px;
   color: rgba(0, 0, 0, 0.35);
   white-space: nowrap;
+}
+
+@keyframes composer-file-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-landing .composer-file-chip__spinner {
+    animation: none;
+    border-top-color: rgba(0, 0, 0, 0.12);
+    border-right-color: rgba(0, 0, 0, 0.45);
+  }
 }
 
 .magic-landing .composer-file-chip__close {
@@ -1146,7 +1258,12 @@
   }
 
   .magic-landing .chat-bubble__files {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .magic-landing .chat-bubble__files:has(> :nth-child(2)) {
     width: 100%;
   }
 }
@@ -1160,4 +1277,56 @@
 
 .magic-landing .ld-agree-row.is-shaking {
   animation: shake 0.5s;
+}
+
+/* 下方入口上传中遮罩 */
+.magic-landing .ld-upload-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 550;
+  display: grid;
+  place-items: center;
+  background: rgba(22, 17, 45, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.magic-landing .ld-upload-mask__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 140px;
+  padding: 28px 32px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px -24px rgba(40, 24, 90, 0.45);
+}
+
+.magic-landing .ld-upload-mask__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(123, 97, 255, 0.18);
+  border-top-color: var(--accent-strong, #7b61ff);
+  border-radius: 50%;
+  animation: ld-upload-spin 0.7s linear infinite;
+}
+
+.magic-landing .ld-upload-mask__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b1530;
+}
+
+@keyframes ld-upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-landing .ld-upload-mask__spinner {
+    animation: none;
+    border-top-color: rgba(123, 97, 255, 0.18);
+    border-right-color: var(--accent-strong, #7b61ff);
+  }
 }

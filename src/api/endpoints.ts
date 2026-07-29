@@ -284,7 +284,15 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     auth: true,
   },
 
-  // ── Agent 对话（独立前缀 VITE_AGENT_BASE，非 /api）──
+  // ── Agent（独立前缀 VITE_AGENT_BASE，非 /api）────
+  {
+    key: "files.upload",
+    module: "Agent",
+    method: "POST",
+    path: "/files/upload",
+    description: "上传文件到 OSS（实际请求 /agent/files/upload，不走 request）",
+    auth: true,
+  },
   {
     key: "agent.chat",
     module: "Agent",

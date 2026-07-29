@@ -1,15 +1,16 @@
 // @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
-import { useNavigate } from "react-router-dom"
-import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId } from "@/api"
+import { useLocation, useNavigate } from "react-router-dom"
+import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatCardFrame } from "@/components"
 import { useAuth, getAuthSession } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
 import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
 import chatFileChipFail from "@/assets/chat/file-chip-fail.svg"
 import chatFileChipClose from "@/assets/chat/file-chip-close.svg"
+import chatFileCardCheck from "@/assets/chat/file-card-check.svg"
 import chatComposerPlus from "@/assets/chat/composer-plus.svg"
 import chatComposerDash from "@/assets/chat/composer-dash.svg"
 import chatComposerSend from "@/assets/chat/composer-send.svg"
@@ -70,13 +71,15 @@ const formatFileSizeLabel = (size) => {
 
 function ChatFileCard({ file }) {
   return (
-    <div className="chat-file-card">
-      <span className="chat-file-card__icon" aria-hidden />
+    <ChatCardFrame className="chat-file-card">
+      <span className="chat-file-card__icon" aria-hidden>
+        <img src={chatFileCardCheck} alt="" width={15} height={15} />
+      </span>
       <div className="chat-file-card__meta">
         <span className="chat-file-card__name" title={file.name}>{file.name}</span>
         <div className="chat-file-card__size">{formatFileSizeLabel(file.size)}</div>
       </div>
-    </div>
+    </ChatCardFrame>
   )
 }
 
@@ -88,16 +91,33 @@ function formatFileSizeCompact(bytes) {
   return `${(n / (1024 * 1024)).toFixed(1)}MB`
 }
 
-/** 输入框内上传文件 chip：成功 / 失败 */
+/** 输入框内上传文件 chip：上传中 / 成功 / 失败 */
 function ComposerFileChip({ file, onRemove }) {
   const isError = file.status === "error"
+  const isUploading = file.status === "uploading"
   return (
-    <div className={"composer-file-chip" + (isError ? " is-error" : "")}>
+    <div
+      className={
+        "composer-file-chip" +
+        (isError ? " is-error" : "") +
+        (isUploading ? " is-uploading" : "")
+      }
+      aria-busy={isUploading || undefined}
+    >
       <span className="composer-file-chip__icon" aria-hidden>
-        <img src={isError ? chatFileChipFail : chatFileChipDoc} alt="" width={16} height={16} />
+        {isUploading ? (
+          <span className="composer-file-chip__spinner" />
+        ) : (
+          <img src={isError ? chatFileChipFail : chatFileChipDoc} alt="" width={16} height={16} />
+        )}
       </span>
       {isError ? (
         <span className="composer-file-chip__name">{file.errorMessage || "简历解析失败"}</span>
+      ) : isUploading ? (
+        <div className="composer-file-chip__meta">
+          <span className="composer-file-chip__name" title={file.name}>{file.name}</span>
+          <span className="composer-file-chip__status">上传中...</span>
+        </div>
       ) : (
         <>
           <span className="composer-file-chip__name" title={file.name}>{file.name}</span>
@@ -317,14 +337,24 @@ function isMaterialFileAllowed(file) {
   return MATERIAL_FILE_TYPES.includes(ext)
 }
 
-function createHeroFileItem(file, status = "success") {
+function createHeroFileItem(file, status = "uploading") {
   return {
     id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     file,
     name: file.name,
     size: file.size,
     status,
+    fileId: null,
+    errorMessage: null,
   }
+}
+
+function patchHeroFile(files, id, patch) {
+  const idx = files.findIndex((f) => f.id === id)
+  if (idx === -1) return files
+  const next = [...files]
+  next[idx] = { ...next[idx], ...patch }
+  return next
 }
 
 const HERO_VOICE_MAX_COUNT = 3
@@ -491,6 +521,63 @@ const INTRO_MSG = {
   at: Date.now(),
 }
 
+const CHAT_CACHE_PREFIX = "mr:chat:"
+
+function serializeChatForCache(chat) {
+  return (chat || [])
+    .filter((m) => !(m.role === "ai" && m.streaming && !m.text))
+    .map((m) => ({
+      role: m.role,
+      text: m.text || "",
+      at: m.at || Date.now(),
+      profile: m.profile || null,
+      files: (m.files || []).map((f) => ({
+        name: f.name,
+        size: f.size,
+        fileId: f.fileId || null,
+      })),
+      // blob: 语音刷新后不可用，仅保留占位信息
+      voices: (m.voices || []).map((v) => ({
+        id: v.id,
+        duration: v.duration,
+        bars: v.bars,
+      })),
+      streaming: false,
+    }))
+}
+
+function loadChatCache(sessionId) {
+  if (!sessionId || typeof sessionStorage === "undefined") return null
+  try {
+    const raw = sessionStorage.getItem(CHAT_CACHE_PREFIX + sessionId)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data || !Array.isArray(data.chat) || !data.chat.length) return null
+    return {
+      chat: data.chat,
+      chatStage: data.chatStage || "intro",
+    }
+  } catch {
+    return null
+  }
+}
+
+function saveChatCache(sessionId, chat, chatStage) {
+  if (!sessionId || typeof sessionStorage === "undefined") return
+  try {
+    sessionStorage.setItem(
+      CHAT_CACHE_PREFIX + sessionId,
+      JSON.stringify({
+        chat: serializeChatForCache(chat),
+        chatStage: chatStage || "intro",
+        savedAt: Date.now(),
+      }),
+    )
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 const LEGAL_DOCS = {
   terms: {
     title: "用户协议",
@@ -627,9 +714,19 @@ const QR_CELLS = buildQr()
 
 export function LandingApp() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isLoggedIn, setSession, user, clearSession, refreshToken } = useAuth()
 
-  const [screen, setScreen] = useState("landing") // landing | chat | fullAuth
+  /** chat 由 URL /chat 或 /chat/:id 驱动；此处仅 landing | fullAuth */
+  const [screen, setScreen] = useState("landing") // landing | fullAuth
+  const isChat =
+    location.pathname === "/chat" ||
+    location.pathname.startsWith("/chat/")
+  const showLanding = !isChat && screen !== "fullAuth"
+  const sessionFromUrl = parseChatSessionIdFromPath(location.pathname)
+  const initialChatCacheRef = useRef(
+    sessionFromUrl ? loadChatCache(sessionFromUrl) : null,
+  )
   const [modalOpen, setModalOpen] = useState(false)
   const [authReturn, setAuthReturn] = useState("landing") // landing | chat
   const [tab, setTab] = useState("account") // account | wechat
@@ -672,10 +769,16 @@ export function LandingApp() {
   const [heroVoices, setHeroVoices] = useState([])
   const [heroRecording, setHeroRecording] = useState(null)
   const [voicePlayingId, setVoicePlayingId] = useState(null)
+  /** 下方入口（简历/材料）上传中遮罩 */
+  const [entryUploading, setEntryUploading] = useState(false)
   const [chatInput, setChatInput] = useState("")
-  const [chatStage, setChatStage] = useState("intro") // intro | ready | generating | done
+  const [chatStage, setChatStage] = useState(
+    () => initialChatCacheRef.current?.chatStage || "intro",
+  ) // intro | ready | generating | done
   const [chatStreaming, setChatStreaming] = useState(false)
-  const [chat, setChat] = useState([INTRO_MSG])
+  const [chat, setChat] = useState(
+    () => initialChatCacheRef.current?.chat || [INTRO_MSG],
+  )
 
   // 让锁定倒计时每秒刷新
   const timers = useRef({})
@@ -686,12 +789,37 @@ export function LandingApp() {
   const chatScrollRef = useRef(null)
   const resumeUploadInputRef = useRef(null)
   const materialUploadInputRef = useRef(null)
-  const chatSessionIdRef = useRef("")
+  const chatSessionIdRef = useRef(sessionFromUrl || "")
   const chatAbortRef = useRef(null)
   const heroVoiceRecorderRef = useRef(null)
   const heroVoiceAudioRef = useRef(null)
   const heroVoicesRef = useRef(heroVoices)
   heroVoicesRef.current = heroVoices
+
+  const syncChatSessionUrl = useCallback(
+    (sessionId, { replace = true } = {}) => {
+      const id = String(sessionId || "").trim()
+      if (!id) return
+      chatSessionIdRef.current = id
+      const next = chatSessionUrl(id)
+      if (location.pathname !== next) {
+        navigate(next, { replace })
+      }
+    },
+    [location.pathname, navigate],
+  )
+
+  const ensureChatSession = useCallback(
+    ({ replace = true } = {}) => {
+      if (!chatSessionIdRef.current) {
+        chatSessionIdRef.current = createAgentSessionId()
+      }
+      syncChatSessionUrl(chatSessionIdRef.current, { replace })
+      return chatSessionIdRef.current
+    },
+    [syncChatSessionUrl],
+  )
+
   useEffect(() => {
     const t = timers.current
     return () => {
@@ -702,12 +830,38 @@ export function LandingApp() {
     }
   }, [])
 
+  // 进入 /chat（无 id）时分配会话并跳到 /chat/:id；有 id 则灌入 ref
   useEffect(() => {
-    if (screen !== "chat") return
+    if (!isChat) return
+    const fromUrl = parseChatSessionIdFromPath(location.pathname)
+    if (fromUrl) {
+      if (chatSessionIdRef.current !== fromUrl) {
+        chatSessionIdRef.current = fromUrl
+        const cached = loadChatCache(fromUrl)
+        if (cached?.chat?.length) {
+          setChat(cached.chat)
+          setChatStage(cached.chatStage || "intro")
+        }
+      }
+      return
+    }
+    // 裸 /chat → 生成或沿用当前会话并写入 URL
+    ensureChatSession({ replace: true })
+  }, [isChat, location.pathname, ensureChatSession])
+
+  // 会话消息持久化，刷新后按 sessionId 恢复
+  useEffect(() => {
+    if (!isChat || chatStreaming) return
+    const id = chatSessionIdRef.current || parseChatSessionIdFromPath(location.pathname)
+    if (!id) return
+    saveChatCache(id, chat, chatStage)
+  }, [chat, chatStage, chatStreaming, isChat, location.pathname])
+  useEffect(() => {
+    if (!isChat) return
     const el = chatScrollRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [screen, chat, chatStage, chatStreaming])
+  }, [isChat, chat, chatStage, chatStreaming])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -1169,7 +1323,7 @@ export function LandingApp() {
     }
 
     if (ret === "chat") {
-      setScreen("chat")
+      ensureChatSession({ replace: false })
       doGenerate()
     }
     toast("登录成功，欢迎来到 Magic Resume 🎉")
@@ -1197,31 +1351,66 @@ export function LandingApp() {
     e.target.value = ""
     if (!picked.length) return
 
-    setHeroFiles((prev) => {
-      const next = [...prev]
-      for (const file of picked) {
-        if (next.length >= HERO_FILE_MAX_COUNT) {
-          toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
-          break
-        }
-        if (!isHeroFileAllowed(file)) {
-          toast(`${file.name} 格式不支持`)
-          continue
-        }
-        if (file.size > HERO_FILE_MAX_SIZE) {
-          toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
-          continue
-        }
-        if (next.some((item) => item.name === file.name && item.size === file.size)) continue
-        next.push(createHeroFileItem(file))
+    // 先基于当前列表同步算出待上传批次，再 setState。
+    // 不能把「收集 added」放进 setState updater：updater 可能异步执行，
+    // 外面立刻读 added 会是空数组，导致根本不调 upload。
+    const prev = heroFiles
+    const next = [...prev]
+    const added = []
+    for (const file of picked) {
+      if (next.length >= HERO_FILE_MAX_COUNT) {
+        toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
+        break
       }
-      return next
-    })
+      if (!isHeroFileAllowed(file)) {
+        toast(`${file.name} 格式不支持`)
+        continue
+      }
+      if (file.size > HERO_FILE_MAX_SIZE) {
+        toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
+        continue
+      }
+      if (next.some((item) => item.name === file.name && item.size === file.size)) continue
+      const item = createHeroFileItem(file, "uploading")
+      next.push(item)
+      added.push(item)
+    }
+    if (!added.length) return
+
+    setHeroFiles(next)
+
+    void Promise.all(
+      added.map(async (item) => {
+        try {
+          const result = await uploadFile(item.file, { parse: true })
+          setHeroFiles((files) =>
+            patchHeroFile(files, item.id, {
+              status: "success",
+              fileId: result.file_id,
+              name: result.filename || item.name,
+              size: result.size_bytes ?? item.size,
+              errorMessage: null,
+            }),
+          )
+        } catch (err) {
+          const message =
+            err instanceof ApiError && err.message
+              ? err.message
+              : "简历解析失败"
+          setHeroFiles((files) =>
+            patchHeroFile(files, item.id, {
+              status: "error",
+              errorMessage: message,
+            }),
+          )
+        }
+      }),
+    )
   }
   const removeHeroFile = (id) => setHeroFiles((files) => files.filter((f) => f.id !== id))
 
   const sendChatMessage = useCallback(
-    async (message) => {
+    async (message, fileIds = []) => {
       const trimmed = message.trim()
       if (!trimmed) return
 
@@ -1235,6 +1424,7 @@ export function LandingApp() {
       if (!chatSessionIdRef.current) {
         chatSessionIdRef.current = createAgentSessionId()
       }
+      syncChatSessionUrl(chatSessionIdRef.current, { replace: true })
 
       chatAbortRef.current?.abort()
       const ac = new AbortController()
@@ -1275,6 +1465,9 @@ export function LandingApp() {
       }
 
       let doneReceived = false
+      const ids = (Array.isArray(fileIds) ? fileIds : [])
+        .map((id) => (id == null ? "" : String(id).trim()))
+        .filter(Boolean)
 
       try {
         await streamAgentChat(
@@ -1284,13 +1477,17 @@ export function LandingApp() {
             message: trimmed,
             workflow: "career_explore",
             stream_output: true,
+            file_ids: ids,
           },
           {
             onDelta: (delta) => patchAiText(aiText + delta),
             onFull: (text) => patchAiText(text),
             onDone: (ev) => {
               doneReceived = true
-              if (ev.session_id) chatSessionIdRef.current = ev.session_id
+              if (ev.session_id) {
+                chatSessionIdRef.current = ev.session_id
+                syncChatSessionUrl(ev.session_id, { replace: true })
+              }
               finishAi(!!ev.ready_generate)
             },
             onError: (err) => {
@@ -1310,12 +1507,12 @@ export function LandingApp() {
         finishAi(false)
       }
     },
-    [toast, user?.id],
+    [toast, user?.id, syncChatSessionUrl],
   )
 
   const enterChatWithContent = ({ text = "", files = [], voices = [] }) => {
     stopHeroVoiceRecording(true)
-    setScreen("chat")
+    ensureChatSession({ replace: false })
     setHeroInput(() => formatHeroIdentity(heroIdentity))
     setHeroFiles([])
     setHeroVoices([])
@@ -1330,21 +1527,46 @@ export function LandingApp() {
       },
     ])
     setChatStage("intro")
-    void sendChatMessage(buildAgentChatMessage(text, files))
+    const fileIds = files.map((f) => f.fileId).filter(Boolean)
+    void sendChatMessage(buildAgentChatMessage(text, files), fileIds)
+  }
+  /** 落地页输入框当前可带入对话的内容（文本 / 已上传成功附件 / 语音） */
+  const snapshotHeroComposer = () => ({
+    text: heroInput.trim(),
+    files: heroFiles
+      .filter((f) => f.status === "success")
+      .map((f) => ({
+        name: f.name,
+        size: f.size,
+        fileId: f.fileId,
+      })),
+    voices: heroVoices.map((voice) => ({
+      id: voice.id,
+      url: voice.url,
+      duration: voice.duration,
+      bars: voice.bars,
+    })),
+  })
+  const mergeComposerFiles = (base, extra) => {
+    const next = [...base]
+    for (const file of extra) {
+      if (next.some((item) => item.name === file.name && item.size === file.size)) continue
+      next.push(file)
+    }
+    return next
   }
   const heroSubmitCore = () => {
-    enterChatWithContent({
-      text: heroInput.trim(),
-      files: heroFiles.map((f) => ({ name: f.name, size: f.size })),
-      voices: heroVoices.map((voice) => ({
-        id: voice.id,
-        url: voice.url,
-        duration: voice.duration,
-        bars: voice.bars,
-      })),
-    })
+    const composer = snapshotHeroComposer()
+    enterChatWithContent(composer)
   }
-  const openResumeUploadPicker = () => resumeUploadInputRef.current?.click()
+  const openResumeUploadPicker = () => {
+    if (entryUploading) return
+    if (heroFiles.some((f) => f.status === "uploading")) {
+      toast("文件上传中，请稍候")
+      return
+    }
+    resumeUploadInputRef.current?.click()
+  }
   const handleResumeUpload = (e) => {
     const file = e.target.files?.[0]
     e.target.value = ""
@@ -1357,22 +1579,49 @@ export function LandingApp() {
       toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
       return
     }
-    const submitResume = () =>
-      enterChatWithContent({
-        text: "",
-        files: [{ name: file.name, size: file.size }],
-      })
+    const submitResume = () => {
+      void (async () => {
+        setEntryUploading(true)
+        try {
+          const result = await uploadFile(file, { parse: true })
+          const composer = snapshotHeroComposer()
+          setEntryUploading(false)
+          enterChatWithContent({
+            text: composer.text,
+            files: mergeComposerFiles(composer.files, [
+              {
+                name: result.filename || file.name,
+                size: result.size_bytes ?? file.size,
+                fileId: result.file_id,
+              },
+            ]),
+            voices: composer.voices,
+          })
+        } catch (err) {
+          setEntryUploading(false)
+          if (err instanceof ApiError && err.handled) return
+          toast(err instanceof ApiError ? err.message : "上传失败，请稍后重试")
+        }
+      })()
+    }
     authGateRef.current?.withAuth("resumeUpload", submitResume)
   }
-  const openMaterialUploadPicker = () => materialUploadInputRef.current?.click()
+  const openMaterialUploadPicker = () => {
+    if (entryUploading) return
+    if (heroFiles.some((f) => f.status === "uploading")) {
+      toast("文件上传中，请稍候")
+      return
+    }
+    materialUploadInputRef.current?.click()
+  }
   const handleMaterialUpload = (e) => {
     const picked = Array.from(e.target.files || [])
     e.target.value = ""
     if (!picked.length) return
 
-    const files = []
+    const localFiles = []
     for (const file of picked) {
-      if (files.length >= MATERIAL_FILE_MAX_COUNT) {
+      if (localFiles.length >= MATERIAL_FILE_MAX_COUNT) {
         toast(`最多上传 ${MATERIAL_FILE_MAX_COUNT} 个文件`)
         break
       }
@@ -1384,23 +1633,58 @@ export function LandingApp() {
         toast(`${file.name} 超过 ${HERO_FILE_MAX_SIZE_MB} MB`)
         continue
       }
-      if (files.some((item) => item.name === file.name && item.size === file.size)) continue
-      files.push({ name: file.name, size: file.size })
+      if (localFiles.some((item) => item.name === file.name && item.size === file.size)) continue
+      localFiles.push(file)
     }
-    if (!files.length) return
+    if (!localFiles.length) return
 
-    const submitMaterials = () =>
-      enterChatWithContent({
-        text: "",
-        files,
-      })
+    const submitMaterials = () => {
+      void (async () => {
+        setEntryUploading(true)
+        try {
+          const uploaded = await Promise.all(
+            localFiles.map(async (file) => {
+              const result = await uploadFile(file, { parse: true })
+              return {
+                name: result.filename || file.name,
+                size: result.size_bytes ?? file.size,
+                fileId: result.file_id,
+              }
+            }),
+          )
+          const composer = snapshotHeroComposer()
+          setEntryUploading(false)
+          enterChatWithContent({
+            text: composer.text,
+            files: mergeComposerFiles(composer.files, uploaded),
+            voices: composer.voices,
+          })
+        } catch (err) {
+          setEntryUploading(false)
+          if (err instanceof ApiError && err.handled) return
+          toast(err instanceof ApiError ? err.message : "上传失败，请稍后重试")
+        }
+      })()
+    }
     authGateRef.current?.withAuth("materialUpload", submitMaterials)
   }
   const hasHeroContent = () => {
     const v = heroInput.trim()
-    return !!(v || heroFiles.length || heroVoices.length)
+    const readyFiles = heroFiles.some((f) => f.status === "success")
+    return !!(v || readyFiles || heroVoices.length)
   }
+  /** 上方入口：有上传失败 / 上传中时不允许发送 */
+  const canHeroSend = () => {
+    if (heroFiles.some((f) => f.status === "error" || f.status === "uploading")) return false
+    return hasHeroContent()
+  }
+  const heroSendDisabled = !canHeroSend()
   const heroSubmit = () => {
+    if (heroFiles.some((f) => f.status === "uploading")) {
+      toast("文件上传中，请稍候")
+      return
+    }
+    if (heroFiles.some((f) => f.status === "error")) return
     if (!hasHeroContent()) return
     authGateRef.current?.withAuth("heroSubmit", heroSubmitCore)
   }
@@ -1420,12 +1704,30 @@ export function LandingApp() {
   }
   const hasChatContent = () => {
     const v = chatInput.trim()
-    return !!(v || heroFiles.length || heroVoices.length)
+    const readyFiles = heroFiles.some((f) => f.status === "success")
+    return !!(v || readyFiles || heroVoices.length)
   }
+  const canChatSend = () => {
+    if (chatStreaming) return false
+    if (heroFiles.some((f) => f.status === "error" || f.status === "uploading")) return false
+    return hasChatContent()
+  }
+  const chatSendDisabled = !canChatSend()
   const chatSend = () => {
-    if (chatStreaming || !hasChatContent()) return
+    if (!canChatSend()) {
+      if (heroFiles.some((f) => f.status === "uploading")) {
+        toast("文件上传中，请稍候")
+      }
+      return
+    }
     const v = chatInput.trim()
-    const files = heroFiles.map((f) => ({ name: f.name, size: f.size }))
+    const files = heroFiles
+      .filter((f) => f.status === "success")
+      .map((f) => ({
+        name: f.name,
+        size: f.size,
+        fileId: f.fileId,
+      }))
     const voices = heroVoices.map((voice) => ({
       id: voice.id,
       url: voice.url,
@@ -1449,7 +1751,8 @@ export function LandingApp() {
     if (chatInputRef.current) {
       chatInputRef.current.style.height = "auto"
     }
-    void sendChatMessage(buildAgentChatMessage(v, files))
+    const fileIds = files.map((f) => f.fileId).filter(Boolean)
+    void sendChatMessage(buildAgentChatMessage(v, files), fileIds)
   }
   const generateResume = () => {
     if (!isLoggedIn) openAuth("chat")
@@ -1461,6 +1764,9 @@ export function LandingApp() {
     timers.current.gen = setTimeout(() => setChatStage("done"), 1600)
   }
   const enterEditor = () => navigate("/console")
+  const openWorkbench = () => {
+    authGateRef.current?.withAuth("console", () => navigate("/console"))
+  }
 
   const openPersonalCenter = () => {
     setUserMenuOpen(false)
@@ -1480,6 +1786,12 @@ export function LandingApp() {
   }
 
   const gotoLanding = () => {
+    chatAbortRef.current?.abort()
+    chatSessionIdRef.current = ""
+    setChatStreaming(false)
+    setChat([INTRO_MSG])
+    setChatStage("intro")
+    navigate("/")
     setScreen("landing")
     setModalOpen(false)
   }
@@ -1559,7 +1871,7 @@ export function LandingApp() {
       />
 
       {/* ===================== LANDING ===================== */}
-      {screen === "landing" && (
+      {showLanding && (
         <div className="ld-150">
 
           {/* header */}
@@ -1571,31 +1883,39 @@ export function LandingApp() {
               <E as="button" className="ld-180" onClick={() => navigate("/surprise")}>✦ 惊喜</E>
             </div>
             {isLoggedIn ? (
-              <div ref={userMenuRef} className="ld-145">
-                <button
-                  type="button"
-                  className="ld-144"
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                >
-                  <div className="ld-143">{user?.nickname?.slice(0, 1) || "你"}</div>
-                  <span className="ld-142">{user?.nickname || "用户"}</span>
-                  <ChevronDownIcon color={userMenuOpen ? "#7b61ff" : "#9890AE"} />
-                </button>
-                {userMenuOpen && (
-                  <div className="ld-141">
-                    <div className="ld-140">
-                      <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
-                        个人中心
-                      </button>
-                      <button type="button" className="user-menu-item danger" onClick={handleLogout}>
-                        退出登录
-                      </button>
+              <div className="ld-139">
+                <E as="button" className="ld-workbench" onClick={openWorkbench}>
+                  简历工作台
+                </E>
+                <div ref={userMenuRef} className="ld-145">
+                  <button
+                    type="button"
+                    className="ld-144"
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                  >
+                    <div className="ld-143">{user?.nickname?.slice(0, 1) || "你"}</div>
+                    <span className="ld-142">{user?.nickname || "用户"}</span>
+                    <ChevronDownIcon color={userMenuOpen ? "#7b61ff" : "#9890AE"} />
+                  </button>
+                  {userMenuOpen && (
+                    <div className="ld-141">
+                      <div className="ld-140">
+                        <button type="button" className="user-menu-item" onClick={openPersonalCenter}>
+                          个人中心
+                        </button>
+                        <button type="button" className="user-menu-item danger" onClick={handleLogout}>
+                          退出登录
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               <div className="ld-139">
+                <E as="button" className="ld-workbench" onClick={openWorkbench}>
+                  简历工作台
+                </E>
                 <E as="button" className="ld-179" onClick={openAuthLogin}>登录</E>
                 <E as="button" className="ld-178" onClick={openAuthCreate}>免费注册</E>
               </div>
@@ -1757,8 +2077,18 @@ export function LandingApp() {
                       {HERO_FILE_UPLOAD_TIP}
                     </span>
                   </span>
-                  <RequireAuthAction returnTo="heroSubmit" shouldRun={hasHeroContent} onAuthorized={heroSubmitCore}>
-                    <E as="button" className="ld-176" title="发送">
+                  <RequireAuthAction returnTo="heroSubmit" shouldRun={canHeroSend} onAuthorized={heroSubmitCore}>
+                    <E
+                      as="button"
+                      className={"ld-176" + (heroSendDisabled ? " is-disabled" : "")}
+                      title={
+                        heroFiles.some((f) => f.status === "error")
+                          ? "有文件上传失败，请移除后重试"
+                          : "发送"
+                      }
+                      disabled={heroSendDisabled}
+                      aria-disabled={heroSendDisabled}
+                    >
                       <ArrowUpIcon />
                     </E>
                   </RequireAuthAction>
@@ -1828,7 +2158,7 @@ export function LandingApp() {
       )}
 
       {/* ===================== CHAT ===================== */}
-      {screen === "chat" && (
+      {isChat && (
         <div className="ld-extra-3 chat-page">
           <header className="chat-page__header">
             <div className="chat-page__header-left">
@@ -2013,10 +2343,15 @@ export function LandingApp() {
                       <E
                         as="button"
                         className={
-                          "chat-composer__send" +
-                          (chatStreaming || !hasChatContent() ? " is-disabled" : "")
+                          "chat-composer__send" + (chatSendDisabled ? " is-disabled" : "")
                         }
-                        title="发送"
+                        title={
+                          heroFiles.some((f) => f.status === "error")
+                            ? "有文件上传失败，请移除后重试"
+                            : "发送"
+                        }
+                        disabled={chatSendDisabled}
+                        aria-disabled={chatSendDisabled}
                         onClick={chatSend}
                       >
                         <span className="chat-composer__send-icon">
@@ -2246,6 +2581,15 @@ export function LandingApp() {
       {/* ===================== TOAST ===================== */}
       {toastMsg && (
         <div className="ld-0">{toastMsg}</div>
+      )}
+
+      {entryUploading && (
+        <div className="ld-upload-mask" role="status" aria-live="polite">
+          <div className="ld-upload-mask__card">
+            <span className="ld-upload-mask__spinner" aria-hidden />
+            <span className="ld-upload-mask__text">上传中</span>
+          </div>
+        </div>
       )}
 
     </div>

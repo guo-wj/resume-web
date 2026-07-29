@@ -1,6 +1,7 @@
 import { useState } from "react"
 import headIcon from "@/assets/chat/color-book.svg"
 import checkIcon from "@/assets/chat/template-check.svg"
+import { ChatCardFrame } from "../ChatCardFrame"
 import type { ChatTemplateCardData, ChatTemplateOption } from "./types"
 import "./index.scss"
 
@@ -44,7 +45,7 @@ export function ChatTemplateCard({
   }
 
   return (
-    <div className={`chat-template-card${className ? ` ${className}` : ""}`}>
+    <ChatCardFrame className={`chat-template-card${className ? ` ${className}` : ""}`}>
       <div className="chat-template-card__head">
         <span className="chat-template-card__head-icon">
           <img src={headIcon} alt="" width={18} height={18} />
@@ -105,6 +106,6 @@ export function ChatTemplateCard({
           )
         })}
       </div>
-    </div>
+    </ChatCardFrame>
   )
 }

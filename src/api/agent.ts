@@ -7,8 +7,9 @@ import { extractErrorMessage, handleUnauthorized } from "./unauthorized"
 const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, "")
 /**
  * 对外路径（经 Nginx /agent/ 转发到 8888，去掉 /agent 前缀）：
- * - /agent/health → 127.0.0.1:8888/health
- * - /agent/chat   → 127.0.0.1:8888/chat
+ * - /agent/health       → 127.0.0.1:8888/health
+ * - /agent/chat         → 127.0.0.1:8888/chat
+ * - /agent/files/upload → 127.0.0.1:8888/files/upload
  */
 const AGENT_CHAT_PATH =
   import.meta.env.VITE_AGENT_CHAT_PATH || `${AGENT_BASE}/chat`
@@ -31,6 +32,8 @@ export interface AgentChatRequest {
   message: string
   workflow: AgentWorkflow | string
   stream_output?: boolean
+  /** 已上传文件的 file_id 列表 */
+  file_ids?: string[]
 }
 
 export interface AgentChatDoneEvent {
@@ -168,6 +171,44 @@ export function buildAgentChatMessage(text = "", files: Array<{ name: string }> 
   return "你好"
 }
 
+/** 生成会话 ID（UUID，便于挂在 /chat/:id） */
 export function createAgentSessionId() {
-  return `s_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID()
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0
+    const v = ch === "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+/** URL path 段编码 */
+export function encodeChatSessionPathId(sessionId: string) {
+  return encodeURIComponent(String(sessionId || "").trim())
+}
+
+export function decodeChatSessionPathId(raw: string) {
+  const text = String(raw || "").trim()
+  if (!text) return ""
+  try {
+    return decodeURIComponent(text)
+  } catch {
+    return text
+  }
+}
+
+export function chatSessionUrl(sessionId: string) {
+  const id = String(sessionId || "").trim()
+  if (!id) return "/chat"
+  return `/chat/${encodeChatSessionPathId(id)}`
+}
+
+/** 从 pathname 解析 /chat/:sessionId（排除裸 /chat） */
+export function parseChatSessionIdFromPath(pathname: string) {
+  const path = String(pathname || "").replace(/\/+$/, "") || "/"
+  if (path === "/chat") return ""
+  const m = path.match(/^\/chat\/([^/]+)$/)
+  if (!m?.[1]) return ""
+  return decodeChatSessionPathId(m[1])
 }

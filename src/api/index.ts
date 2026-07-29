@@ -10,6 +10,10 @@ export {
   streamAgentChat,
   buildAgentChatMessage,
   createAgentSessionId,
+  encodeChatSessionPathId,
+  decodeChatSessionPathId,
+  chatSessionUrl,
+  parseChatSessionIdFromPath,
   HERO_GOAL_WORKFLOW,
   resolveAgentChatUrl,
 } from "./agent"
@@ -93,4 +97,6 @@ export {
   loadSubscriptionUsageData,
   FEATURE_COLORS,
 } from "./credit"
+export { uploadFile, resolveAgentUploadUrl } from "./files"
+export type { UploadFileResult, UploadFileOptions } from "./files"
 export { ApiError } from "./types"

@@ -3,7 +3,7 @@
  *
  * - APP_ROUTES：React Router 页面级路由
  * - CONSOLE_NAV：工作台 /console 内 hash 子路由
- * - LANDING_SCREENS：首页 landing 内部视图（非 URL 路由）
+ * - LANDING_SCREENS：首页 landing 内部视图（非 URL；chat 已独立为 /chat）
  */
 
 export interface AppRoute {
@@ -44,8 +44,22 @@ export const APP_ROUTES: AppRoute[] = [
     path: "/",
     name: "landing",
     component: "LandingApp",
-    description: "首页 · 登录注册 · AI 对话创建简历",
+    description: "首页 · 登录注册",
     nav: true,
+  },
+  {
+    path: "/chat",
+    name: "chat",
+    component: "LandingApp",
+    description: "AI 对话 · /chat/:sessionId 挂载会话",
+    nav: false,
+  },
+  {
+    path: "/chat/:sessionId",
+    name: "chatSession",
+    component: "LandingApp",
+    description: "AI 对话会话页（刷新保持同一 session）",
+    nav: false,
   },
   {
     path: "/console",
@@ -132,10 +146,9 @@ export const CONSOLE_GROUP_TITLE: Record<string, string> = Object.fromEntries(
   CONSOLE_NAV.map((item) => [item.id, item.label]),
 )
 
-/** 首页内部视图（组件 state，不反映在 URL） */
+/** 首页内部视图（fullAuth 仍为组件 state；chat 已独立为 /chat） */
 export const LANDING_SCREENS: LandingScreen[] = [
   { id: "landing", label: "落地页", description: "营销首页" },
-  { id: "chat", label: "AI 对话", description: "对话式创建简历" },
   { id: "fullAuth", label: "整屏登录", description: "全屏登录页（开发调试）" },
 ]
 

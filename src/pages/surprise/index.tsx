@@ -1,8 +1,10 @@
+import { useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ActionCard } from "./components/ActionCard"
 import { InsightSectionCard } from "./components/InsightSectionCard"
 import { ReviewPanel } from "./components/ReviewPanel"
 import { SurpriseHeader } from "./components/SurpriseHeader"
+import { exportSurprisePagePng } from "./exportPagePng"
 import { SURPRISE_MOCK } from "./mock"
 import type { SurprisePageData } from "./types"
 import "./index.scss"
@@ -15,6 +17,22 @@ import "./index.scss"
  */
 export function SurpriseApp({ data = SURPRISE_MOCK }: { data?: SurprisePageData }) {
   const navigate = useNavigate()
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    const target = bodyRef.current
+    if (!target || exporting) return
+    setExporting(true)
+    try {
+      await exportSurprisePagePng(target)
+    } catch (err) {
+      console.error(err)
+      window.alert("导出失败，请稍后重试")
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div className="surprise-page">
@@ -26,9 +44,11 @@ export function SurpriseApp({ data = SURPRISE_MOCK }: { data?: SurprisePageData 
           statusBadge={data.header.statusBadge}
           ctaLabel={data.header.ctaLabel}
           onCta={() => navigate("/")}
+          onExport={handleExport}
+          exporting={exporting}
         />
 
-        <div className="surprise-page__body">
+        <div className="surprise-page__body" ref={bodyRef}>
           <aside className="surprise-page__left">
             {data.actionCards.map((card) => (
               <ActionCard key={card.id} card={card} />

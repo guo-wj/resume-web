@@ -6,7 +6,7 @@ export const SURPRISE_MOCK: SurprisePageData = {
     title: "这是我读到的你",
     subtitle: "从你聊的那些事里，我写成这样一份简历",
     statusBadge: "简历已生成",
-    ctaLabel: "进入Dashboard",
+    ctaLabel: "进入简历工作台",
   },
   actionCards: [
     {
@@ -14,7 +14,7 @@ export const SURPRISE_MOCK: SurprisePageData = {
       title: "这里是标题",
       description:
         "这里是内容描述这里是内容描述这里是内容描述这里是内容描述",
-      ctaLabel: "进入Dashboard",
+      ctaLabel: "进入简历工作台",
       tone: "coral",
     },
     {
@@ -22,7 +22,7 @@ export const SURPRISE_MOCK: SurprisePageData = {
       title: "这里是标题",
       description:
         "这里是内容描述这里是内容描述这里是内容描述这里是内容描述",
-      ctaLabel: "进入Dashboard",
+      ctaLabel: "进入简历工作台",
       tone: "gold",
     },
     {
@@ -30,7 +30,7 @@ export const SURPRISE_MOCK: SurprisePageData = {
       title: "这里是标题",
       description:
         "这里是内容描述这里是内容描述这里是内容描述这里是内容描述",
-      ctaLabel: "进入Dashboard",
+      ctaLabel: "进入简历工作台",
       tone: "purple",
     },
   ],

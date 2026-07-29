@@ -1,11 +1,9 @@
 /* 用户画像卡片 — Figma 27:20 header / 27:30 fields */
 .chat-profile-card {
   width: min(420px, 100%);
-  border-radius: 16px;
+  border-radius: calc(100% * 26 / 380) / calc(100% * 16.5 / 187);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.82);
-  border: 0.889px solid rgba(28, 93, 95, 0.14);
-  box-shadow: 0 2px 24px rgba(28, 93, 95, 0.08);
 }
 
 .chat-profile-card__head {

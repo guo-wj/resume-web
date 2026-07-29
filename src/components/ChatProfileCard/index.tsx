@@ -2,6 +2,7 @@ import headIcon from "@/assets/chat/profile-book.svg"
 import userIcon from "@/assets/chat/profile-user.svg"
 import phoneIcon from "@/assets/chat/profile-phone.svg"
 import targetIcon from "@/assets/chat/profile-target.svg"
+import { ChatCardFrame } from "../ChatCardFrame"
 import type { ChatProfileCardData, ChatProfileField, ChatProfileFieldIcon } from "./types"
 import "./index.scss"
 
@@ -25,7 +26,7 @@ export function ChatProfileCard({ data, className }: ChatProfileCardProps) {
   if (!fields.length) return null
 
   return (
-    <div className={`chat-profile-card${className ? ` ${className}` : ""}`}>
+    <ChatCardFrame className={`chat-profile-card${className ? ` ${className}` : ""}`}>
       <div className="chat-profile-card__head">
         <span className="chat-profile-card__head-icon">
           <img src={headIcon} alt="" width={18} height={18} />
@@ -40,7 +41,7 @@ export function ChatProfileCard({ data, className }: ChatProfileCardProps) {
           <ProfileFieldRow key={field.key} field={field} showDivider={i > 0} />
         ))}
       </div>
-    </div>
+    </ChatCardFrame>
   )
 }
 

@@ -1,0 +1,25 @@
+/* 非文字聊天卡片：chat-card.svg 手绘边框（随宽高拉伸） */
+.chat-card-frame {
+  position: relative;
+  border: 0 !important;
+  box-shadow: none;
+  box-sizing: border-box;
+  /* 与 SVG viewBox 380×187 圆角（约 rx=26 / ry=16.5）同比例，随拉伸同步 */
+  border-radius: calc(100% * 26 / 380) / calc(100% * 16.5 / 187);
+}
+
+.chat-card-frame__border {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  line-height: 0;
+  overflow: visible;
+}
+
+.chat-card-frame__border > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}

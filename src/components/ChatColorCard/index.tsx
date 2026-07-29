@@ -1,6 +1,7 @@
 import { useState } from "react"
 import headIcon from "@/assets/chat/color-book.svg"
 import checkIcon from "@/assets/chat/color-check.svg"
+import { ChatCardFrame } from "../ChatCardFrame"
 import type { ChatColorCardData, ChatColorOption } from "./types"
 import "./index.scss"
 
@@ -31,7 +32,7 @@ export function ChatColorCard({ data, selectedId, onSelect, className }: ChatCol
   }
 
   return (
-    <div className={`chat-color-card${className ? ` ${className}` : ""}`}>
+    <ChatCardFrame className={`chat-color-card${className ? ` ${className}` : ""}`}>
       <div className="chat-color-card__head">
         <span className="chat-color-card__head-icon">
           <img src={headIcon} alt="" width={18} height={18} />
@@ -63,6 +64,6 @@ export function ChatColorCard({ data, selectedId, onSelect, className }: ChatCol
           )
         })}
       </div>
-    </div>
+    </ChatCardFrame>
   )
 }

@@ -51,15 +51,17 @@ export async function request<T = unknown>(
   const authToken = token ?? getAccessToken()
   const gate = createTimeoutGate(timeout, signal ?? undefined)
 
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData
+
   try {
     const res = await fetch(url, {
       method: ep.method,
       headers: {
-        ...(body != null ? { "Content-Type": "application/json" } : {}),
+        ...(body != null && !isFormData ? { "Content-Type": "application/json" } : {}),
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...headers,
       },
-      body: body != null ? JSON.stringify(body) : undefined,
+      body: body == null ? undefined : isFormData ? body : JSON.stringify(body),
       ...rest,
       signal: gate.signal,
     })
