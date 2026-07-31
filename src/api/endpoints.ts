@@ -294,6 +294,14 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     auth: true,
   },
   {
+    key: "agent.sessions.create",
+    module: "Agent",
+    method: "POST",
+    path: "/sessions",
+    description: "创建聊天会话（实际请求 /agent/sessions，返回 session_id）",
+    auth: true,
+  },
+  {
     key: "agent.chat",
     module: "Agent",
     method: "POST",

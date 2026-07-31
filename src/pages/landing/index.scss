@@ -370,7 +370,12 @@
   box-shadow: none;
 }
 .magic-landing .ld-177 { width:36px;height:36px;border-radius:99px;border:0;background:#f3f0ff;cursor:pointer;display:grid;place-items:center; }
-.magic-landing .ld-177:hover { background:var(--accent-tint); }
+.magic-landing .ld-177:hover:not(:disabled):not(.is-disabled) { background:var(--accent-tint); }
+.magic-landing .ld-177.is-disabled,
+.magic-landing .ld-177:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .magic-landing .ld-178 { height:34px;padding:0 18px;border:0;background:var(--accent);color:#fff;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(123,97,255,.28); }
 .magic-landing .ld-178:hover { background:var(--accent-press); }
 .magic-landing .ld-179 { height:34px;padding:0 14px;border:0;background:transparent;border-radius:99px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-1); }
@@ -687,6 +692,39 @@
   box-shadow: none;
 }
 
+/* 仅文件、无文字：不要气泡底色/内边距（对齐 Figma 27:345 裸 FileCard） */
+.magic-landing .chat-bubble.is-user.is-files-only {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 文字 + 文件：气泡底色只包文字，文件卡不再叠一层背景 */
+.magic-landing .chat-bubble.is-user.is-with-media {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__text {
+  padding: 10px 16px;
+  background: rgba(28, 93, 95, 0.1);
+  border-radius: 8px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__files.has-prev,
+.magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__voices.has-prev {
+  margin-top: 0;
+}
+
 .magic-landing .chat-bubble.is-thinking {
   max-width: none;
   width: auto;
@@ -754,19 +792,19 @@
   }
 }
 
-/* File card — Figma 27:345；边框用 chat-card.svg 手绘描边 */
+/* File card — Figma 27:345 */
 .magic-landing .chat-file-card {
   position: relative;
   width: auto;
   max-width: 100%;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 8px;
   padding: 12.444px 16.445px;
-  /* 圆角跟随 .chat-card-frame（与 SVG 边框一致） */
-  border-radius: calc(100% * 26 / 380) / calc(100% * 16.5 / 187);
-  background: rgba(28, 93, 95, 0.06);
+  border-radius: 16px;
+  border: 0.889px solid #1c5d5f;
+  background: rgba(28, 93, 95, 0.05);
   box-sizing: border-box;
 }
 
@@ -775,20 +813,20 @@
 }
 
 .magic-landing .chat-file-card__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 20px;
+  width: 15px;
+  height: 22px;
+  margin-top: 2px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  background: #22c55e;
   line-height: 0;
 }
 
 .magic-landing .chat-file-card__icon img {
   width: 15px;
-  height: 15px;
+  height: 22px;
   display: block;
+  object-fit: fill;
 }
 
 .magic-landing .chat-file-card__meta {

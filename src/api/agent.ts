@@ -1,6 +1,7 @@
 import { getAccessToken } from "@/store/auth"
+import type { ApiResponse } from "./types"
 import { ApiError } from "./types"
-import { DEFAULT_TIMEOUT_MS, createTimeoutGate, isAbortError } from "./timeout"
+import { DEFAULT_TIMEOUT_MS, createTimeoutGate, isAbortError, throwIfAborted } from "./timeout"
 import { extractErrorMessage, handleUnauthorized } from "./unauthorized"
 
 /** Agent 服务独立前缀，不走 VITE_API_BASE */
@@ -8,11 +9,76 @@ const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, 
 /**
  * 对外路径（经 Nginx /agent/ 转发到 8888，去掉 /agent 前缀）：
  * - /agent/health       → 127.0.0.1:8888/health
+ * - /agent/sessions     → 127.0.0.1:8888/sessions
  * - /agent/chat         → 127.0.0.1:8888/chat
  * - /agent/files/upload → 127.0.0.1:8888/files/upload
  */
 const AGENT_CHAT_PATH =
   import.meta.env.VITE_AGENT_CHAT_PATH || `${AGENT_BASE}/chat`
+
+export function resolveAgentSessionsUrl(): string {
+  return `${AGENT_BASE}/sessions`
+}
+
+export interface AgentSessionCreateResult {
+  session_id: string
+  status?: string
+  expires_at?: string
+  [key: string]: unknown
+}
+
+export interface CreateAgentSessionOptions {
+  signal?: AbortSignal
+  timeout?: number
+}
+
+/** POST /agent/sessions — 服务端创建会话（UUIDv7），需登录 */
+export async function createAgentSession(options: CreateAgentSessionOptions = {}) {
+  const { signal, timeout = DEFAULT_TIMEOUT_MS } = options
+  const token = getAccessToken()
+  const gate = createTimeoutGate(timeout, signal)
+
+  try {
+    const res = await fetch(resolveAgentSessionsUrl(), {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      signal: gate.signal,
+    })
+
+    const json = (await res.json().catch(() => null)) as
+      | ApiResponse<AgentSessionCreateResult>
+      | AgentSessionCreateResult
+      | null
+
+    if (!res.ok) {
+      if (res.status === 401) throw handleUnauthorized()
+      throw new ApiError(
+        res.status,
+        extractErrorMessage(json, (json as ApiResponse | null)?.message || res.statusText || "创建会话失败"),
+      )
+    }
+
+    if (json && typeof (json as ApiResponse).code === "number" && (json as ApiResponse).code !== 0) {
+      if ((json as ApiResponse).code === 401) throw handleUnauthorized()
+      throw new ApiError((json as ApiResponse).code, (json as ApiResponse).message || "创建会话失败")
+    }
+
+    const data = ((json as ApiResponse<AgentSessionCreateResult>)?.data ?? json) as AgentSessionCreateResult
+    const sessionId = String(data?.session_id || "").trim()
+    if (!sessionId) {
+      throw new ApiError(0, "创建会话失败：未返回 session_id")
+    }
+    return { ...data, session_id: sessionId }
+  } catch (err) {
+    if (err instanceof ApiError) throw err
+    throwIfAborted(err, gate.didTimeout())
+  } finally {
+    gate.dispose()
+  }
+}
 
 export function resolveAgentChatUrl(): string {
   const override = import.meta.env.VITE_AGENT_CHAT_URL

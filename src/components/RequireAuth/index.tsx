@@ -9,7 +9,7 @@ import React, {
   type ReactElement,
   type ReactNode,
 } from "react"
-import { useAuth } from "@/store"
+import { useAuth, getAuthSession } from "@/store"
 
 type AuthAction = () => void
 
@@ -29,6 +29,12 @@ interface AuthGateContextValue extends AuthGateHandle {
 
 const AuthGateContext = createContext<AuthGateContextValue | null>(null)
 
+/** 是否已具备可发对话的登录态（token + user.id） */
+function hasAuthedUser() {
+  const session = getAuthSession()
+  return !!(session?.accessToken && session?.user?.id)
+}
+
 export const AuthGateProvider = forwardRef<
   AuthGateHandle,
   {
@@ -41,7 +47,8 @@ export const AuthGateProvider = forwardRef<
 
   const withAuth = useCallback(
     (returnTo: string, action: AuthAction) => {
-      if (isLoggedIn) {
+      // 以 store 最新会话为准，避免仅有 token、无 user 时误放行进对话页
+      if (hasAuthedUser()) {
         action()
         return true
       }
@@ -49,7 +56,7 @@ export const AuthGateProvider = forwardRef<
       onRequireAuth(returnTo)
       return false
     },
-    [isLoggedIn, onRequireAuth],
+    [onRequireAuth],
   )
 
   const resumePendingAction = useCallback((returnTo: string) => {

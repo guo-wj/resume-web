@@ -8,6 +8,8 @@ export { request, API_BASE, DEFAULT_TIMEOUT_MS } from "./request"
 export type { RequestOptions } from "./request"
 export {
   streamAgentChat,
+  createAgentSession,
+  resolveAgentSessionsUrl,
   buildAgentChatMessage,
   createAgentSessionId,
   encodeChatSessionPathId,
@@ -17,7 +19,13 @@ export {
   HERO_GOAL_WORKFLOW,
   resolveAgentChatUrl,
 } from "./agent"
-export type { AgentChatRequest, AgentChatDoneEvent, AgentWorkflow } from "./agent"
+export type {
+  AgentChatRequest,
+  AgentChatDoneEvent,
+  AgentWorkflow,
+  AgentSessionCreateResult,
+  CreateAgentSessionOptions,
+} from "./agent"
 export { logout, loginByPassword } from "./auth"
 export {
   getUserProfile,

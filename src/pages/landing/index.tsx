@@ -1,16 +1,15 @@
 // @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSessionId, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
+import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatCardFrame } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData } from "@/components"
 import { useAuth, getAuthSession } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
 import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
 import chatFileChipFail from "@/assets/chat/file-chip-fail.svg"
 import chatFileChipClose from "@/assets/chat/file-chip-close.svg"
-import chatFileCardCheck from "@/assets/chat/file-card-check.svg"
 import chatComposerPlus from "@/assets/chat/composer-plus.svg"
 import chatComposerDash from "@/assets/chat/composer-dash.svg"
 import chatComposerSend from "@/assets/chat/composer-send.svg"
@@ -71,15 +70,15 @@ const formatFileSizeLabel = (size) => {
 
 function ChatFileCard({ file }) {
   return (
-    <ChatCardFrame className="chat-file-card">
+    <div className="chat-file-card">
       <span className="chat-file-card__icon" aria-hidden>
-        <img src={chatFileCardCheck} alt="" width={15} height={15} />
+        <img src={chatFileChipDoc} alt="" width={15} height={22} />
       </span>
       <div className="chat-file-card__meta">
         <span className="chat-file-card__name" title={file.name}>{file.name}</span>
         <div className="chat-file-card__size">{formatFileSizeLabel(file.size)}</div>
       </div>
-    </ChatCardFrame>
+    </div>
   )
 }
 
@@ -790,6 +789,8 @@ export function LandingApp() {
   const resumeUploadInputRef = useRef(null)
   const materialUploadInputRef = useRef(null)
   const chatSessionIdRef = useRef(sessionFromUrl || "")
+  /** 并发去重：同一时刻只创建一次会话 */
+  const creatingSessionRef = useRef(null)
   const chatAbortRef = useRef(null)
   const heroVoiceRecorderRef = useRef(null)
   const heroVoiceAudioRef = useRef(null)
@@ -810,14 +811,37 @@ export function LandingApp() {
   )
 
   const ensureChatSession = useCallback(
-    ({ replace = true } = {}) => {
-      if (!chatSessionIdRef.current) {
-        chatSessionIdRef.current = createAgentSessionId()
+    async ({ replace = true } = {}) => {
+      const fromUrl = parseChatSessionIdFromPath(location.pathname)
+      if (fromUrl) {
+        chatSessionIdRef.current = fromUrl
+        syncChatSessionUrl(fromUrl, { replace })
+        return fromUrl
       }
-      syncChatSessionUrl(chatSessionIdRef.current, { replace })
-      return chatSessionIdRef.current
+      if (chatSessionIdRef.current) {
+        syncChatSessionUrl(chatSessionIdRef.current, { replace })
+        return chatSessionIdRef.current
+      }
+      if (creatingSessionRef.current) {
+        const id = await creatingSessionRef.current
+        syncChatSessionUrl(id, { replace })
+        return id
+      }
+      creatingSessionRef.current = (async () => {
+        const created = await createAgentSession()
+        const id = created.session_id
+        chatSessionIdRef.current = id
+        return id
+      })()
+      try {
+        const id = await creatingSessionRef.current
+        syncChatSessionUrl(id, { replace })
+        return id
+      } finally {
+        creatingSessionRef.current = null
+      }
     },
-    [syncChatSessionUrl],
+    [location.pathname, syncChatSessionUrl],
   )
 
   useEffect(() => {
@@ -830,7 +854,7 @@ export function LandingApp() {
     }
   }, [])
 
-  // 进入 /chat（无 id）时分配会话并跳到 /chat/:id；有 id 则灌入 ref
+  // 进入 /chat（无 id）时调接口创建会话并跳到 /chat/:id；有 id 则灌入 ref
   useEffect(() => {
     if (!isChat) return
     const fromUrl = parseChatSessionIdFromPath(location.pathname)
@@ -845,9 +869,16 @@ export function LandingApp() {
       }
       return
     }
-    // 裸 /chat → 生成或沿用当前会话并写入 URL
-    ensureChatSession({ replace: true })
-  }, [isChat, location.pathname, ensureChatSession])
+    // 裸 /chat：已登录则创建服务端会话；未登录不本地造 id
+    if (!getAuthSession()?.user?.id && !user?.id) return
+    let cancelled = false
+    void ensureChatSession({ replace: true }).catch(() => {
+      if (cancelled) return
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isChat, location.pathname, ensureChatSession, user?.id])
 
   // 会话消息持久化，刷新后按 sessionId 恢复
   useEffect(() => {
@@ -1323,7 +1354,7 @@ export function LandingApp() {
     }
 
     if (ret === "chat") {
-      ensureChatSession({ replace: false })
+      void ensureChatSession({ replace: false })
       doGenerate()
     }
     toast("登录成功，欢迎来到 Magic Resume 🎉")
@@ -1340,6 +1371,10 @@ export function LandingApp() {
     })
   const onHeroChange = (e) => setHeroInput(e.target.value)
   const openHeroFilePicker = () => {
+    if (!isLoggedIn) {
+      openAuth("heroSubmit")
+      return
+    }
     if (heroFiles.length >= HERO_FILE_MAX_COUNT) {
       toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
       return
@@ -1421,10 +1456,22 @@ export function LandingApp() {
         return
       }
 
-      if (!chatSessionIdRef.current) {
-        chatSessionIdRef.current = createAgentSessionId()
+      // 会话 id 优先取自 URL，再回退 ref；都没有则创建服务端会话
+      let sessionId =
+        parseChatSessionIdFromPath(location.pathname) || chatSessionIdRef.current || ""
+      if (!sessionId) {
+        try {
+          sessionId = await ensureChatSession({ replace: true })
+        } catch (err) {
+          if (!(err instanceof ApiError && err.handled)) {
+            toast(err instanceof ApiError ? err.message : "创建会话失败，请稍后重试")
+          }
+          return
+        }
+      } else {
+        chatSessionIdRef.current = sessionId
+        syncChatSessionUrl(sessionId, { replace: true })
       }
-      syncChatSessionUrl(chatSessionIdRef.current, { replace: true })
 
       chatAbortRef.current?.abort()
       const ac = new AbortController()
@@ -1473,7 +1520,7 @@ export function LandingApp() {
         await streamAgentChat(
           {
             user_id: String(userId),
-            session_id: chatSessionIdRef.current,
+            session_id: sessionId,
             message: trimmed,
             workflow: "career_explore",
             stream_output: true,
@@ -1507,12 +1554,25 @@ export function LandingApp() {
         finishAi(false)
       }
     },
-    [toast, user?.id, syncChatSessionUrl],
+    [toast, user?.id, location.pathname, ensureChatSession, syncChatSessionUrl],
   )
 
-  const enterChatWithContent = ({ text = "", files = [], voices = [] }) => {
+  const enterChatWithContent = async ({ text = "", files = [], voices = [] }) => {
+    // 未登录绝不进会话页（避免先跳转再 toast「请先登录」）
+    const userId = getAuthSession()?.user?.id ?? user?.id
+    if (!userId) {
+      openAuth("heroSubmit")
+      return
+    }
     stopHeroVoiceRecording(true)
-    ensureChatSession({ replace: false })
+    try {
+      await ensureChatSession({ replace: false })
+    } catch (err) {
+      if (!(err instanceof ApiError && err.handled)) {
+        toast(err instanceof ApiError ? err.message : "创建会话失败，请稍后重试")
+      }
+      return
+    }
     setHeroInput(() => formatHeroIdentity(heroIdentity))
     setHeroFiles([])
     setHeroVoices([])
@@ -1565,7 +1625,9 @@ export function LandingApp() {
       toast("文件上传中，请稍候")
       return
     }
-    resumeUploadInputRef.current?.click()
+    authGateRef.current?.withAuth("resumeUpload", () => {
+      resumeUploadInputRef.current?.click()
+    })
   }
   const handleResumeUpload = (e) => {
     const file = e.target.files?.[0]
@@ -1604,6 +1666,7 @@ export function LandingApp() {
         }
       })()
     }
+    // 选文件后再确认一次登录（点击卡片已 gate，这里兜底）
     authGateRef.current?.withAuth("resumeUpload", submitResume)
   }
   const openMaterialUploadPicker = () => {
@@ -1612,7 +1675,9 @@ export function LandingApp() {
       toast("文件上传中，请稍候")
       return
     }
-    materialUploadInputRef.current?.click()
+    authGateRef.current?.withAuth("materialUpload", () => {
+      materialUploadInputRef.current?.click()
+    })
   }
   const handleMaterialUpload = (e) => {
     const picked = Array.from(e.target.files || [])
@@ -1839,14 +1904,20 @@ export function LandingApp() {
 
   const chatRows = chat.map((m) => {
     const thinking = m.role === "ai" && !!m.streaming && !m.text
+    const files = m.files || []
+    const voices = m.voices || []
+    const text = m.text || ""
+    const hasText = !!text.trim()
+    const filesOnly = m.role === "user" && !hasText && files.length > 0 && voices.length === 0
+    const withMedia = m.role === "user" && hasText && (files.length > 0 || voices.length > 0)
     return {
       role: m.role,
-      text: m.text,
+      text,
       streaming: !!m.streaming,
       thinking,
       profile: m.profile || null,
-      files: m.files || [],
-      voices: m.voices || [],
+      files,
+      voices,
       rowClass:
         "chat-row" +
         (m.role === "user" ? " is-user" : " is-ai") +
@@ -1854,7 +1925,9 @@ export function LandingApp() {
       bubbleClass:
         "chat-bubble" +
         (m.role === "user" ? " is-user" : " is-ai") +
-        (thinking ? " is-thinking" : ""),
+        (thinking ? " is-thinking" : "") +
+        (filesOnly ? " is-files-only" : "") +
+        (withMedia ? " is-with-media" : ""),
     }
   })
 
@@ -2070,11 +2143,19 @@ export function LandingApp() {
                     <MicIcon color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
                   </E>
                   <span className="upload-tip">
-                    <E as="button" className="ld-177" aria-label="添加材料" onClick={openHeroFilePicker}>
+                    <E
+                      as="button"
+                      className={"ld-177" + (!isLoggedIn ? " is-disabled" : "")}
+                      aria-label="添加材料"
+                      title={!isLoggedIn ? "请先登录后再上传" : undefined}
+                      disabled={!isLoggedIn}
+                      aria-disabled={!isLoggedIn}
+                      onClick={openHeroFilePicker}
+                    >
                       <ClipIcon />
                     </E>
                     <span className="upload-tip__bubble" role="tooltip">
-                      {HERO_FILE_UPLOAD_TIP}
+                      {!isLoggedIn ? "请先登录后再上传材料" : HERO_FILE_UPLOAD_TIP}
                     </span>
                   </span>
                   <RequireAuthAction returnTo="heroSubmit" shouldRun={canHeroSend} onAuthorized={heroSubmitCore}>
