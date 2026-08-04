@@ -700,7 +700,7 @@
   box-shadow: none;
 }
 
-/* 文字 + 文件：气泡底色只包文字，文件卡不再叠一层背景 */
+/* 文字 + 文件/语音：各自独立；文件在上、文字在下 */
 .magic-landing .chat-bubble.is-user.is-with-media {
   display: flex;
   flex-direction: column;
@@ -720,7 +720,7 @@
   max-width: 100%;
 }
 
-.magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__files.has-prev,
+.magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__text.has-prev,
 .magic-landing .chat-bubble.is-user.is-with-media .chat-bubble__voices.has-prev {
   margin-top: 0;
 }
@@ -792,11 +792,10 @@
   }
 }
 
-/* File card — Figma 27:345 */
+/* File card — 短卡片用 CSS 边框（chat-card.svg 九宫格/硬拉伸都不适合扁卡） */
 .magic-landing .chat-file-card {
-  position: relative;
   width: auto;
-  max-width: 100%;
+  max-width: min(100%, 320px);
   min-width: 0;
   display: flex;
   align-items: flex-start;
@@ -840,9 +839,9 @@
   font-weight: 500;
   line-height: 20px;
   color: #1a1a1a;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .magic-landing .chat-file-card__size {

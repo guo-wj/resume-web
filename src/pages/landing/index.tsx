@@ -2286,34 +2286,38 @@ export function LandingApp() {
                       <div className="chat-think-dots" role="status" aria-label="正在回复">
                         <span /><span /><span />
                       </div>
-                    ) : m.role === "ai" && m.text ? (
-                      <ChatTextCard content={m.text} />
-                    ) : m.text ? (
-                      <div className="chat-bubble__text">{m.text}</div>
-                    ) : null}
-                    {m.files.length > 0 && (
-                      <div className={"chat-bubble__files" + (m.text || m.voices.length ? " has-prev" : "")}>
-                        {m.files.map((f) => (
-                          <ChatFileCard key={`${f.name}-${f.size}`} file={f} />
-                        ))}
-                      </div>
+                    ) : (
+                      <>
+                        {m.files.length > 0 && (
+                          <div className="chat-bubble__files">
+                            {m.files.map((f) => (
+                              <ChatFileCard key={`${f.name}-${f.size}`} file={f} />
+                            ))}
+                          </div>
+                        )}
+                        {m.role === "ai" && m.text ? (
+                          <ChatTextCard content={m.text} />
+                        ) : m.text ? (
+                          <div className={"chat-bubble__text" + (m.files.length ? " has-prev" : "")}>{m.text}</div>
+                        ) : null}
+                        {m.voices.length > 0 && (
+                          <div className={"chat-bubble__voices" + (m.text || m.files.length ? " has-prev" : "")}>
+                            {m.voices.map((voice) => (
+                              <VoiceClipRow
+                                key={voice.id}
+                                clip={voice}
+                                tone="chat"
+                                playing={voicePlayingId === voice.id}
+                                onPlay={playVoiceClip}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {m.role === "ai" && m.profile ? (
+                          <ChatProfileCard data={buildChatProfileCardData(m.profile)} />
+                        ) : null}
+                      </>
                     )}
-                    {m.voices.length > 0 && (
-                      <div className={"chat-bubble__voices" + (m.text || m.files.length ? " has-prev" : "")}>
-                        {m.voices.map((voice) => (
-                          <VoiceClipRow
-                            key={voice.id}
-                            clip={voice}
-                            tone="chat"
-                            playing={voicePlayingId === voice.id}
-                            onPlay={playVoiceClip}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    {m.role === "ai" && m.profile ? (
-                      <ChatProfileCard data={buildChatProfileCardData(m.profile)} />
-                    ) : null}
                   </div>
                 </div>
               ))}
