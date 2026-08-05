@@ -302,6 +302,14 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     auth: true,
   },
   {
+    key: "agent.conversations.get",
+    module: "Agent",
+    method: "GET",
+    path: "/conversations/:session_id",
+    description: "获取单会话历史（实际请求 /agent/conversations/{session_id}）",
+    auth: true,
+  },
+  {
     key: "agent.chat",
     module: "Agent",
     method: "POST",

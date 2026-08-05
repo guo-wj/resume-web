@@ -1,10 +1,10 @@
 // @ts-nocheck — 遗留大文件，待逐步补全类型
 import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
+import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, getConversationHistory, mapConversationHistoryToChat, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
 import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData } from "@/components"
-import { useAuth, getAuthSession } from "@/store"
+import { useAuth, getAuthSession, getAccessToken } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
 import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
@@ -791,6 +791,10 @@ export function LandingApp() {
   const chatSessionIdRef = useRef(sessionFromUrl || "")
   /** 并发去重：同一时刻只创建一次会话 */
   const creatingSessionRef = useRef(null)
+  /** 本页生命周期内刚新建的 session，跳过历史拉取（刷新后 ref 清空会再拉） */
+  const freshSessionIdsRef = useRef(new Set())
+  /** 同一 session 的历史请求去重（避免 StrictMode / effect 重跑打两次） */
+  const historyInflightRef = useRef(null)
   const chatAbortRef = useRef(null)
   const heroVoiceRecorderRef = useRef(null)
   const heroVoiceAudioRef = useRef(null)
@@ -798,16 +802,24 @@ export function LandingApp() {
   heroVoicesRef.current = heroVoices
 
   const syncChatSessionUrl = useCallback(
-    (sessionId, { replace = true } = {}) => {
+    (sessionId, { replace = true, isNewSession = false } = {}) => {
       const id = String(sessionId || "").trim()
       if (!id) return
       chatSessionIdRef.current = id
+      if (isNewSession) freshSessionIdsRef.current.add(id)
       const next = chatSessionUrl(id)
       if (location.pathname !== next) {
-        navigate(next, { replace })
+        navigate(next, {
+          replace,
+          state: isNewSession ? { isNewSession: true } : null,
+        })
+        return
+      }
+      if (isNewSession && location.state?.isNewSession !== true) {
+        navigate(next, { replace: true, state: { isNewSession: true } })
       }
     },
-    [location.pathname, navigate],
+    [location.pathname, location.state, navigate],
   )
 
   const ensureChatSession = useCallback(
@@ -819,23 +831,26 @@ export function LandingApp() {
         return fromUrl
       }
       if (chatSessionIdRef.current) {
-        syncChatSessionUrl(chatSessionIdRef.current, { replace })
-        return chatSessionIdRef.current
+        const existing = chatSessionIdRef.current
+        const isFresh = freshSessionIdsRef.current.has(existing)
+        syncChatSessionUrl(existing, { replace, isNewSession: isFresh })
+        return existing
       }
       if (creatingSessionRef.current) {
         const id = await creatingSessionRef.current
-        syncChatSessionUrl(id, { replace })
+        syncChatSessionUrl(id, { replace, isNewSession: true })
         return id
       }
       creatingSessionRef.current = (async () => {
         const created = await createAgentSession()
         const id = created.session_id
         chatSessionIdRef.current = id
+        freshSessionIdsRef.current.add(id)
         return id
       })()
       try {
         const id = await creatingSessionRef.current
-        syncChatSessionUrl(id, { replace })
+        syncChatSessionUrl(id, { replace, isNewSession: true })
         return id
       } finally {
         creatingSessionRef.current = null
@@ -854,22 +869,11 @@ export function LandingApp() {
     }
   }, [])
 
-  // 进入 /chat（无 id）时调接口创建会话并跳到 /chat/:id；有 id 则灌入 ref
+  // 裸 /chat：已登录则创建会话
   useEffect(() => {
     if (!isChat) return
     const fromUrl = parseChatSessionIdFromPath(location.pathname)
-    if (fromUrl) {
-      if (chatSessionIdRef.current !== fromUrl) {
-        chatSessionIdRef.current = fromUrl
-        const cached = loadChatCache(fromUrl)
-        if (cached?.chat?.length) {
-          setChat(cached.chat)
-          setChatStage(cached.chatStage || "intro")
-        }
-      }
-      return
-    }
-    // 裸 /chat：已登录则创建服务端会话；未登录不本地造 id
+    if (fromUrl) return
     if (!getAuthSession()?.user?.id && !user?.id) return
     let cancelled = false
     void ensureChatSession({ replace: true }).catch(() => {
@@ -879,6 +883,68 @@ export function LandingApp() {
       cancelled = true
     }
   }, [isChat, location.pathname, ensureChatSession, user?.id])
+
+  // 带 sessionId：刷新/回访拉历史；首页新建进会话则跳过
+  useEffect(() => {
+    if (!isChat) return
+    const fromUrl = parseChatSessionIdFromPath(location.pathname)
+    if (!fromUrl) return
+
+    chatSessionIdRef.current = fromUrl
+    const isFreshSession =
+      location.state?.isNewSession === true || freshSessionIdsRef.current.has(fromUrl)
+
+    if (isFreshSession) {
+      freshSessionIdsRef.current.add(fromUrl)
+      return
+    }
+
+    const cached = loadChatCache(fromUrl)
+    if (cached?.chat?.length) {
+      setChat(cached.chat)
+      setChatStage(cached.chatStage || "intro")
+    }
+
+    if (!getAccessToken()) return
+
+    let cancelled = false
+    void (async () => {
+      try {
+        let inflight = historyInflightRef.current
+        if (!inflight || inflight.sessionId !== fromUrl) {
+          inflight = {
+            sessionId: fromUrl,
+            promise: getConversationHistory(fromUrl),
+          }
+          historyInflightRef.current = inflight
+        }
+        const hist = await inflight.promise
+        if (cancelled) return
+        const mapped = mapConversationHistoryToChat(hist)
+        if (mapped.length) {
+          setChat(mapped)
+          setChatStage("intro")
+          saveChatCache(fromUrl, mapped, "intro")
+          return
+        }
+        setChat((current) => {
+          if (current.some((m) => m.role === "user")) return current
+          if (cached?.chat?.some((m) => m.role === "user")) return cached.chat
+          return [INTRO_MSG]
+        })
+      } catch (err) {
+        if (cancelled) return
+        if (historyInflightRef.current?.sessionId === fromUrl) {
+          historyInflightRef.current = null
+        }
+        if (err instanceof ApiError && err.handled) return
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isChat, location.pathname, location.state])
 
   // 会话消息持久化，刷新后按 sessionId 恢复
   useEffect(() => {
@@ -1519,7 +1585,6 @@ export function LandingApp() {
       try {
         await streamAgentChat(
           {
-            user_id: String(userId),
             session_id: sessionId,
             message: trimmed,
             workflow: "career_explore",

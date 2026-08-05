@@ -8,10 +8,11 @@ import { extractErrorMessage, handleUnauthorized } from "./unauthorized"
 const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, "")
 /**
  * 对外路径（经 Nginx /agent/ 转发到 8888，去掉 /agent 前缀）：
- * - /agent/health       → 127.0.0.1:8888/health
- * - /agent/sessions     → 127.0.0.1:8888/sessions
- * - /agent/chat         → 127.0.0.1:8888/chat
- * - /agent/files/upload → 127.0.0.1:8888/files/upload
+ * - /agent/health                    → 127.0.0.1:8888/health
+ * - /agent/sessions                  → 127.0.0.1:8888/sessions
+ * - /agent/conversations/{session_id}→ 127.0.0.1:8888/conversations/{session_id}
+ * - /agent/chat                      → 127.0.0.1:8888/chat
+ * - /agent/files/upload              → 127.0.0.1:8888/files/upload
  */
 const AGENT_CHAT_PATH =
   import.meta.env.VITE_AGENT_CHAT_PATH || `${AGENT_BASE}/chat`
@@ -80,6 +81,238 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
   }
 }
 
+export function resolveAgentConversationUrl(sessionId: string): string {
+  const id = encodeURIComponent(String(sessionId || "").trim())
+  return `${AGENT_BASE}/conversations/${id}`
+}
+
+export interface AgentConversationBlock {
+  type: string
+  content?: string
+  data?: {
+    file_id?: string
+    name?: string
+    size?: number
+    size_bytes?: number
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+export interface AgentConversationMessage {
+  id?: string
+  role?: string
+  blocks?: AgentConversationBlock[]
+  /** 兼容旧字段 */
+  content?: string
+  message?: string
+  text?: string
+  file_ids?: string[]
+  files?: Array<{
+    file_id?: string
+    filename?: string
+    name?: string
+    size_bytes?: number
+    size?: number
+  }>
+  created_at?: string | null
+  timestamp?: string | number
+  [key: string]: unknown
+}
+
+export interface AgentConversationHistory {
+  conversation_id?: string
+  session_id?: string
+  messages?: AgentConversationMessage[]
+  history?: AgentConversationMessage[]
+  ready_generate?: boolean
+  [key: string]: unknown
+}
+
+export interface GetConversationHistoryOptions {
+  signal?: AbortSignal
+  timeout?: number
+}
+
+/** UI 侧消息形态（与 landing chat state 对齐） */
+export interface AgentChatUiMessage {
+  role: "user" | "ai"
+  text: string
+  at: number
+  files: Array<{ name: string; size?: number; fileId?: string | null }>
+  voices: Array<Record<string, unknown>>
+  streaming: boolean
+  profile?: unknown
+  id?: string
+}
+
+function parseMessageTime(raw: unknown): number {
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return raw < 1e12 ? raw * 1000 : raw
+  }
+  if (typeof raw === "string" && raw.trim()) {
+    const ms = Date.parse(raw)
+    if (!Number.isNaN(ms)) return ms
+  }
+  return Date.now()
+}
+
+function normalizeConversationRole(role: unknown): "user" | "ai" | null {
+  const r = String(role || "").trim().toLowerCase()
+  if (!r) return null
+  if (r === "user" || r === "human") return "user"
+  if (r === "ai" || r === "assistant" || r === "bot" || r === "model") return "ai"
+  // tool 等角色不进聊天气泡
+  return null
+}
+
+function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
+  const textParts: string[] = []
+  const files: AgentChatUiMessage["files"] = []
+  for (const block of blocks || []) {
+    if (!block || typeof block !== "object") continue
+    const type = String(block.type || "").trim().toLowerCase()
+    if (type === "text") {
+      const content = String(block.content || "").trim()
+      if (content) textParts.push(content)
+      continue
+    }
+    if (type === "file_card") {
+      const data = block.data || {}
+      const name = String(data.name || "未命名文件").trim() || "未命名文件"
+      const fileId = data.file_id != null ? String(data.file_id).trim() : ""
+      files.push({
+        name,
+        size: data.size_bytes ?? data.size,
+        fileId: fileId || null,
+      })
+    }
+  }
+  return { text: textParts.join("\n\n"), files }
+}
+
+/** 将会话历史接口数据映射为聊天 UI 消息列表 */
+export function mapConversationHistoryToChat(
+  data: AgentConversationHistory | AgentConversationMessage[] | null | undefined,
+): AgentChatUiMessage[] {
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.messages)
+      ? data.messages
+      : Array.isArray(data?.history)
+        ? data.history
+        : []
+
+  const out: AgentChatUiMessage[] = []
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue
+    const role = normalizeConversationRole(item.role)
+    if (!role) continue
+
+    const fromBlocks = blocksToChatParts(item.blocks)
+    let text = fromBlocks.text
+    let files = fromBlocks.files
+
+    // 无 blocks 时兼容旧扁平字段
+    if (!text && !files.length) {
+      text = String(item.content ?? item.message ?? item.text ?? "").trim()
+      files = Array.isArray(item.files)
+        ? item.files.map((f) => ({
+            name: String(f?.filename || f?.name || "未命名文件"),
+            size: f?.size_bytes ?? f?.size,
+            fileId: f?.file_id ? String(f.file_id) : null,
+          }))
+        : Array.isArray(item.file_ids)
+          ? item.file_ids
+              .map((id) => String(id || "").trim())
+              .filter(Boolean)
+              .map((fileId) => ({ name: "附件", fileId }))
+          : []
+    }
+
+    if (!text && !files.length) continue
+    out.push({
+      id: item.id ? String(item.id) : undefined,
+      role,
+      text,
+      at: parseMessageTime(item.created_at ?? item.timestamp),
+      files,
+      voices: [],
+      streaming: false,
+    })
+  }
+  return out
+}
+
+/** GET /agent/conversations/{session_id} — 获取单会话历史，需登录 */
+export async function getConversationHistory(
+  sessionId: string,
+  options: GetConversationHistoryOptions = {},
+) {
+  const id = String(sessionId || "").trim()
+  if (!id) throw new ApiError(0, "缺少 session_id")
+
+  const { signal, timeout = DEFAULT_TIMEOUT_MS } = options
+  const token = getAccessToken()
+  const gate = createTimeoutGate(timeout, signal)
+
+  try {
+    const res = await fetch(resolveAgentConversationUrl(id), {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      signal: gate.signal,
+    })
+
+    const json = (await res.json().catch(() => null)) as
+      | ApiResponse<AgentConversationHistory | AgentConversationMessage[]>
+      | AgentConversationHistory
+      | AgentConversationMessage[]
+      | null
+
+    if (!res.ok) {
+      if (res.status === 401) throw handleUnauthorized()
+      throw new ApiError(
+        res.status,
+        extractErrorMessage(
+          json,
+          (json as ApiResponse | null)?.message || res.statusText || "获取会话历史失败",
+        ),
+      )
+    }
+
+    if (json && typeof (json as ApiResponse).code === "number" && (json as ApiResponse).code !== 0) {
+      if ((json as ApiResponse).code === 401) throw handleUnauthorized()
+      throw new ApiError((json as ApiResponse).code, (json as ApiResponse).message || "获取会话历史失败")
+    }
+
+    const data = ((json as ApiResponse)?.data ?? json) as
+      | AgentConversationHistory
+      | AgentConversationMessage[]
+
+    if (Array.isArray(data)) {
+      return { conversation_id: id, session_id: id, messages: data } as AgentConversationHistory
+    }
+    const conversationId = String(
+      (data as AgentConversationHistory)?.conversation_id ||
+        (data as AgentConversationHistory)?.session_id ||
+        id,
+    )
+    return {
+      ...(data as AgentConversationHistory),
+      conversation_id: conversationId,
+      session_id: conversationId,
+    }
+  } catch (err) {
+    if (err instanceof ApiError) throw err
+    throwIfAborted(err, gate.didTimeout())
+  } finally {
+    gate.dispose()
+  }
+}
+
 export function resolveAgentChatUrl(): string {
   const override = import.meta.env.VITE_AGENT_CHAT_URL
   if (override) return override
@@ -93,7 +326,6 @@ export function resolveAgentChatUrl(): string {
 export type AgentWorkflow = "career_explore" | "resume_revise" | "resume_generate"
 
 export interface AgentChatRequest {
-  user_id: string | number
   session_id: string
   message: string
   workflow: AgentWorkflow | string

@@ -10,6 +10,9 @@ export {
   streamAgentChat,
   createAgentSession,
   resolveAgentSessionsUrl,
+  getConversationHistory,
+  resolveAgentConversationUrl,
+  mapConversationHistoryToChat,
   buildAgentChatMessage,
   createAgentSessionId,
   encodeChatSessionPathId,
@@ -25,6 +28,11 @@ export type {
   AgentWorkflow,
   AgentSessionCreateResult,
   CreateAgentSessionOptions,
+  AgentConversationHistory,
+  AgentConversationMessage,
+  AgentConversationBlock,
+  AgentChatUiMessage,
+  GetConversationHistoryOptions,
 } from "./agent"
 export { logout, loginByPassword } from "./auth"
 export {
