@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="ScoreCardIcon" clip-path="url(#clip0_365_23)">
+<path id="Vector" d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56Z" fill="#1C5D5F" fill-opacity="0.1"/>
+<path id="Vector_2" d="M28 12.4444L30.8 25.2L43.5556 28L30.8 30.8L28 43.5556L25.2 30.8L12.4444 28L25.2 25.2L28 12.4444Z" stroke="#1C5D5F" stroke-width="2" stroke-linejoin="round"/>
+<path id="Vector_3" d="M28 30.3333C29.2887 30.3333 30.3333 29.2887 30.3333 28C30.3333 26.7113 29.2887 25.6667 28 25.6667C26.7113 25.6667 25.6667 26.7113 25.6667 28C25.6667 29.2887 26.7113 30.3333 28 30.3333Z" fill="#E8A200"/>
+</g>
+<defs>
+<clipPath id="clip0_365_23">
+<rect width="56" height="56" fill="white"/>
+</clipPath>
+</defs>
+</svg>

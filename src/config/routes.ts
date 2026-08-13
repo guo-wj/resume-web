@@ -2,7 +2,7 @@
  * 前端路由表 — 全站路由单一数据源
  *
  * - APP_ROUTES：React Router 页面级路由
- * - CONSOLE_NAV：工作台 /console 内 hash 子路由
+ * - CONSOLE_NAV：工作台 /console 侧边栏导航
  * - LANDING_SCREENS：首页 landing 内部视图（非 URL；chat 已独立为 /chat）
  */
 
@@ -65,8 +65,15 @@ export const APP_ROUTES: AppRoute[] = [
     path: "/console",
     name: "console",
     component: "DashboardApp",
-    description: "工作台 · 会员 / 积分 / 订单 / 设置",
+    description: "工作台 · 我的简历 / 履历 / 面试准备",
     nav: true,
+  },
+  {
+    path: "/console/edit/:resumeId?",
+    name: "resumeEdit",
+    component: "ResumeEditApp",
+    description: "AI 简历修改 · 对话 / 表单",
+    nav: false,
   },
   {
     path: "/surprise",
@@ -77,68 +84,11 @@ export const APP_ROUTES: AppRoute[] = [
   },
 ]
 
-/** 工作台侧边栏导航（hash 路由：/console#overview、/console#membership.current …） */
+/** 工作台侧边栏导航 */
 export const CONSOLE_NAV: ConsoleNavItem[] = [
-  { id: "overview", label: "概览", icon: "grid" },
-  {
-    id: "membership",
-    label: "我的会员",
-    icon: "crown",
-    subs: [
-      { id: "current", label: "当前订阅" },
-      { id: "plans", label: "套餐订阅" },
-      { id: "renewal", label: "续费管理" },
-    ],
-  },
-  {
-    id: "credits",
-    label: "积分中心",
-    icon: "coins",
-    subs: [
-      { id: "balance", label: "余额与明细" },
-      { id: "buy", label: "购买积分" },
-      { id: "auto", label: "自动充值" },
-    ],
-  },
-  {
-    id: "orders",
-    label: "订单与发票",
-    icon: "receipt",
-    badge: 1,
-    subs: [
-      { id: "list", label: "订单记录" },
-      { id: "invoice", label: "发票管理" },
-      { id: "refund", label: "退款申请" },
-    ],
-  },
-  {
-    id: "stats",
-    label: "消耗统计",
-    icon: "chart",
-    subs: [
-      { id: "overview", label: "概览" },
-      { id: "detail", label: "明细" },
-    ],
-  },
-  {
-    id: "promo",
-    label: "优惠与活动",
-    icon: "gift",
-    subs: [
-      { id: "coupons", label: "优惠券" },
-      { id: "redeem", label: "兑换码" },
-    ],
-  },
-  {
-    id: "settings",
-    label: "账户设置",
-    icon: "settings",
-    subs: [
-      { id: "profile", label: "个人资料" },
-      { id: "security", label: "登录与安全" },
-      { id: "notify", label: "通知偏好" },
-    ],
-  },
+  { id: "resume", label: "我的简历", icon: "resume" },
+  { id: "profile", label: "个人履历", icon: "profile" },
+  { id: "interview", label: "面试准备", icon: "interview" },
 ]
 
 /** 工作台分组标题 */
@@ -153,7 +103,7 @@ export const LANDING_SCREENS: LandingScreen[] = [
 ]
 
 /** 默认工作台路由 */
-export const CONSOLE_DEFAULT_ROUTE = "overview"
+export const CONSOLE_DEFAULT_ROUTE = "resume"
 
 /** 解析工作台 hash 路由 */
 export function parseConsoleRoute(hash: string): { group: string; sub?: string } {

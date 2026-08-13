@@ -1,0 +1,62 @@
+.chat-loading-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.chat-loading-status__icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+/*
+ * 扫光：整段字始终可见（渐变全程不透明），
+ * 一道更亮的高光从左扫到右，不会出现「字被扫没」.
+ */
+.chat-loading-status__text {
+  display: inline-block;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  word-break: break-word;
+  color: #8e8e8e;
+  background-image: linear-gradient(
+    90deg,
+    #8e8e8e 0%,
+    #8e8e8e 38%,
+    #1f1f1f 50%,
+    #8e8e8e 62%,
+    #8e8e8e 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: repeat-x;
+  background-position: 100% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chatLoadingShine 1.4s linear infinite;
+}
+
+@keyframes chatLoadingShine {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-loading-status__text {
+    animation: none;
+    color: #666666;
+    background: none;
+    -webkit-text-fill-color: #666666;
+  }
+}

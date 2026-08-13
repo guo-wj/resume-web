@@ -14,6 +14,8 @@ export { AuthGateProvider, RequireAuthAction, useAuthGate } from "./RequireAuth"
 export { GlobalAuthToast } from "./GlobalAuthToast"
 export { ChatTextCard } from "./ChatTextCard"
 export type { ChatCardType, ChatTextCardProps } from "./ChatTextCard"
+export { ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "./ChatLoadingStatus"
+export type { ChatLoadingStatusProps } from "./ChatLoadingStatus"
 export { ChatCardFrame } from "./ChatCardFrame"
 export {
   ChatProfileCard,

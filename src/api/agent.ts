@@ -142,6 +142,8 @@ export interface AgentChatUiMessage {
   files: Array<{ name: string; size?: number; fileId?: string | null }>
   voices: Array<Record<string, unknown>>
   streaming: boolean
+  /** 流式 loading_text，有内容卡片 / 正文后清空 */
+  loadingText?: string | null
   profile?: unknown
   id?: string
 }
@@ -344,8 +346,36 @@ export interface AgentChatDoneEvent {
 export interface AgentChatStreamCallbacks {
   onDelta?: (delta: string) => void
   onFull?: (text: string) => void
+  /** 流式 loading_text：展示临时 loading 态，后续内容卡片 / token 会替换 */
+  onLoadingText?: (text: string) => void
+  /** 其它带 type 的事件（info_card / score_card / file_parse_status…） */
+  onEvent?: (type: string, data: Record<string, unknown>) => void
   onDone?: (event: AgentChatDoneEvent) => void
   onError?: (error: Error) => void
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function eventPayload(data: Record<string, unknown>): Record<string, unknown> {
+  return asRecord(data.data) || data
+}
+
+function readEventText(data: Record<string, unknown>, payload: Record<string, unknown>) {
+  for (const src of [payload, data]) {
+    if (typeof src.text === "string" && src.text.trim()) return src.text.trim()
+    if (typeof src.content === "string" && src.content.trim()) return src.content.trim()
+    if (typeof src.message === "string" && src.message.trim()) return src.message.trim()
+  }
+  return ""
+}
+
+function readEventDelta(data: Record<string, unknown>, payload: Record<string, unknown>) {
+  if (typeof payload.delta === "string" && payload.delta) return payload.delta
+  if (typeof data.delta === "string" && data.delta) return data.delta
+  return ""
 }
 
 function parseStreamLine(line: string): Record<string, unknown> | null {
@@ -363,13 +393,43 @@ function parseStreamLine(line: string): Record<string, unknown> | null {
 function isDoneEvent(data: Record<string, unknown>): boolean {
   return (
     data.done === true ||
+    data.type === "done" ||
     ("session_id" in data && ("ready_generate" in data || "resume_result" in data))
   )
 }
 
 function handleStreamEvent(data: Record<string, unknown>, callbacks: AgentChatStreamCallbacks) {
-  if (typeof data.delta === "string" && data.delta) {
-    callbacks.onDelta?.(data.delta)
+  const rawType = data.type ?? data.event ?? data.event_type
+  const type = typeof rawType === "string" ? rawType.trim().toLowerCase() : ""
+  const payload = eventPayload(data)
+
+  if (type === "loading_text") {
+    const text = readEventText(data, payload)
+    if (text) callbacks.onLoadingText?.(text)
+    return
+  }
+
+  if (type === "token" || type === "text_delta" || type === "delta") {
+    const delta = readEventDelta(data, payload)
+    if (delta) callbacks.onDelta?.(delta)
+    return
+  }
+
+  if (type === "text") {
+    const full = readEventText(data, payload)
+    if (full) callbacks.onFull?.(full)
+    return
+  }
+
+  if (type && type !== "done" && type !== "error") {
+    callbacks.onEvent?.(type, payload)
+    return
+  }
+
+  // 旧格式：无 type
+  const delta = readEventDelta(data, payload)
+  if (delta) {
+    callbacks.onDelta?.(delta)
     return
   }
   if (typeof data.text === "string") {
@@ -379,6 +439,54 @@ function handleStreamEvent(data: Record<string, unknown>, callbacks: AgentChatSt
   if (isDoneEvent(data)) {
     callbacks.onDone?.(data as AgentChatDoneEvent)
   }
+}
+
+/**
+ * 将一条 SSE 消息（event + data）归一化后分发。
+ * 服务端常见格式：
+ *   event: loading_text
+ *   data: {"text":"正在认真阅读你的简历"}
+ * 若只解析 data 行会丢掉 type，文案会被误当成正文。
+ */
+function dispatchSseMessage(
+  eventName: string,
+  rawData: string,
+  callbacks: AgentChatStreamCallbacks,
+) {
+  const event = String(eventName || "").trim().toLowerCase()
+  const raw = String(rawData || "").trim()
+
+  if (!raw || raw === "[DONE]") {
+    if (event === "done" || raw === "[DONE]") callbacks.onDone?.({ done: true })
+    return
+  }
+
+  let data: Record<string, unknown> | null = null
+  try {
+    data = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    if (event === "loading_text") {
+      callbacks.onLoadingText?.(raw)
+      return
+    }
+    if (event === "token" || event === "text_delta" || event === "delta") {
+      callbacks.onDelta?.(raw)
+      return
+    }
+    return
+  }
+
+  if (!data || typeof data !== "object") return
+
+  // SSE event 名优先写入 type（JSON 内未带 type / event 时）
+  if (event && typeof data.type !== "string" && typeof data.event !== "string" && typeof data.event_type !== "string") {
+    data = { ...data, type: event }
+  } else if (event) {
+    // 即使 JSON 有其它字段，也以 SSE event 为准（调试台「类型」列来自 event:）
+    data = { ...data, type: event }
+  }
+
+  handleStreamEvent(data, callbacks)
 }
 
 /** POST /agent/chat，解析 SSE / 逐行 JSON 流式响应；首包默认 20s 超时 */
@@ -426,6 +534,46 @@ export async function streamAgentChat(
     const reader = res.body.getReader()
     const decoder = new TextDecoder()
     let buffer = ""
+    let sseEvent = ""
+    let sseDataLines: string[] = []
+
+    const flushSseMessage = () => {
+      if (!sseEvent && sseDataLines.length === 0) return
+      const rawData = sseDataLines.join("\n")
+      const eventName = sseEvent
+      sseEvent = ""
+      sseDataLines = []
+      if (rawData || eventName) dispatchSseMessage(eventName, rawData, callbacks)
+    }
+
+    const consumeLine = (line: string) => {
+      // SSE 消息以空行分隔
+      if (line === "") {
+        flushSseMessage()
+        return
+      }
+      // SSE comment
+      if (line.startsWith(":")) return
+
+      if (line.startsWith("event:")) {
+        // 上一条还没空行收尾时，遇到新 event 先 flush
+        if (sseDataLines.length > 0) flushSseMessage()
+        sseEvent = line.slice(6).trim()
+        return
+      }
+      if (line.startsWith("data:")) {
+        // 规范允许 "data:" 后有可选空格
+        sseDataLines.push(line.slice(5).replace(/^\s/, ""))
+        return
+      }
+      if (line.startsWith("id:") || line.startsWith("retry:")) return
+
+      // 非标准：逐行 JSON（无 event/data 前缀）
+      if (!sseEvent && sseDataLines.length === 0) {
+        const data = parseStreamLine(line)
+        if (data) handleStreamEvent(data, callbacks)
+      }
+    }
 
     while (true) {
       const { done, value } = await reader.read()
@@ -435,14 +583,11 @@ export async function streamAgentChat(
       const lines = buffer.split(/\r?\n/)
       buffer = lines.pop() || ""
 
-      for (const line of lines) {
-        const data = parseStreamLine(line)
-        if (data) handleStreamEvent(data, callbacks)
-      }
+      for (const line of lines) consumeLine(line)
     }
 
-    const tail = parseStreamLine(buffer)
-    if (tail) handleStreamEvent(tail, callbacks)
+    if (buffer) consumeLine(buffer)
+    flushSseMessage()
   } catch (err) {
     if (signal?.aborted && !gate.didTimeout()) return
     if (gate.didTimeout()) throw new ApiError(0, "请求超时，请稍后重试")

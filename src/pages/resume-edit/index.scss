@@ -1,0 +1,548 @@
+/* AI 简历修改 · Figma 353:1272（设计稿约 1920）
+ * 与 surprise / workbench 一致：尺寸走根 rem（r()）；禁止 transform:scale；不做断点改布局
+ */
+
+@use "adaptive" as *;
+
+.resume-edit {
+  --re-teal: #1c5d5f;
+  --re-teal-soft: rgba(28, 93, 95, 0.1);
+  --re-teal-mid: rgba(28, 93, 95, 0.07);
+  --re-teal-border: rgba(28, 93, 95, 0.12);
+  --re-teal-border-2: rgba(28, 93, 95, 0.15);
+  --re-ink: rgba(0, 0, 0, 0.82);
+  --re-muted: rgba(0, 0, 0, 0.3);
+  --re-muted-2: rgba(0, 0, 0, 0.35);
+  --re-muted-3: rgba(0, 0, 0, 0.25);
+  --re-muted-4: rgba(0, 0, 0, 0.5);
+  --re-muted-5: rgba(0, 0, 0, 0.7);
+  --re-green: #22c55e;
+  --re-file-status: #2d7a7c;
+  --re-font: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui,
+    sans-serif;
+  --re-inter: "Inter", "PingFang SC", system-ui, sans-serif;
+
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #f6faf9;
+  color: var(--re-ink);
+  font-family: var(--re-font);
+}
+
+.resume-edit *,
+.resume-edit *::before,
+.resume-edit *::after {
+  box-sizing: border-box;
+}
+
+.resume-edit__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  img {
+    position: absolute;
+    left: -31%;
+    top: -17%;
+    width: 148%;
+    height: auto;
+    min-height: 135%;
+    object-fit: cover;
+    opacity: 0.5;
+  }
+}
+
+.resume-edit__split {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ——— 左栏：对话 ——— */
+.resume-edit__chat {
+  position: relative;
+  flex: 1 1 50%;
+  width: 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.6);
+  border-right: 1px solid #e5e5e5;
+}
+
+.resume-edit__chat-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: r(12);
+  height: r(56);
+  padding: r(12) r(16);
+  background: #fff;
+  border-bottom: 0.8px solid rgba(0, 0, 0, 0.1);
+}
+
+.resume-edit__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: r(32);
+  height: r(32);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+
+  img {
+    width: r(15);
+    height: r(15);
+  }
+
+  &:hover {
+    background: rgba(28, 93, 95, 0.06);
+  }
+}
+
+.resume-edit__modes {
+  display: flex;
+  align-items: center;
+  gap: r(16);
+  padding: r(2);
+}
+
+.resume-edit__mode {
+  display: inline-flex;
+  align-items: center;
+  gap: r(6);
+  height: r(32);
+  padding: r(6) r(16);
+  border: none;
+  border-radius: r(8);
+  background: transparent;
+  color: var(--re-teal);
+  font-size: r(14);
+  line-height: r(16);
+  cursor: pointer;
+  white-space: nowrap;
+
+  img {
+    width: r(16);
+    height: r(16);
+  }
+
+  &.is-active {
+    background: var(--re-teal);
+    color: #fff;
+    box-shadow:
+      0 1px 1.5px rgba(0, 0, 0, 0.1),
+      0 1px 1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.resume-edit__history {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: r(8);
+  max-width: r(180);
+  height: r(32);
+  padding: r(6) r(16);
+  border: 0.8px solid var(--re-teal-border-2);
+  border-radius: r(8);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--re-muted-5);
+  font-size: r(14);
+  line-height: r(16);
+  cursor: pointer;
+
+  span {
+    max-width: r(120);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  img {
+    width: r(12);
+    height: r(12);
+    flex-shrink: 0;
+  }
+}
+
+.resume-edit__messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: r(16) 0 r(24);
+}
+
+.resume-edit__messages-inner {
+  width: 100%;
+  max-width: r(680);
+  margin: 0 auto;
+  padding: 0 r(16);
+  display: flex;
+  flex-direction: column;
+  gap: r(20);
+}
+
+.resume-edit__msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.resume-edit__ai-text {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--re-inter);
+  font-size: r(14);
+  line-height: r(22.75);
+  color: var(--re-ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.resume-edit__bubble {
+  max-width: 100%;
+  padding: r(10) r(16);
+  border-radius: r(8);
+  font-family: var(--re-inter);
+  font-size: r(14);
+  line-height: r(22.75);
+  color: var(--re-ink);
+  word-break: break-word;
+}
+
+.resume-edit__bubble--user {
+  background: var(--re-teal-soft);
+}
+
+.resume-edit__time {
+  margin: r(6) 0 0;
+  font-family: var(--re-inter);
+  font-size: r(12);
+  line-height: r(16);
+  color: var(--re-muted);
+}
+
+.resume-edit__file-card {
+  display: flex;
+  align-items: center;
+  gap: r(12);
+  width: r(257);
+  padding: r(12) r(16);
+  border: 0.889px solid var(--re-teal);
+  border-radius: r(16);
+  background: rgba(28, 93, 95, 0.06);
+}
+
+.resume-edit__file-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: r(32);
+  height: r(32);
+  border-radius: r(20);
+  background: var(--re-green);
+
+  img {
+    width: r(15);
+    height: r(15);
+  }
+}
+
+.resume-edit__file-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.resume-edit__file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: r(8);
+}
+
+.resume-edit__file-name {
+  font-size: r(14);
+  font-weight: 500;
+  line-height: r(20);
+  color: #1a1a1a;
+}
+
+.resume-edit__file-status {
+  flex-shrink: 0;
+  font-size: r(12);
+  line-height: r(16);
+  color: var(--re-file-status);
+}
+
+.resume-edit__file-size {
+  display: block;
+  margin-top: r(4);
+  font-size: r(12);
+  line-height: r(16);
+  color: var(--re-muted-2);
+}
+
+.resume-edit__score {
+  width: 100%;
+  max-width: r(648);
+}
+
+.resume-edit__composer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: r(8) r(16) r(24);
+}
+
+.resume-edit__composer-card {
+  width: 100%;
+  max-width: r(680);
+  padding: r(17) r(21);
+  border: 0.889px solid var(--re-teal-border);
+  border-radius: r(16);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 r(4) r(32) rgba(28, 93, 95, 0.08);
+}
+
+.resume-edit__composer-input {
+  display: block;
+  width: 100%;
+  min-height: r(23);
+  max-height: r(120);
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: var(--re-inter);
+  font-size: r(14);
+  line-height: r(22.75);
+  color: var(--re-ink);
+
+  &::placeholder {
+    color: rgba(0, 0, 0, 0.28);
+  }
+}
+
+.resume-edit__composer-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: r(12);
+}
+
+.resume-edit__composer-right {
+  display: flex;
+  align-items: center;
+  gap: r(8);
+}
+
+.resume-edit__enter-hint {
+  padding-right: r(4);
+  font-family: var(--re-inter);
+  font-size: r(12);
+  line-height: r(16);
+  color: var(--re-muted-3);
+}
+
+.resume-edit__tool-btn,
+.resume-edit__send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: r(28);
+  height: r(28);
+  padding: 0;
+  border: 0.889px solid var(--re-teal-border);
+  border-radius: r(14);
+  background: var(--re-teal-mid);
+  cursor: pointer;
+
+  img {
+    width: r(14);
+    height: r(14);
+  }
+}
+
+.resume-edit__send-btn {
+  border: none;
+  background: rgba(28, 93, 95, 0.15);
+
+  img {
+    width: r(13);
+    height: r(13);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.resume-edit__form-placeholder {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: r(8);
+  padding: r(40);
+  color: var(--re-muted-4);
+  font-size: r(16);
+
+  p {
+    margin: 0;
+  }
+}
+
+.resume-edit__form-hint {
+  font-size: r(13);
+  color: var(--re-muted);
+}
+
+/* ——— 右栏：预览 ——— */
+.resume-edit__preview {
+  flex: 1 1 50%;
+  width: 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.resume-edit__preview-bar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: r(56);
+  padding: r(12) r(16);
+  background: #fff;
+  border-bottom: 0.8px solid rgba(0, 0, 0, 0.1);
+}
+
+.resume-edit__live {
+  display: flex;
+  align-items: center;
+  gap: r(8);
+  font-size: r(12);
+  line-height: r(16);
+  color: var(--re-muted-4);
+}
+
+.resume-edit__live-dot {
+  width: r(8);
+  height: r(8);
+  border-radius: 50%;
+  background: var(--re-green);
+}
+
+.resume-edit__adjust {
+  position: absolute;
+  left: r(73);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: r(6);
+  height: r(32);
+  padding: r(6) r(16);
+  border: 0.8px solid var(--re-teal);
+  border-radius: r(8);
+  background: transparent;
+  color: var(--re-teal);
+  font-size: r(14);
+  line-height: r(16);
+  cursor: pointer;
+  white-space: nowrap;
+
+  img {
+    width: r(16);
+    height: r(16);
+  }
+}
+
+.resume-edit__preview-actions {
+  display: flex;
+  align-items: center;
+  gap: r(16);
+}
+
+.resume-edit__btn-ghost,
+.resume-edit__btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: r(6);
+  height: r(32);
+  padding: r(6) r(16);
+  border: none;
+  border-radius: r(8);
+  font-size: r(14);
+  line-height: r(16);
+  cursor: pointer;
+  white-space: nowrap;
+
+  img {
+    width: r(16);
+    height: r(16);
+  }
+}
+
+.resume-edit__btn-ghost {
+  background: rgba(30, 42, 47, 0.1);
+  color: var(--re-ink);
+}
+
+.resume-edit__btn-primary {
+  background: var(--re-teal);
+  color: #fff;
+  box-shadow:
+    0 1px 1.5px rgba(0, 0, 0, 0.1),
+    0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.resume-edit__skeleton {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: r(38) r(24) r(40);
+  display: flex;
+  flex-direction: column;
+  gap: r(23);
+  background: #fff;
+}
+
+.resume-edit__skeleton-bar {
+  height: r(32);
+  border-radius: r(8);
+  background: #d4d4d4;
+  animation: resume-edit-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes resume-edit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}

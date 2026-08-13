@@ -20,6 +20,8 @@ interface PendingAuthAction {
 
 export interface AuthGateHandle {
   withAuth: (returnTo: string, action: AuthAction) => boolean
+  /** 取出并清除 pending（不执行）；returnTo 不匹配时返回 null */
+  takePendingAction: (returnTo: string) => AuthAction | null
   resumePendingAction: (returnTo: string) => boolean
 }
 
@@ -59,6 +61,13 @@ export const AuthGateProvider = forwardRef<
     [onRequireAuth],
   )
 
+  const takePendingAction = useCallback((returnTo: string) => {
+    const pending = pendingRef.current
+    if (!pending || pending.returnTo !== returnTo) return null
+    pendingRef.current = null
+    return pending.action
+  }, [])
+
   const resumePendingAction = useCallback((returnTo: string) => {
     const pending = pendingRef.current
     pendingRef.current = null
@@ -69,9 +78,13 @@ export const AuthGateProvider = forwardRef<
     return false
   }, [])
 
-  useImperativeHandle(ref, () => ({ withAuth, resumePendingAction }), [withAuth, resumePendingAction])
+  useImperativeHandle(
+    ref,
+    () => ({ withAuth, takePendingAction, resumePendingAction }),
+    [withAuth, takePendingAction, resumePendingAction],
+  )
 
-  const value = { isLoggedIn, withAuth, resumePendingAction }
+  const value = { isLoggedIn, withAuth, takePendingAction, resumePendingAction }
 
   return <AuthGateContext.Provider value={value}>{children}</AuthGateContext.Provider>
 })

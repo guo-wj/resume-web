@@ -110,24 +110,6 @@
   @keyframes spin { to { transform: rotate(360deg) } }
   @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: .45; transform: scale(.88) } }
   @keyframes toastIn { from { opacity: 0; transform: translate(-50%,-14px) } to { opacity: 1; transform: translate(-50%,0) } }
-  @keyframes thinkDot {
-    0%, 80%, 100% { transform: translateY(0); opacity: .35; }
-    40% { transform: translateY(-5px); opacity: 1; }
-  }
-  .magic-landing .chat-think-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .magic-landing .chat-think-dots span {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #6D5DF6;
-    animation: thinkDot 1.05s ease-in-out infinite;
-  }
-  .magic-landing .chat-think-dots span:nth-child(2) { animation-delay: .15s; }
-  .magic-landing .chat-think-dots span:nth-child(3) { animation-delay: .3s; }
   .magic-landing .chat-scroll {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -728,9 +710,15 @@
 .magic-landing .chat-bubble.is-thinking {
   max-width: none;
   width: auto;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: rgba(28, 93, 95, 0.06);
+  padding: 4px 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.magic-landing .chat-bubble.is-thinking.is-loading {
+  padding: 4px 0;
+  background: transparent;
+  border-radius: 0;
 }
 
 .magic-landing .chat-bubble__text {
@@ -762,10 +750,6 @@
 .magic-landing .chat-bubble__voices.has-prev,
 .magic-landing .chat-profile-card {
   margin-top: 12px;
-}
-
-.magic-landing .chat-page .chat-think-dots span {
-  background: #7eb6ae;
 }
 
 .magic-landing .chat-page .chat-text-card__md {

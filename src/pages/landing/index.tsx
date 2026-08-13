@@ -3,7 +3,7 @@ import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, getConversationHistory, mapConversationHistoryToChat, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
 import { useAuth, getAuthSession, getAccessToken } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
@@ -524,7 +524,7 @@ const CHAT_CACHE_PREFIX = "mr:chat:"
 
 function serializeChatForCache(chat) {
   return (chat || [])
-    .filter((m) => !(m.role === "ai" && m.streaming && !m.text))
+    .filter((m) => !(m.role === "ai" && m.streaming && !m.text && !m.loadingText))
     .map((m) => ({
       role: m.role,
       text: m.text || "",
@@ -727,7 +727,7 @@ export function LandingApp() {
     sessionFromUrl ? loadChatCache(sessionFromUrl) : null,
   )
   const [modalOpen, setModalOpen] = useState(false)
-  const [authReturn, setAuthReturn] = useState("landing") // landing | chat
+  const [authReturn, setAuthReturn] = useState("landing") // landing | chat | resumeUpload | materialUpload | heroUpload | ...
   const [tab, setTab] = useState("account") // account | wechat
   const [step, setStep] = useState("method") // method | setpw
 
@@ -1173,6 +1173,7 @@ export function LandingApp() {
   const closeAuth = () => {
     if (screen === "fullAuth") setScreen("landing")
     else setModalOpen(false)
+    setStep("method")
   }
   const onBackdrop = () => {
     if (screen !== "fullAuth") setModalOpen(false)
@@ -1323,10 +1324,6 @@ export function LandingApp() {
       setLoginPwError("请输入登录密码")
       return
     }
-    if (!agreed) {
-      nudgeAgree()
-      return
-    }
     if (loggingIn) return
 
     setLoggingIn(true)
@@ -1356,7 +1353,9 @@ export function LandingApp() {
     proceedAuth()
   }
   const openApple = () => {
-    if (!agreed) {
+    // 密码登录不展示协议勾选；验证码 / 微信等可注册入口需要先同意
+    const hideAgree = tab === "account" && loginMode === "password"
+    if (!hideAgree && !agreed) {
       nudgeAgree()
       return
     }
@@ -1412,6 +1411,15 @@ export function LandingApp() {
     const ret = authReturn
     setModalOpen(false)
     setScreen("landing")
+    setStep("method")
+
+    // 选文件类：登录后不自动弹系统文件框（浏览器会拦截），清掉 pending，用户再点一次原入口即可
+    if (ret === "resumeUpload" || ret === "materialUpload" || ret === "heroUpload") {
+      authGateRef.current?.takePendingAction(ret)
+      toast("登录成功，欢迎来到 Magic Resume 🎉")
+      resetAuthFields()
+      return
+    }
 
     if (authGateRef.current?.resumePendingAction(ret)) {
       toast("登录成功，欢迎来到 Magic Resume 🎉")
@@ -1437,15 +1445,13 @@ export function LandingApp() {
     })
   const onHeroChange = (e) => setHeroInput(e.target.value)
   const openHeroFilePicker = () => {
-    if (!isLoggedIn) {
-      openAuth("heroSubmit")
-      return
-    }
     if (heroFiles.length >= HERO_FILE_MAX_COUNT) {
       toast(`最多上传 ${HERO_FILE_MAX_COUNT} 个文件`)
       return
     }
-    heroFileInputRef.current?.click()
+    authGateRef.current?.withAuth("heroUpload", () => {
+      heroFileInputRef.current?.click()
+    })
   }
   const handleHeroFiles = (e) => {
     const picked = Array.from(e.target.files || [])
@@ -1518,7 +1524,8 @@ export function LandingApp() {
       // 登录后 resume 的 pending action 可能持有旧闭包，需从 store 读最新 user
       const userId = getAuthSession()?.user?.id ?? user?.id
       if (!userId) {
-        toast("请先登录后再对话")
+        // 兜底：不入消息、不 toast，交给上层 withAuth 弹登录
+        openAuth("chatSend")
         return
       }
 
@@ -1545,15 +1552,14 @@ export function LandingApp() {
       setChatStreaming(true)
 
       let aiText = ""
-      setChat((c) => [...c, { role: "ai", text: "", streaming: true, at: Date.now() }])
+      setChat((c) => [...c, { role: "ai", text: "", streaming: true, loadingText: null, at: Date.now() }])
 
-      const patchAiText = (text) => {
-        aiText = text
+      const patchStreamingAi = (patch) => {
         setChat((c) => {
           const next = [...c]
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i].role === "ai" && next[i].streaming) {
-              next[i] = { ...next[i], text: aiText }
+              next[i] = { ...next[i], ...patch }
               break
             }
           }
@@ -1561,13 +1567,35 @@ export function LandingApp() {
         })
       }
 
+      const patchAiText = (text) => {
+        aiText = text
+        patchStreamingAi({ text: aiText, loadingText: null })
+      }
+
+      const patchAiLoading = (loadingText) => {
+        patchStreamingAi({ loadingText })
+      }
+
+      const clearAiLoading = () => {
+        patchStreamingAi({ loadingText: null })
+      }
+
       const finishAi = (readyGenerate) => {
         setChat((c) => {
           const next = [...c]
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i].role === "ai" && next[i].streaming) {
-              if (!aiText) next.splice(i, 1)
-              else next[i] = { role: "ai", text: aiText, streaming: false, at: next[i].at || Date.now(), profile: next[i].profile }
+              if (!aiText && !next[i].profile) next.splice(i, 1)
+              else {
+                next[i] = {
+                  role: "ai",
+                  text: aiText,
+                  streaming: false,
+                  loadingText: null,
+                  at: next[i].at || Date.now(),
+                  profile: next[i].profile,
+                }
+              }
               break
             }
           }
@@ -1582,6 +1610,8 @@ export function LandingApp() {
         .map((id) => (id == null ? "" : String(id).trim()))
         .filter(Boolean)
 
+      const contentCardTypes = new Set(["info_card", "score_card", "profile_card"])
+
       try {
         await streamAgentChat(
           {
@@ -1594,6 +1624,10 @@ export function LandingApp() {
           {
             onDelta: (delta) => patchAiText(aiText + delta),
             onFull: (text) => patchAiText(text),
+            onLoadingText: (text) => patchAiLoading(text),
+            onEvent: (type) => {
+              if (contentCardTypes.has(type)) clearAiLoading()
+            },
             onDone: (ev) => {
               doneReceived = true
               if (ev.session_id) {
@@ -1731,7 +1765,6 @@ export function LandingApp() {
         }
       })()
     }
-    // 选文件后再确认一次登录（点击卡片已 gate，这里兜底）
     authGateRef.current?.withAuth("resumeUpload", submitResume)
   }
   const openMaterialUploadPicker = () => {
@@ -1850,6 +1883,8 @@ export function LandingApp() {
       }
       return
     }
+
+    // 未登录：先弹登录，消息不入会话；登录成功后再发出
     const v = chatInput.trim()
     const files = heroFiles
       .filter((f) => f.status === "success")
@@ -1864,25 +1899,30 @@ export function LandingApp() {
       duration: voice.duration,
       bars: voice.bars,
     }))
-    stopHeroVoiceRecording(true)
-    setChat((c) => [
-      ...c,
-      {
-        role: "user",
-        text: v,
-        files,
-        voices,
-        at: Date.now(),
-      },
-    ])
-    setChatInput("")
-    setHeroFiles([])
-    setHeroVoices([])
-    if (chatInputRef.current) {
-      chatInputRef.current.style.height = "auto"
+
+    const doSend = () => {
+      stopHeroVoiceRecording(true)
+      setChat((c) => [
+        ...c,
+        {
+          role: "user",
+          text: v,
+          files,
+          voices,
+          at: Date.now(),
+        },
+      ])
+      setChatInput("")
+      setHeroFiles([])
+      setHeroVoices([])
+      if (chatInputRef.current) {
+        chatInputRef.current.style.height = "auto"
+      }
+      const fileIds = files.map((f) => f.fileId).filter(Boolean)
+      void sendChatMessage(buildAgentChatMessage(v, files), fileIds)
     }
-    const fileIds = files.map((f) => f.fileId).filter(Boolean)
-    void sendChatMessage(buildAgentChatMessage(v, files), fileIds)
+
+    authGateRef.current?.withAuth("chatSend", doSend)
   }
   const generateResume = () => {
     if (!isLoggedIn) openAuth("chat")
@@ -1968,16 +2008,23 @@ export function LandingApp() {
     ";"
 
   const chatRows = chat.map((m) => {
-    const thinking = m.role === "ai" && !!m.streaming && !m.text
+    const loadingText = (m.loadingText || "").trim()
     const files = m.files || []
     const voices = m.voices || []
     const text = m.text || ""
     const hasText = !!text.trim()
+    const hasProfile = !!m.profile
+    const loading = m.role === "ai" && !!loadingText && !hasText && !hasProfile
+    const thinking = m.role === "ai" && !!m.streaming && !hasText && !loading && !hasProfile
+    const statusLoading = loading || thinking
+    const statusText = loadingText || CHAT_LOADING_STATUS_DEFAULT_TEXT
     const filesOnly = m.role === "user" && !hasText && files.length > 0 && voices.length === 0
     const withMedia = m.role === "user" && hasText && (files.length > 0 || voices.length > 0)
     return {
       role: m.role,
       text,
+      loadingText: statusText,
+      loading: statusLoading,
       streaming: !!m.streaming,
       thinking,
       profile: m.profile || null,
@@ -1986,11 +2033,11 @@ export function LandingApp() {
       rowClass:
         "chat-row" +
         (m.role === "user" ? " is-user" : " is-ai") +
-        (thinking ? " is-thinking" : ""),
+        (statusLoading ? " is-thinking" : ""),
       bubbleClass:
         "chat-bubble" +
         (m.role === "user" ? " is-user" : " is-ai") +
-        (thinking ? " is-thinking" : "") +
+        (statusLoading ? " is-thinking is-loading" : "") +
         (filesOnly ? " is-files-only" : "") +
         (withMedia ? " is-with-media" : ""),
     }
@@ -2210,17 +2257,15 @@ export function LandingApp() {
                   <span className="upload-tip">
                     <E
                       as="button"
-                      className={"ld-177" + (!isLoggedIn ? " is-disabled" : "")}
+                      className="ld-177"
                       aria-label="添加材料"
-                      title={!isLoggedIn ? "请先登录后再上传" : undefined}
-                      disabled={!isLoggedIn}
-                      aria-disabled={!isLoggedIn}
+                      title={isLoggedIn ? undefined : "登录后可上传材料"}
                       onClick={openHeroFilePicker}
                     >
                       <ClipIcon />
                     </E>
                     <span className="upload-tip__bubble" role="tooltip">
-                      {!isLoggedIn ? "请先登录后再上传材料" : HERO_FILE_UPLOAD_TIP}
+                      {!isLoggedIn ? "点击后先登录，再上传材料" : HERO_FILE_UPLOAD_TIP}
                     </span>
                   </span>
                   <RequireAuthAction returnTo="heroSubmit" shouldRun={canHeroSend} onAuthorized={heroSubmitCore}>
@@ -2347,10 +2392,8 @@ export function LandingApp() {
               {chatRows.map((m, i) => (
                 <div key={i} className={m.rowClass}>
                   <div className={m.bubbleClass}>
-                    {m.thinking ? (
-                      <div className="chat-think-dots" role="status" aria-label="正在回复">
-                        <span /><span /><span />
-                      </div>
+                    {m.loading ? (
+                      <ChatLoadingStatus text={m.loadingText} />
                     ) : (
                       <>
                         {m.files.length > 0 && (
@@ -2661,16 +2704,18 @@ export function LandingApp() {
                     </div>
                   </div>
 
-                  {/* agreement */}
-                  <div className={agreeShake ? "ld-agree-row is-shaking" : "ld-agree-row"}>
-                    <button style={css(checkboxStyle)} onClick={toggleAgree}>{agreed ? "✓" : ""}</button>
-                    <div className="ld-21">
-                      我已阅读并同意 Magic Resume
-                      <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
-                      和
-                      <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
+                  {/* 协议勾选：密码登录隐藏；验证码 / 微信等可注册入口展示 */}
+                  {!(isAccountTab && loginMode === "password") && (
+                    <div className={agreeShake ? "ld-agree-row is-shaking" : "ld-agree-row"}>
+                      <button style={css(checkboxStyle)} onClick={toggleAgree}>{agreed ? "✓" : ""}</button>
+                      <div className="ld-21">
+                        我已阅读并同意 Magic Resume
+                        <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
+                        和
+                        <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
