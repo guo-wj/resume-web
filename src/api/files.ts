@@ -48,7 +48,11 @@ export async function uploadFile(file: File, options: UploadFileOptions = {}) {
     const json = (await res.json().catch(() => null)) as ApiResponse<UploadFileResult> | null
 
     if (!res.ok) {
-      if (res.status === 401) throw handleUnauthorized()
+      if (res.status === 401) {
+        throw handleUnauthorized(
+          extractErrorMessage(json, json?.message || res.statusText || "上传失败"),
+        )
+      }
       throw new ApiError(
         res.status,
         extractErrorMessage(json, json?.message || res.statusText || "上传失败"),
@@ -56,7 +60,9 @@ export async function uploadFile(file: File, options: UploadFileOptions = {}) {
     }
 
     if (json && typeof json.code === "number" && json.code !== 0) {
-      if (json.code === 401) throw handleUnauthorized()
+      if (json.code === 401) {
+        throw handleUnauthorized(json.message || "上传失败")
+      }
       throw new ApiError(json.code, json.message || "上传失败")
     }
 

@@ -69,7 +69,11 @@ export async function request<T = unknown>(
     const json = (await res.json().catch(() => null)) as ApiResponse<T> | null
 
     if (!res.ok) {
-      if (res.status === 401) throw handleUnauthorized()
+      if (res.status === 401) {
+        throw handleUnauthorized(
+          extractErrorMessage(json, json?.message || res.statusText || "请求失败"),
+        )
+      }
       throw new ApiError(
         res.status,
         extractErrorMessage(json, json?.message || res.statusText || "请求失败"),
@@ -77,7 +81,9 @@ export async function request<T = unknown>(
     }
 
     if (json && typeof json.code === "number" && json.code !== 0) {
-      if (json.code === 401) throw handleUnauthorized()
+      if (json.code === 401) {
+        throw handleUnauthorized(json.message || "请求失败")
+      }
       throw new ApiError(json.code, json.message || "请求失败")
     }
 

@@ -29,6 +29,32 @@ export type {
   ChatProfileCardProps,
 } from "./ChatProfileCard"
 export {
+  ChatInfoCard,
+  buildChatInfoCardData,
+  CHAT_INFO_CARD_MOCK,
+} from "./ChatInfoCard"
+export type {
+  ChatInfoCardData,
+  ChatInfoCardPayload,
+  ChatInfoBasicInfo,
+  ChatInfoStarItem,
+  ChatInfoField,
+  ChatInfoFieldIcon,
+  ChatInfoCardProps,
+} from "./ChatInfoCard"
+export {
+  ChatMiniResumeCard,
+  buildChatMiniResumeCardData,
+  CHAT_MINI_RESUME_CARD_MOCK,
+} from "./ChatMiniResumeCard"
+export type {
+  ChatMiniResumeCardData,
+  ChatMiniResumeCardPayload,
+  ChatMiniResumeExperience,
+  ChatMiniResumeAction,
+  ChatMiniResumeCardProps,
+} from "./ChatMiniResumeCard"
+export {
   ChatScoreCard,
   getChatScoreTier,
   CHAT_SCORE_CARD_MOCK,

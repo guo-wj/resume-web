@@ -310,6 +310,14 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     auth: true,
   },
   {
+    key: "agent.conversations.cards.update",
+    module: "Agent",
+    method: "PUT",
+    path: "/conversations/:session_id/cards/:card_id",
+    description: "保存基础信息卡编辑（实际请求 /agent/conversations/{session_id}/cards/{card_id}）",
+    auth: true,
+  },
+  {
     key: "agent.chat",
     module: "Agent",
     method: "POST",

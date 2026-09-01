@@ -745,10 +745,20 @@
   gap: 8px;
 }
 
-/* Profile card — styles live in components/ChatProfileCard */
+/* Profile / Info card — styles live in components */
 .magic-landing .chat-bubble__files.has-prev,
 .magic-landing .chat-bubble__voices.has-prev,
-.magic-landing .chat-profile-card {
+.magic-landing .chat-profile-card,
+.magic-landing .chat-info-card,
+.magic-landing .chat-mini-resume-card {
+  margin-top: 12px;
+}
+
+/* 卡片先于正文到达时，后到的正文也要留间距 */
+.magic-landing .chat-info-card + .chat-text-card,
+.magic-landing .chat-profile-card + .chat-text-card,
+.magic-landing .chat-mini-resume-card + .chat-text-card,
+.magic-landing .chat-text-card + .chat-text-card {
   margin-top: 12px;
 }
 
@@ -776,18 +786,18 @@
   }
 }
 
-/* File card — 短卡片用 CSS 边框（chat-card.svg 九宫格/硬拉伸都不适合扁卡） */
+/* File card — Figma 材料解析卡片 379:2863 / 2871 / 2881 / 2890 */
 .magic-landing .chat-file-card {
   width: auto;
   max-width: min(100%, 320px);
   min-width: 0;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12.444px 16.445px;
+  align-items: center;
+  gap: 12px;
+  padding: 12.5px 16.5px;
   border-radius: 16px;
-  border: 0.889px solid #1c5d5f;
-  background: rgba(28, 93, 95, 0.05);
+  border: 1px solid rgba(28, 93, 95, 0.05);
+  background: #fff;
   box-sizing: border-box;
 }
 
@@ -796,20 +806,30 @@
 }
 
 .magic-landing .chat-file-card__icon {
-  width: 15px;
-  height: 22px;
-  margin-top: 2px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
   line-height: 0;
+  overflow: visible;
 }
 
 .magic-landing .chat-file-card__icon img {
-  width: 15px;
-  height: 22px;
   display: block;
-  object-fit: fill;
+  object-fit: contain;
+}
+
+.magic-landing .chat-file-card.is-pdf .chat-file-card__icon img {
+  width: 21.333px;
+  height: 26.667px;
+}
+
+.magic-landing .chat-file-card.is-md .chat-file-card__icon img,
+.magic-landing .chat-file-card.is-word .chat-file-card__icon img,
+.magic-landing .chat-file-card.is-txt .chat-file-card__icon img {
+  width: 32px;
+  height: 32px;
 }
 
 .magic-landing .chat-file-card__meta {
@@ -823,9 +843,9 @@
   font-weight: 500;
   line-height: 20px;
   color: #1a1a1a;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .magic-landing .chat-file-card__size {
@@ -1268,7 +1288,9 @@
     display: none;
   }
 
-  .magic-landing .chat-profile-card {
+  .magic-landing .chat-profile-card,
+  .magic-landing .chat-info-card,
+  .magic-landing .chat-mini-resume-card {
     width: 100%;
   }
 }

@@ -2,14 +2,19 @@
 import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, getConversationHistory, mapConversationHistoryToChat, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
+import { registerUnauthorizedLoginHandler } from "@/api/unauthorized"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatInfoCard, buildChatInfoCardData, ChatMiniResumeCard, buildChatMiniResumeCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
 import { useAuth, getAuthSession, getAccessToken } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
 import chatBoltIcon from "@/assets/chat/bolt.svg"
 import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
 import chatFileChipFail from "@/assets/chat/file-chip-fail.svg"
 import chatFileChipClose from "@/assets/chat/file-chip-close.svg"
+import chatFileTypePdf from "@/assets/chat/file-type-pdf.svg"
+import chatFileTypeMd from "@/assets/chat/file-type-md.svg"
+import chatFileTypeWord from "@/assets/chat/file-type-word.svg"
+import chatFileTypeTxt from "@/assets/chat/file-type-txt.svg"
 import chatComposerPlus from "@/assets/chat/composer-plus.svg"
 import chatComposerDash from "@/assets/chat/composer-dash.svg"
 import chatComposerSend from "@/assets/chat/composer-send.svg"
@@ -68,11 +73,29 @@ const formatFileSizeLabel = (size) => {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function getFileExt(name) {
+  const n = String(name || "").trim()
+  const i = n.lastIndexOf(".")
+  return i >= 0 ? n.slice(i + 1).toLowerCase() : ""
+}
+
+/** 材料卡图标 — Figma 379:2863/2871/2881/2890，按扩展名识别 */
+function getMaterialFileIcon(name) {
+  const ext = getFileExt(name)
+  if (ext === "pdf") return { src: chatFileTypePdf, kind: "pdf" }
+  if (ext === "doc" || ext === "docx") return { src: chatFileTypeWord, kind: "word" }
+  if (ext === "md" || ext === "markdown") return { src: chatFileTypeMd, kind: "md" }
+  if (ext === "txt") return { src: chatFileTypeTxt, kind: "txt" }
+  // 图片等未单独出稿：回退 txt 图标
+  return { src: chatFileTypeTxt, kind: "txt" }
+}
+
 function ChatFileCard({ file }) {
+  const icon = getMaterialFileIcon(file?.name)
   return (
-    <div className="chat-file-card">
+    <div className={`chat-file-card is-${icon.kind}`}>
       <span className="chat-file-card__icon" aria-hidden>
-        <img src={chatFileChipDoc} alt="" width={15} height={22} />
+        <img src={icon.src} alt="" />
       </span>
       <div className="chat-file-card__meta">
         <span className="chat-file-card__name" title={file.name}>{file.name}</span>
@@ -522,14 +545,56 @@ const INTRO_MSG = {
 
 const CHAT_CACHE_PREFIX = "mr:chat:"
 
+/** 从有序 segments 同步扁平字段（缓存 / 判空兼容） */
+function syncFlatFieldsFromSegments(segments) {
+  let text = ""
+  let infoCard
+  let miniResumeCard
+  let profile
+  for (const s of segments || []) {
+    if (!s || typeof s !== "object") continue
+    if (s.kind === "text") text += String(s.text || "")
+    else if (s.kind === "info_card") infoCard = s.data
+    else if (s.kind === "mini_resume_card") miniResumeCard = s.data
+    else if (s.kind === "profile_card") profile = s.data
+  }
+  return { text, infoCard, miniResumeCard, profile }
+}
+
+/** 旧缓存无 segments 时，按原先「正文 → 卡片」顺序还原，避免布局跳变 */
+function ensureAiSegments(m) {
+  if (Array.isArray(m?.segments) && m.segments.length) return m.segments
+  const segs = []
+  if (m?.text) segs.push({ kind: "text", text: m.text })
+  if (m?.miniResumeCard) segs.push({ kind: "mini_resume_card", data: m.miniResumeCard })
+  if (m?.infoCard) segs.push({ kind: "info_card", data: m.infoCard })
+  if (m?.profile) segs.push({ kind: "profile_card", data: m.profile })
+  return segs
+}
+
 function serializeChatForCache(chat) {
   return (chat || [])
-    .filter((m) => !(m.role === "ai" && m.streaming && !m.text && !m.loadingText))
+    .filter(
+      (m) =>
+        !(
+          m.role === "ai" &&
+          m.streaming &&
+          !m.text &&
+          !m.loadingText &&
+          !m.profile &&
+          !m.infoCard &&
+          !m.miniResumeCard &&
+          !(m.segments && m.segments.length)
+        ),
+    )
     .map((m) => ({
       role: m.role,
       text: m.text || "",
       at: m.at || Date.now(),
       profile: m.profile || null,
+      infoCard: m.infoCard || null,
+      miniResumeCard: m.miniResumeCard || null,
+      segments: Array.isArray(m.segments) ? m.segments : undefined,
       files: (m.files || []).map((f) => ({
         name: f.name,
         size: f.size,
@@ -1170,6 +1235,19 @@ export function LandingApp() {
   }
   const openAuthLogin = () => openAuth("landing")
   const openAuthCreate = () => openAuth("landing")
+
+  // 401：弹登录窗，不在输入区 / toast 里展示「未登录」文案
+  const openAuthOnUnauthorizedRef = useRef(openAuth)
+  openAuthOnUnauthorizedRef.current = (ret) => openAuth(ret)
+  const isChatRef = useRef(isChat)
+  isChatRef.current = isChat
+  useEffect(() => {
+    registerUnauthorizedLoginHandler(() => {
+      openAuthOnUnauthorizedRef.current(isChatRef.current ? "chatSend" : "heroUpload")
+    })
+    return () => registerUnauthorizedLoginHandler(null)
+  }, [])
+
   const closeAuth = () => {
     if (screen === "fullAuth") setScreen("landing")
     else setModalOpen(false)
@@ -1458,6 +1536,13 @@ export function LandingApp() {
     e.target.value = ""
     if (!picked.length) return
 
+    // 选文件瞬间若已掉登录，直接弹窗，绝不进入上传 / 错误 chip
+    const session = getAuthSession()
+    if (!(session?.accessToken && session?.user?.id)) {
+      openAuth("heroUpload")
+      return
+    }
+
     // 先基于当前列表同步算出待上传批次，再 setState。
     // 不能把「收集 added」放进 setState updater：updater 可能异步执行，
     // 外面立刻读 added 会是空数组，导致根本不调 upload。
@@ -1500,6 +1585,11 @@ export function LandingApp() {
             }),
           )
         } catch (err) {
+          // 401：去掉失败 chip，由全局 handler 弹登录（勿把「未登录」文案塞进输入区）
+          if (err instanceof ApiError && err.handled) {
+            setHeroFiles((files) => files.filter((f) => f.id !== item.id))
+            return
+          }
           const message =
             err instanceof ApiError && err.message
               ? err.message
@@ -1552,14 +1642,18 @@ export function LandingApp() {
       setChatStreaming(true)
 
       let aiText = ""
-      setChat((c) => [...c, { role: "ai", text: "", streaming: true, loadingText: null, at: Date.now() }])
+      setChat((c) => [
+        ...c,
+        { role: "ai", text: "", streaming: true, loadingText: null, segments: [], at: Date.now() },
+      ])
 
       const patchStreamingAi = (patch) => {
         setChat((c) => {
           const next = [...c]
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i].role === "ai" && next[i].streaming) {
-              next[i] = { ...next[i], ...patch }
+              const resolved = typeof patch === "function" ? patch(next[i]) : patch
+              next[i] = { ...next[i], ...resolved }
               break
             }
           }
@@ -1567,9 +1661,44 @@ export function LandingApp() {
         })
       }
 
-      const patchAiText = (text) => {
+      const appendAiTextDelta = (delta) => {
+        aiText += delta
+        patchStreamingAi((msg) => {
+          const segments = [...(msg.segments || [])]
+          const last = segments[segments.length - 1]
+          if (last?.kind === "text") {
+            segments[segments.length - 1] = { ...last, text: last.text + delta }
+          } else {
+            segments.push({ kind: "text", text: delta })
+          }
+          return { ...syncFlatFieldsFromSegments(segments), segments, loadingText: null }
+        })
+      }
+
+      const setAiFullText = (text) => {
         aiText = text
-        patchStreamingAi({ text: aiText, loadingText: null })
+        patchStreamingAi((msg) => {
+          let segments = [...(msg.segments || [])]
+          const firstTextIdx = segments.findIndex((s) => s?.kind === "text")
+          if (firstTextIdx >= 0) {
+            segments = segments.filter((s, i) => s?.kind !== "text" || i === firstTextIdx)
+            const idx = segments.findIndex((s) => s?.kind === "text")
+            segments[idx] = { kind: "text", text }
+          } else {
+            segments.push({ kind: "text", text })
+          }
+          return { ...syncFlatFieldsFromSegments(segments), segments, loadingText: null }
+        })
+      }
+
+      const upsertAiCardSegment = (kind, data) => {
+        patchStreamingAi((msg) => {
+          const segments = [...(msg.segments || [])]
+          const idx = segments.findIndex((s) => s?.kind === kind)
+          if (idx >= 0) segments[idx] = { kind, data }
+          else segments.push({ kind, data })
+          return { ...syncFlatFieldsFromSegments(segments), segments, loadingText: null }
+        })
       }
 
       const patchAiLoading = (loadingText) => {
@@ -1585,15 +1714,24 @@ export function LandingApp() {
           const next = [...c]
           for (let i = next.length - 1; i >= 0; i--) {
             if (next[i].role === "ai" && next[i].streaming) {
-              if (!aiText && !next[i].profile) next.splice(i, 1)
+              const hasContent =
+                !!aiText ||
+                !!next[i].profile ||
+                !!next[i].infoCard ||
+                !!next[i].miniResumeCard ||
+                (Array.isArray(next[i].segments) && next[i].segments.length > 0)
+              if (!hasContent) next.splice(i, 1)
               else {
                 next[i] = {
                   role: "ai",
-                  text: aiText,
+                  text: aiText || next[i].text || "",
                   streaming: false,
                   loadingText: null,
                   at: next[i].at || Date.now(),
                   profile: next[i].profile,
+                  infoCard: next[i].infoCard,
+                  miniResumeCard: next[i].miniResumeCard,
+                  segments: next[i].segments,
                 }
               }
               break
@@ -1610,7 +1748,12 @@ export function LandingApp() {
         .map((id) => (id == null ? "" : String(id).trim()))
         .filter(Boolean)
 
-      const contentCardTypes = new Set(["info_card", "score_card", "profile_card"])
+      const contentCardTypes = new Set([
+        "info_card",
+        "score_card",
+        "profile_card",
+        "mini_resume_card",
+      ])
 
       try {
         await streamAgentChat(
@@ -1622,11 +1765,18 @@ export function LandingApp() {
             file_ids: ids,
           },
           {
-            onDelta: (delta) => patchAiText(aiText + delta),
-            onFull: (text) => patchAiText(text),
+            onDelta: (delta) => appendAiTextDelta(delta),
+            onFull: (text) => setAiFullText(text),
             onLoadingText: (text) => patchAiLoading(text),
-            onEvent: (type) => {
+            onEvent: (type, data) => {
               if (contentCardTypes.has(type)) clearAiLoading()
+              if (type === "info_card") {
+                upsertAiCardSegment("info_card", data)
+              } else if (type === "mini_resume_card") {
+                upsertAiCardSegment("mini_resume_card", data)
+              } else if (type === "profile_card") {
+                upsertAiCardSegment("profile_card", data)
+              }
             },
             onDone: (ev) => {
               doneReceived = true
@@ -2014,8 +2164,12 @@ export function LandingApp() {
     const text = m.text || ""
     const hasText = !!text.trim()
     const hasProfile = !!m.profile
-    const loading = m.role === "ai" && !!loadingText && !hasText && !hasProfile
-    const thinking = m.role === "ai" && !!m.streaming && !hasText && !loading && !hasProfile
+    const hasInfoCard = !!m.infoCard
+    const hasMiniResumeCard = !!m.miniResumeCard
+    const hasCard = hasProfile || hasInfoCard || hasMiniResumeCard
+    const segments = m.role === "ai" ? ensureAiSegments(m) : []
+    const loading = m.role === "ai" && !!loadingText && !hasText && !hasCard
+    const thinking = m.role === "ai" && !!m.streaming && !hasText && !loading && !hasCard
     const statusLoading = loading || thinking
     const statusText = loadingText || CHAT_LOADING_STATUS_DEFAULT_TEXT
     const filesOnly = m.role === "user" && !hasText && files.length > 0 && voices.length === 0
@@ -2028,6 +2182,9 @@ export function LandingApp() {
       streaming: !!m.streaming,
       thinking,
       profile: m.profile || null,
+      infoCard: m.infoCard || null,
+      miniResumeCard: m.miniResumeCard || null,
+      segments,
       files,
       voices,
       rowClass:
@@ -2403,8 +2560,89 @@ export function LandingApp() {
                             ))}
                           </div>
                         )}
-                        {m.role === "ai" && m.text ? (
-                          <ChatTextCard content={m.text} />
+                        {m.role === "ai" ? (
+                          (m.segments || []).map((seg, segIdx) => {
+                            if (!seg) return null
+                            if (seg.kind === "text") {
+                              const content = String(seg.text || "")
+                              if (!content.trim()) return null
+                              return <ChatTextCard key={`seg-text-${segIdx}`} content={content} />
+                            }
+                            if (seg.kind === "mini_resume_card") {
+                              return (
+                                <ChatMiniResumeCard
+                                  key={`seg-mini-${segIdx}`}
+                                  data={buildChatMiniResumeCardData(seg.data) || undefined}
+                                  onAction={(action) => {
+                                    toast(action.label || "即将生成完整简历")
+                                  }}
+                                />
+                              )
+                            }
+                            if (seg.kind === "info_card") {
+                              return (
+                                <ChatInfoCard
+                                  key={`seg-info-${segIdx}`}
+                                  data={buildChatInfoCardData(seg.data) || undefined}
+                                  sessionId={() =>
+                                    String(
+                                      chatSessionIdRef.current ||
+                                        parseChatSessionIdFromPath(location.pathname) ||
+                                        "",
+                                    ).trim()
+                                  }
+                                  onSaved={(payload) => {
+                                    setChat((c) => {
+                                      const next = [...c]
+                                      if (i >= 0 && i < next.length && next[i]?.role === "ai") {
+                                        const prevCard =
+                                          typeof next[i].infoCard === "object" && next[i].infoCard
+                                            ? (next[i].infoCard as Record<string, unknown>)
+                                            : {}
+                                        const merged = {
+                                          ...prevCard,
+                                          ...payload,
+                                          card_id: payload.card_id ?? prevCard.card_id,
+                                        }
+                                        const segments = ensureAiSegments(next[i]).map((s) =>
+                                          s?.kind === "info_card"
+                                            ? {
+                                                kind: "info_card",
+                                                data: {
+                                                  ...(typeof s.data === "object" && s.data
+                                                    ? (s.data as Record<string, unknown>)
+                                                    : {}),
+                                                  ...merged,
+                                                },
+                                              }
+                                            : s,
+                                        )
+                                        next[i] = {
+                                          ...next[i],
+                                          infoCard: merged,
+                                          segments,
+                                        }
+                                      }
+                                      return next
+                                    })
+                                    toast("已保存")
+                                  }}
+                                  onSaveError={(err) => {
+                                    toast(err.message || "保存失败，请稍后重试")
+                                  }}
+                                />
+                              )
+                            }
+                            if (seg.kind === "profile_card") {
+                              return (
+                                <ChatProfileCard
+                                  key={`seg-profile-${segIdx}`}
+                                  data={buildChatProfileCardData(seg.data)}
+                                />
+                              )
+                            }
+                            return null
+                          })
                         ) : m.text ? (
                           <div className={"chat-bubble__text" + (m.files.length ? " has-prev" : "")}>{m.text}</div>
                         ) : null}
@@ -2421,9 +2659,6 @@ export function LandingApp() {
                             ))}
                           </div>
                         )}
-                        {m.role === "ai" && m.profile ? (
-                          <ChatProfileCard data={buildChatProfileCardData(m.profile)} />
-                        ) : null}
                       </>
                     )}
                   </div>

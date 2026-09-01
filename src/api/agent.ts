@@ -11,6 +11,7 @@ const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE || "/agent").replace(/\/$/, 
  * - /agent/health                    → 127.0.0.1:8888/health
  * - /agent/sessions                  → 127.0.0.1:8888/sessions
  * - /agent/conversations/{session_id}→ 127.0.0.1:8888/conversations/{session_id}
+ * - /agent/conversations/{session_id}/cards/{card_id} → 127.0.0.1:8888/conversations/{session_id}/cards/{card_id}
  * - /agent/chat                      → 127.0.0.1:8888/chat
  * - /agent/files/upload              → 127.0.0.1:8888/files/upload
  */
@@ -55,7 +56,11 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
       | null
 
     if (!res.ok) {
-      if (res.status === 401) throw handleUnauthorized()
+      if (res.status === 401) {
+        throw handleUnauthorized(
+          extractErrorMessage(json, (json as ApiResponse | null)?.message || res.statusText || "创建会话失败"),
+        )
+      }
       throw new ApiError(
         res.status,
         extractErrorMessage(json, (json as ApiResponse | null)?.message || res.statusText || "创建会话失败"),
@@ -63,7 +68,9 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
     }
 
     if (json && typeof (json as ApiResponse).code === "number" && (json as ApiResponse).code !== 0) {
-      if ((json as ApiResponse).code === 401) throw handleUnauthorized()
+      if ((json as ApiResponse).code === 401) {
+        throw handleUnauthorized((json as ApiResponse).message || "创建会话失败")
+      }
       throw new ApiError((json as ApiResponse).code, (json as ApiResponse).message || "创建会话失败")
     }
 
@@ -84,6 +91,116 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 export function resolveAgentConversationUrl(sessionId: string): string {
   const id = encodeURIComponent(String(sessionId || "").trim())
   return `${AGENT_BASE}/conversations/${id}`
+}
+
+/** PUT /agent/conversations/{session_id}/cards/{card_id} */
+export function resolveAgentConversationCardUrl(sessionId: string, cardId: string | number): string {
+  const sid = encodeURIComponent(String(sessionId || "").trim())
+  const cid = encodeURIComponent(String(cardId ?? "").trim())
+  return `${AGENT_BASE}/conversations/${sid}/cards/${cid}`
+}
+
+export interface UpdateConversationCardBody {
+  name?: string | null
+  phone?: string | null
+  email?: string | null
+  education?: string | null
+  target_role?: string | null
+}
+
+export interface UpdateConversationCardResult {
+  type?: string
+  card_id?: number | string
+  data?: {
+    file_id?: string
+    basic?: {
+      name?: string | null
+      phone?: string | null
+      email?: string | null
+      education?: string | null
+      target_role?: string | null
+      [key: string]: unknown
+    }
+    star?: unknown[]
+    title?: string
+    title_2?: string
+    hint?: string
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+export interface UpdateConversationCardOptions {
+  signal?: AbortSignal
+  timeout?: number
+}
+
+/** PUT /agent/conversations/{session_id}/cards/{card_id} — 保存基础信息卡编辑 */
+export async function updateConversationCard(
+  sessionId: string,
+  cardId: string | number,
+  body: UpdateConversationCardBody,
+  options: UpdateConversationCardOptions = {},
+) {
+  const sid = String(sessionId || "").trim()
+  const cid = String(cardId ?? "").trim()
+  if (!sid) throw new ApiError(0, "缺少 session_id")
+  if (!cid) throw new ApiError(0, "缺少 card_id")
+
+  const { signal, timeout = DEFAULT_TIMEOUT_MS } = options
+  const token = getAccessToken()
+  const gate = createTimeoutGate(timeout, signal)
+
+  try {
+    const res = await fetch(resolveAgentConversationCardUrl(sid, cid), {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: gate.signal,
+    })
+
+    const json = (await res.json().catch(() => null)) as
+      | ApiResponse<UpdateConversationCardResult>
+      | UpdateConversationCardResult
+      | null
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw handleUnauthorized(
+          extractErrorMessage(
+            json,
+            (json as ApiResponse | null)?.message || res.statusText || "保存失败",
+          ),
+        )
+      }
+      throw new ApiError(
+        res.status,
+        extractErrorMessage(
+          json,
+          (json as ApiResponse | null)?.message || res.statusText || "保存失败",
+        ),
+      )
+    }
+
+    if (json && typeof (json as ApiResponse).code === "number" && (json as ApiResponse).code !== 0) {
+      if ((json as ApiResponse).code === 401) {
+        throw handleUnauthorized((json as ApiResponse).message || "保存失败")
+      }
+      throw new ApiError((json as ApiResponse).code, (json as ApiResponse).message || "保存失败")
+    }
+
+    return ((json as ApiResponse<UpdateConversationCardResult>)?.data ??
+      json) as UpdateConversationCardResult
+  } catch (err) {
+    if (err instanceof ApiError) throw err
+    throwIfAborted(err, gate.didTimeout())
+  } finally {
+    gate.dispose()
+  }
 }
 
 export interface AgentConversationBlock {
@@ -134,6 +251,13 @@ export interface GetConversationHistoryOptions {
   timeout?: number
 }
 
+/** UI 侧 AI 消息内有序内容块（按到达顺序渲染，避免卡片后到的正文被画到卡片上方） */
+export type AgentChatAiSegment =
+  | { kind: "text"; text: string }
+  | { kind: "info_card"; data: unknown }
+  | { kind: "mini_resume_card"; data: unknown }
+  | { kind: "profile_card"; data: unknown }
+
 /** UI 侧消息形态（与 landing chat state 对齐） */
 export interface AgentChatUiMessage {
   role: "user" | "ai"
@@ -144,7 +268,11 @@ export interface AgentChatUiMessage {
   streaming: boolean
   /** 流式 loading_text，有内容卡片 / 正文后清空 */
   loadingText?: string | null
+  /** 有序内容；优先于扁平 text/infoCard 字段渲染 */
+  segments?: AgentChatAiSegment[]
   profile?: unknown
+  infoCard?: unknown
+  miniResumeCard?: unknown
   id?: string
 }
 
@@ -171,12 +299,22 @@ function normalizeConversationRole(role: unknown): "user" | "ai" | null {
 function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
   const textParts: string[] = []
   const files: AgentChatUiMessage["files"] = []
+  const segments: AgentChatAiSegment[] = []
+  let infoCard: Record<string, unknown> | null = null
+  let profile: Record<string, unknown> | null = null
+  let miniResumeCard: Record<string, unknown> | null = null
+
   for (const block of blocks || []) {
     if (!block || typeof block !== "object") continue
     const type = String(block.type || "").trim().toLowerCase()
     if (type === "text") {
       const content = String(block.content || "").trim()
-      if (content) textParts.push(content)
+      if (content) {
+        textParts.push(content)
+        const last = segments[segments.length - 1]
+        if (last?.kind === "text") last.text = `${last.text}\n\n${content}`
+        else segments.push({ kind: "text", text: content })
+      }
       continue
     }
     if (type === "file_card") {
@@ -188,9 +326,44 @@ function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
         size: data.size_bytes ?? data.size,
         fileId: fileId || null,
       })
+      continue
+    }
+    if (type === "info_card" && block.data && typeof block.data === "object") {
+      const data = { ...(block.data as Record<string, unknown>) }
+      if (data.card_id == null && (block as { card_id?: unknown }).card_id != null) {
+        data.card_id = (block as { card_id?: unknown }).card_id
+      }
+      infoCard = data
+      segments.push({ kind: "info_card", data })
+      continue
+    }
+    if (type === "mini_resume_card") {
+      const raw =
+        block.data && typeof block.data === "object"
+          ? { ...(block.data as Record<string, unknown>) }
+          : { ...(block as Record<string, unknown>) }
+      delete raw.type
+      delete raw.data
+      if (raw.card_id == null && (block as { card_id?: unknown }).card_id != null) {
+        raw.card_id = (block as { card_id?: unknown }).card_id
+      }
+      miniResumeCard = raw
+      segments.push({ kind: "mini_resume_card", data: raw })
+      continue
+    }
+    if (type === "profile_card" && block.data && typeof block.data === "object") {
+      profile = block.data as Record<string, unknown>
+      segments.push({ kind: "profile_card", data: profile })
     }
   }
-  return { text: textParts.join("\n\n"), files }
+  return {
+    text: textParts.join("\n\n"),
+    files,
+    infoCard,
+    profile,
+    miniResumeCard,
+    segments,
+  }
 }
 
 /** 将会话历史接口数据映射为聊天 UI 消息列表 */
@@ -214,9 +387,13 @@ export function mapConversationHistoryToChat(
     const fromBlocks = blocksToChatParts(item.blocks)
     let text = fromBlocks.text
     let files = fromBlocks.files
+    const infoCard = fromBlocks.infoCard
+    const profile = fromBlocks.profile
+    const miniResumeCard = fromBlocks.miniResumeCard
+    let segments = fromBlocks.segments
 
     // 无 blocks 时兼容旧扁平字段
-    if (!text && !files.length) {
+    if (!text && !files.length && !infoCard && !profile && !miniResumeCard) {
       text = String(item.content ?? item.message ?? item.text ?? "").trim()
       files = Array.isArray(item.files)
         ? item.files.map((f) => ({
@@ -230,9 +407,10 @@ export function mapConversationHistoryToChat(
               .filter(Boolean)
               .map((fileId) => ({ name: "附件", fileId }))
           : []
+      segments = text ? [{ kind: "text", text }] : []
     }
 
-    if (!text && !files.length) continue
+    if (!text && !files.length && !infoCard && !profile && !miniResumeCard) continue
     out.push({
       id: item.id ? String(item.id) : undefined,
       role,
@@ -241,6 +419,10 @@ export function mapConversationHistoryToChat(
       files,
       voices: [],
       streaming: false,
+      segments: segments.length ? segments : undefined,
+      infoCard: infoCard || undefined,
+      profile: profile || undefined,
+      miniResumeCard: miniResumeCard || undefined,
     })
   }
   return out
@@ -275,7 +457,14 @@ export async function getConversationHistory(
       | null
 
     if (!res.ok) {
-      if (res.status === 401) throw handleUnauthorized()
+      if (res.status === 401) {
+        throw handleUnauthorized(
+          extractErrorMessage(
+            json,
+            (json as ApiResponse | null)?.message || res.statusText || "获取会话历史失败",
+          ),
+        )
+      }
       throw new ApiError(
         res.status,
         extractErrorMessage(
@@ -286,7 +475,9 @@ export async function getConversationHistory(
     }
 
     if (json && typeof (json as ApiResponse).code === "number" && (json as ApiResponse).code !== 0) {
-      if ((json as ApiResponse).code === 401) throw handleUnauthorized()
+      if ((json as ApiResponse).code === 401) {
+        throw handleUnauthorized((json as ApiResponse).message || "获取会话历史失败")
+      }
       throw new ApiError((json as ApiResponse).code, (json as ApiResponse).message || "获取会话历史失败")
     }
 
@@ -422,7 +613,11 @@ function handleStreamEvent(data: Record<string, unknown>, callbacks: AgentChatSt
   }
 
   if (type && type !== "done" && type !== "error") {
-    callbacks.onEvent?.(type, payload)
+    // card_id 等字段常在事件顶层（与 data 同级），合并进 payload 供卡片使用
+    const merged: Record<string, unknown> = { ...payload }
+    if (merged.card_id == null && data.card_id != null) merged.card_id = data.card_id
+    if (merged.card_id == null && data.id != null) merged.card_id = data.id
+    callbacks.onEvent?.(type, merged)
     return
   }
 
@@ -519,7 +714,12 @@ export async function streamAgentChat(
     gate.clearTimer()
 
     if (!res.ok) {
-      if (res.status === 401) throw handleUnauthorized()
+      if (res.status === 401) {
+        const json401 = await res.json().catch(() => null)
+        throw handleUnauthorized(
+          extractErrorMessage(json401, res.statusText || "对话请求失败"),
+        )
+      }
       const json = await res.json().catch(() => null)
       throw new ApiError(
         res.status,

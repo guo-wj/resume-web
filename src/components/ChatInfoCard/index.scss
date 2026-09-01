@@ -1,0 +1,222 @@
+/* 基础信息卡片 — Figma 379:2180（实线描边，非手绘边框） */
+.chat-info-card {
+  width: min(420px, 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(28, 93, 95, 0.1);
+  box-shadow: 0 2px 24px 0 rgba(28, 93, 95, 0.08);
+  box-sizing: border-box;
+}
+
+.chat-info-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f7f9f9;
+}
+
+.chat-info-card__head-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #2d7a7c 0%, #1c5d5f 100%);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: clip;
+}
+
+.chat-info-card__head-icon img {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.chat-info-card__head-text {
+  min-width: 0;
+}
+
+.chat-info-card__title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.chat-info-card__sub {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.chat-info-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+}
+
+.chat-info-card__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-info-card__row-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(28, 93, 95, 0.08);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: clip;
+}
+
+.chat-info-card__row-icon img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.chat-info-card__row-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.chat-info-card__label {
+  font-size: 12px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.chat-info-card__value {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 编辑态输入 — Figma 379:2280：bg rgba(28,93,95,0.05) / radius 4 */
+.chat-info-card__input {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 0 8px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 0;
+  outline: none;
+  border-radius: 4px;
+  background: rgba(28, 93, 95, 0.05);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #1a1a1a;
+  font-family: inherit;
+}
+
+.chat-info-card__input:focus {
+  background: rgba(28, 93, 95, 0.08);
+}
+
+.chat-info-card__divider {
+  height: 1px;
+  width: 100%;
+  background: rgba(28, 93, 95, 0.07);
+}
+
+.chat-info-card__hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(28, 93, 95, 0.03);
+  border-top: 1px solid rgba(28, 93, 95, 0.08);
+  box-sizing: border-box;
+}
+
+.chat-info-card__hint-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.chat-info-card__hint-icon img {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+.chat-info-card__hint-text {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.chat-info-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px 20px;
+  box-sizing: border-box;
+}
+
+.chat-info-card__hint + .chat-info-card__actions {
+  padding-top: 12px;
+}
+
+.chat-info-card__btn {
+  min-width: 96px;
+  width: 96px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  font-family: inherit;
+}
+
+.chat-info-card__btn:not(:disabled):hover {
+  opacity: 0.92;
+}
+
+.chat-info-card__btn:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.chat-info-card__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 次要「编辑」— Figma 379:2264 */
+.chat-info-card__btn--edit {
+  background: rgba(30, 42, 47, 0.1);
+  color: #1e2a2f;
+  font-size: 15.8px;
+}
+
+/* 主要「确定」— Figma 379:2266 */
+.chat-info-card__btn--confirm {
+  background: linear-gradient(180deg, #1c5d5f 0%, #1e6264 100%);
+  color: #fff;
+}

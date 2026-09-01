@@ -12,6 +12,8 @@ export {
   resolveAgentSessionsUrl,
   getConversationHistory,
   resolveAgentConversationUrl,
+  updateConversationCard,
+  resolveAgentConversationCardUrl,
   mapConversationHistoryToChat,
   buildAgentChatMessage,
   createAgentSessionId,
@@ -32,7 +34,11 @@ export type {
   AgentConversationMessage,
   AgentConversationBlock,
   AgentChatUiMessage,
+  AgentChatAiSegment,
   GetConversationHistoryOptions,
+  UpdateConversationCardBody,
+  UpdateConversationCardResult,
+  UpdateConversationCardOptions,
 } from "./agent"
 export { logout, loginByPassword } from "./auth"
 export {
