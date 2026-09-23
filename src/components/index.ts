@@ -38,6 +38,7 @@ export type {
   ChatInfoCardPayload,
   ChatInfoBasicInfo,
   ChatInfoStarItem,
+  ChatInfoExperience,
   ChatInfoField,
   ChatInfoFieldIcon,
   ChatInfoCardProps,

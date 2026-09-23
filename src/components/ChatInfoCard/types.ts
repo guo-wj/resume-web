@@ -1,4 +1,12 @@
-export type ChatInfoFieldIcon = "user" | "phone" | "target" | "education"
+export type ChatInfoFieldIcon =
+  | "name"
+  | "phone"
+  | "email"
+  | "industry"
+  | "role"
+  | "education"
+  | "school"
+  | "major"
 
 export interface ChatInfoField {
   key: string
@@ -7,22 +15,35 @@ export interface ChatInfoField {
   icon: ChatInfoFieldIcon
 }
 
-export interface ChatInfoCardData {
-  /** 主标题（SSE title） */
+export interface ChatInfoExperience {
   title: string
-  /** 副标题（SSE title_2） */
+  /** 原始 category，如 research / work / competition */
+  category: string
+  categoryLabel: string
+  role: string
+  period: string
+  content: string
+  duty: string
+  result: string
+  abilityArgs: string[]
+}
+
+export interface ChatInfoCardData {
+  /** 主标题；缺省为设计稿固定文案 */
+  title: string
+  /** 副标题：优先 title_2，否则 hint */
   subtitle?: string
   fields: ChatInfoField[]
+  experiences: ChatInfoExperience[]
   /** 有值才展示：已写入履历库提示；开关关闭时后端不返回 */
   hint?: string
   fileId?: string
   /** PUT /conversations/{session_id}/cards/{card_id} */
   cardId?: string | number
-  /** 接口字段，卡片 UI 暂不展示，保存时原样带回 */
-  email?: string
-  /** @deprecated 底部按钮固定为「编辑 / 确定」 */
+  written?: boolean
+  /** @deprecated 底部按钮固定为「修改 / 保存」 */
   secondaryAction?: { label: string }
-  /** @deprecated 底部按钮固定为「编辑 / 确定」 */
+  /** @deprecated 底部按钮固定为「修改 / 保存」 */
   primaryAction?: { label: string }
 }
 
@@ -31,8 +52,26 @@ export interface ChatInfoBasicInfo {
   name?: string
   phone?: string
   email?: string
-  education?: string
+  target_industry?: string
   target_role?: string
+  highest_education?: string
+  /** 旧字段，与 highest_education 同义 */
+  education?: string
+  school?: string
+  major?: string
+  [key: string]: unknown
+}
+
+export interface ChatInfoExperiencePayload {
+  title?: string
+  category?: string
+  role?: string
+  start_date?: string
+  end_date?: string
+  content?: string
+  duty?: string
+  result?: string
+  ability_args?: unknown
   [key: string]: unknown
 }
 
@@ -48,18 +87,18 @@ export interface ChatInfoStarItem {
 
 /** SSE `info_card` 事件 data 形态 */
 export interface ChatInfoCardPayload {
-  /** 固定文案，直接展示 */
   title?: string
-  /** 固定文案，直接展示 */
   title_2?: string
-  /** 有则展示（已写入履历库）；无则不展示 */
+  /** 有则作为副标题（已写入履历库）；无则不展示 */
   hint?: string
+  written?: boolean
   file_id?: string
   /** 事件顶层或 data 内均可 */
   card_id?: string | number
   basic?: ChatInfoBasicInfo
   /** 文档别名，与 basic 同义 */
   basic_info?: ChatInfoBasicInfo
+  experience?: ChatInfoExperiencePayload[]
   star?: ChatInfoStarItem[]
   primary_btn?: string
   secondary_btn?: string

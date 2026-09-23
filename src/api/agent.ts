@@ -104,8 +104,13 @@ export interface UpdateConversationCardBody {
   name?: string | null
   phone?: string | null
   email?: string | null
+  /** 旧字段，与 highest_education 同义 */
   education?: string | null
+  target_industry?: string | null
   target_role?: string | null
+  highest_education?: string | null
+  school?: string | null
+  major?: string | null
 }
 
 export interface UpdateConversationCardResult {
@@ -118,9 +123,14 @@ export interface UpdateConversationCardResult {
       phone?: string | null
       email?: string | null
       education?: string | null
+      target_industry?: string | null
       target_role?: string | null
+      highest_education?: string | null
+      school?: string | null
+      major?: string | null
       [key: string]: unknown
     }
+    experience?: unknown[]
     star?: unknown[]
     title?: string
     title_2?: string

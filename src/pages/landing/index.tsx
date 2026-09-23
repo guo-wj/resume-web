@@ -2573,8 +2573,8 @@ export function LandingApp() {
                                 <ChatMiniResumeCard
                                   key={`seg-mini-${segIdx}`}
                                   data={buildChatMiniResumeCardData(seg.data) || undefined}
-                                  onAction={(action) => {
-                                    toast(action.label || "即将生成完整简历")
+                                  onAction={() => {
+                                    navigate("/surprise")
                                   }}
                                 />
                               )
