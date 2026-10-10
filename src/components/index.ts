@@ -36,6 +36,7 @@ export {
 export type {
   ChatInfoCardData,
   ChatInfoCardPayload,
+  ChatInfoCardChangePayload,
   ChatInfoBasicInfo,
   ChatInfoStarItem,
   ChatInfoExperience,
@@ -55,6 +56,17 @@ export type {
   ChatMiniResumeAction,
   ChatMiniResumeCardProps,
 } from "./ChatMiniResumeCard"
+export {
+  ChatButtonCard,
+  buildChatButtonCardData,
+  CHAT_BUTTON_CARD_MOCK,
+} from "./ChatButtonCard"
+export type {
+  ChatButtonCardData,
+  ChatButtonCardPayload,
+  ChatButtonItem,
+  ChatButtonCardProps,
+} from "./ChatButtonCard"
 export {
   ChatScoreCard,
   getChatScoreTier,

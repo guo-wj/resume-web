@@ -4,10 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, getConversationHistory, mapConversationHistoryToChat, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { registerUnauthorizedLoginHandler } from "@/api/unauthorized"
 import { PersonalCenter } from "@/pages/personal"
-import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatInfoCard, buildChatInfoCardData, ChatMiniResumeCard, buildChatMiniResumeCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
+import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatInfoCard, buildChatInfoCardData, ChatMiniResumeCard, buildChatMiniResumeCardData, ChatButtonCard, buildChatButtonCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
 import { useAuth, getAuthSession, getAccessToken } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
-import chatBoltIcon from "@/assets/chat/bolt.svg"
 import chatFileChipDoc from "@/assets/chat/file-chip-doc.svg"
 import chatFileChipFail from "@/assets/chat/file-chip-fail.svg"
 import chatFileChipClose from "@/assets/chat/file-chip-close.svg"
@@ -550,15 +549,17 @@ function syncFlatFieldsFromSegments(segments) {
   let text = ""
   let infoCard
   let miniResumeCard
+  let buttonCard
   let profile
   for (const s of segments || []) {
     if (!s || typeof s !== "object") continue
     if (s.kind === "text") text += String(s.text || "")
     else if (s.kind === "info_card") infoCard = s.data
     else if (s.kind === "mini_resume_card") miniResumeCard = s.data
+    else if (s.kind === "button_card") buttonCard = s.data
     else if (s.kind === "profile_card") profile = s.data
   }
-  return { text, infoCard, miniResumeCard, profile }
+  return { text, infoCard, miniResumeCard, buttonCard, profile }
 }
 
 /** 旧缓存无 segments 时，按原先「正文 → 卡片」顺序还原，避免布局跳变 */
@@ -568,6 +569,7 @@ function ensureAiSegments(m) {
   if (m?.text) segs.push({ kind: "text", text: m.text })
   if (m?.miniResumeCard) segs.push({ kind: "mini_resume_card", data: m.miniResumeCard })
   if (m?.infoCard) segs.push({ kind: "info_card", data: m.infoCard })
+  if (m?.buttonCard) segs.push({ kind: "button_card", data: m.buttonCard })
   if (m?.profile) segs.push({ kind: "profile_card", data: m.profile })
   return segs
 }
@@ -584,6 +586,7 @@ function serializeChatForCache(chat) {
           !m.profile &&
           !m.infoCard &&
           !m.miniResumeCard &&
+          !m.buttonCard &&
           !(m.segments && m.segments.length)
         ),
     )
@@ -594,6 +597,7 @@ function serializeChatForCache(chat) {
       profile: m.profile || null,
       infoCard: m.infoCard || null,
       miniResumeCard: m.miniResumeCard || null,
+      buttonCard: m.buttonCard || null,
       segments: Array.isArray(m.segments) ? m.segments : undefined,
       files: (m.files || []).map((f) => ({
         name: f.name,
@@ -1719,6 +1723,7 @@ export function LandingApp() {
                 !!next[i].profile ||
                 !!next[i].infoCard ||
                 !!next[i].miniResumeCard ||
+                !!next[i].buttonCard ||
                 (Array.isArray(next[i].segments) && next[i].segments.length > 0)
               if (!hasContent) next.splice(i, 1)
               else {
@@ -1731,6 +1736,7 @@ export function LandingApp() {
                   profile: next[i].profile,
                   infoCard: next[i].infoCard,
                   miniResumeCard: next[i].miniResumeCard,
+                  buttonCard: next[i].buttonCard,
                   segments: next[i].segments,
                 }
               }
@@ -1753,6 +1759,7 @@ export function LandingApp() {
         "score_card",
         "profile_card",
         "mini_resume_card",
+        "button_card",
       ])
 
       try {
@@ -1774,6 +1781,8 @@ export function LandingApp() {
                 upsertAiCardSegment("info_card", data)
               } else if (type === "mini_resume_card") {
                 upsertAiCardSegment("mini_resume_card", data)
+              } else if (type === "button_card") {
+                upsertAiCardSegment("button_card", data)
               } else if (type === "profile_card") {
                 upsertAiCardSegment("profile_card", data)
               }
@@ -2074,6 +2083,25 @@ export function LandingApp() {
 
     authGateRef.current?.withAuth("chatSend", doSend)
   }
+  /** 建议按钮卡：点击后把文案作为用户消息发出 */
+  const sendSuggestedPrompt = (text) => {
+    const v = String(text || "").trim()
+    if (!v || chatStreaming) return
+    const doSend = () => {
+      setChat((c) => [
+        ...c,
+        {
+          role: "user",
+          text: v,
+          files: [],
+          voices: [],
+          at: Date.now(),
+        },
+      ])
+      void sendChatMessage(buildAgentChatMessage(v, []), [])
+    }
+    authGateRef.current?.withAuth("chatSend", doSend)
+  }
   const generateResume = () => {
     if (!isLoggedIn) openAuth("chat")
     else doGenerate()
@@ -2166,7 +2194,8 @@ export function LandingApp() {
     const hasProfile = !!m.profile
     const hasInfoCard = !!m.infoCard
     const hasMiniResumeCard = !!m.miniResumeCard
-    const hasCard = hasProfile || hasInfoCard || hasMiniResumeCard
+    const hasButtonCard = !!m.buttonCard
+    const hasCard = hasProfile || hasInfoCard || hasMiniResumeCard || hasButtonCard
     const segments = m.role === "ai" ? ensureAiSegments(m) : []
     const loading = m.role === "ai" && !!loadingText && !hasText && !hasCard
     const thinking = m.role === "ai" && !!m.streaming && !hasText && !loading && !hasCard
@@ -2184,6 +2213,7 @@ export function LandingApp() {
       profile: m.profile || null,
       infoCard: m.infoCard || null,
       miniResumeCard: m.miniResumeCard || null,
+      buttonCard: m.buttonCard || null,
       segments,
       files,
       voices,
@@ -2533,12 +2563,6 @@ export function LandingApp() {
                 </div>
               </div>
             </div>
-            <div className="chat-page__badge">
-              <span className="chat-page__badge-icon">
-                <img src={chatBoltIcon} alt="" width={11} height={11} />
-              </span>
-              <span className="chat-page__badge-text">AI Powered</span>
-            </div>
           </header>
 
           <div
@@ -2629,6 +2653,18 @@ export function LandingApp() {
                                   }}
                                   onSaveError={(err) => {
                                     toast(err.message || "保存失败，请稍后重试")
+                                  }}
+                                />
+                              )
+                            }
+                            if (seg.kind === "button_card") {
+                              return (
+                                <ChatButtonCard
+                                  key={`seg-btn-${segIdx}`}
+                                  data={buildChatButtonCardData(seg.data) || undefined}
+                                  disabled={chatStreaming}
+                                  onButtonClick={(button) => {
+                                    sendSuggestedPrompt(button.text)
                                   }}
                                 />
                               )

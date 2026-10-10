@@ -1,4 +1,3 @@
-import loadingIcon from "@/assets/chat/loading-icon.png"
 import "./index.scss"
 
 /** 默认思考文案（流式尚未下发 loading_text 时） */
@@ -10,7 +9,68 @@ export interface ChatLoadingStatusProps {
   className?: string
 }
 
-/** 对话 loading 态：左侧 icon + 右侧扫光文案（Figma 353:1135 / 353:1136） */
+/** Figma 412:51 / 412:55 ThinkingLoader — 笑脸星星 + 闪烁光点 */
+function ThinkingLoaderIcon() {
+  return (
+    <svg
+      className="chat-loading-status__icon"
+      viewBox="0 0 64 64"
+      width={22}
+      height={22}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <g className="chat-loading-status__bob">
+        <path
+          className="chat-loading-status__sparkle chat-loading-status__sparkle--1"
+          d="M49.92 7.04L51.04 9.12L53.12 10.24L51.04 11.36L49.92 13.44L48.8 11.36L46.72 10.24L48.8 9.12L49.92 7.04Z"
+          fill="#62D8D2"
+        />
+        <path
+          className="chat-loading-status__sparkle chat-loading-status__sparkle--2"
+          d="M7.68 30.72L8.576 32.384L10.24 33.28L8.576 34.176L7.68 35.84L6.784 34.176L5.12 33.28L6.784 32.384L7.68 30.72Z"
+          fill="#62D8D2"
+        />
+        <path
+          className="chat-loading-status__sparkle chat-loading-status__sparkle--3"
+          d="M51.2 47.04L52.224 48.896L54.08 49.92L52.224 50.944L51.2 52.8L50.176 50.944L48.32 49.92L50.176 48.896L51.2 47.04Z"
+          fill="#62D8D2"
+        />
+        <g className="chat-loading-status__star">
+          <path
+            d="M28.2437 12.8227C29.5248 9.32255 34.4752 9.32255 35.7563 12.8227L38.2444 19.6207C38.803 21.1467 40.2292 22.1832 41.8532 22.2431L49.0603 22.5093C52.7834 22.6467 54.3133 27.3518 51.3829 29.6527L45.6955 34.1181C44.4183 35.1209 43.8741 36.7963 44.3183 38.3583L46.286 45.2784C47.306 48.8656 43.2952 51.7738 40.2027 49.6892L34.2358 45.6671C32.8844 44.7562 31.1156 44.7562 29.7642 45.6671L23.7973 49.6892C20.7048 51.7738 16.694 48.8656 17.714 45.2784L19.6817 38.3583C20.1259 36.7963 19.5817 35.1209 18.3045 34.1181L12.6171 29.6527C9.68673 27.3518 11.2166 22.6467 14.9397 22.5093L22.1468 22.2431C23.7708 22.1832 25.197 21.1467 25.7556 19.6207L28.2437 12.8227Z"
+            fill="#1C5D5F"
+          />
+          <path
+            d="M26.24 32.32C27.6538 32.32 28.8 31.0306 28.8 29.44C28.8 27.8494 27.6538 26.56 26.24 26.56C24.8262 26.56 23.68 27.8494 23.68 29.44C23.68 31.0306 24.8262 32.32 26.24 32.32Z"
+            fill="white"
+          />
+          <path
+            d="M37.76 32.32C39.1738 32.32 40.32 31.0306 40.32 29.44C40.32 27.8494 39.1738 26.56 37.76 26.56C36.3462 26.56 35.2 27.8494 35.2 29.44C35.2 31.0306 36.3462 32.32 37.76 32.32Z"
+            fill="white"
+          />
+          <path
+            d="M26.24 30.976C26.7348 30.976 27.136 30.5748 27.136 30.08C27.136 29.5852 26.7348 29.184 26.24 29.184C25.7452 29.184 25.344 29.5852 25.344 30.08C25.344 30.5748 25.7452 30.976 26.24 30.976Z"
+            fill="#1C5D5F"
+          />
+          <path
+            d="M37.76 30.976C38.2548 30.976 38.656 30.5748 38.656 30.08C38.656 29.5852 38.2548 29.184 37.76 29.184C37.2652 29.184 36.864 29.5852 36.864 30.08C36.864 30.5748 37.2652 30.976 37.76 30.976Z"
+            fill="#1C5D5F"
+          />
+          <path
+            d="M24.96 36.48C29.6533 40.32 34.3467 40.32 39.04 36.48"
+            stroke="white"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+/** 对话 loading 态：左侧动画 icon + 右侧扫光文案（Figma 412:51 / 412:55） */
 export function ChatLoadingStatus({
   text = CHAT_LOADING_STATUS_DEFAULT_TEXT,
   className,
@@ -24,14 +84,7 @@ export function ChatLoadingStatus({
       aria-live="polite"
       aria-label={label}
     >
-      <img
-        className="chat-loading-status__icon"
-        src={loadingIcon}
-        alt=""
-        width={22}
-        height={20}
-        draggable={false}
-      />
+      <ThinkingLoaderIcon />
       <span className="chat-loading-status__text">{label}</span>
     </div>
   )

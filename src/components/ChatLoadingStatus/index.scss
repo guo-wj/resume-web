@@ -5,12 +5,73 @@
   max-width: 100%;
 }
 
+/* Figma 412:51 ThinkingLoader — 笑脸星星 + 闪烁 */
 .chat-loading-status__icon {
   flex: 0 0 auto;
   width: 22px;
-  height: 20px;
-  object-fit: contain;
+  height: 22px;
   display: block;
+  overflow: visible;
+}
+
+.chat-loading-status__bob {
+  transform-origin: 32px 34px;
+  animation: chatLoadingBob 1.6s ease-in-out infinite;
+}
+
+.chat-loading-status__star {
+  transform-origin: 32px 32px;
+  animation: chatLoadingStar 1.6s ease-in-out infinite;
+}
+
+.chat-loading-status__sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chatLoadingTwinkle 1.2s ease-in-out infinite;
+}
+
+.chat-loading-status__sparkle--1 {
+  animation-delay: 0s;
+}
+
+.chat-loading-status__sparkle--2 {
+  animation-delay: 0.35s;
+}
+
+.chat-loading-status__sparkle--3 {
+  animation-delay: 0.7s;
+}
+
+@keyframes chatLoadingBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes chatLoadingStar {
+  0%,
+  100% {
+    transform: rotate(-4deg) scale(1);
+  }
+  50% {
+    transform: rotate(4deg) scale(1.04);
+  }
+}
+
+@keyframes chatLoadingTwinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 
 /*
@@ -53,8 +114,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .chat-loading-status__bob,
+  .chat-loading-status__star,
+  .chat-loading-status__sparkle,
   .chat-loading-status__text {
     animation: none;
+  }
+
+  .chat-loading-status__sparkle {
+    opacity: 0.7;
+  }
+
+  .chat-loading-status__text {
     color: #666666;
     background: none;
     -webkit-text-fill-color: #666666;

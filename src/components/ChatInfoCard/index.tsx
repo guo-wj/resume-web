@@ -16,6 +16,7 @@ import chevronIcon from "@/assets/chat/info-chevron.svg"
 import type {
   ChatInfoCardData,
   ChatInfoCardPayload,
+  ChatInfoCardChangePayload,
   ChatInfoBasicInfo,
   ChatInfoExperience,
   ChatInfoExperiencePayload,
@@ -76,6 +77,7 @@ const DETAIL_STEPS: Array<{ key: "content" | "duty" | "result"; label: string }>
 export type {
   ChatInfoCardData,
   ChatInfoCardPayload,
+  ChatInfoCardChangePayload,
   ChatInfoBasicInfo,
   ChatInfoExperience,
   ChatInfoExperiencePayload,
@@ -535,22 +537,37 @@ function ExperienceItem({
   )
 }
 
-/** 将 SSE info_card data 转为卡片结构化数据 */
+/** 将 SSE / 历史 info_card data 转为卡片结构化数据（兼容 data.change 包一层） */
 export function buildChatInfoCardData(
   payload: ChatInfoCardPayload | Record<string, unknown> | null | undefined,
 ): ChatInfoCardData | null {
   if (!payload || typeof payload !== "object") return null
   const data = payload as ChatInfoCardPayload
-  const basic = asRecord(data.basic) || asRecord(data.basic_info) || {}
+  const change = asRecord(data.change) as ChatInfoCardChangePayload | null
+
+  const basic =
+    asRecord(data.basic) ||
+    asRecord(data.basic_info) ||
+    asRecord(change?.basic) ||
+    asRecord(change?.basic_info) ||
+    {}
   const fields = fieldsFromBasic(basic)
-  const experiences = readExperiences(data.experience)
+  const experiences = readExperiences(
+    data.experience ?? change?.experience,
+  )
 
   if (!fields.length && !experiences.length) return null
 
-  const title = String(data.title || "").trim() || DEFAULT_TITLE
-  const hint = String(data.hint || "").trim()
-  const title2 = String(data.title_2 || "").trim()
-  const written = data.written
+  const title =
+    String(data.title || change?.title || "").trim() || DEFAULT_TITLE
+  const hint = String(data.hint || change?.hint || "").trim()
+  const title2 = String(data.title_2 || change?.title_2 || "").trim()
+  const written =
+    typeof data.written === "boolean"
+      ? data.written
+      : typeof change?.written === "boolean"
+        ? change.written
+        : undefined
   const subtitle =
     title2 || hint || (written === false ? "" : DEFAULT_SUBTITLE)
 
@@ -567,7 +584,7 @@ export function buildChatInfoCardData(
     fields,
     experiences,
     hint: hint || undefined,
-    written: typeof written === "boolean" ? written : undefined,
+    written,
     fileId: data.file_id != null ? String(data.file_id).trim() || undefined : undefined,
     cardId: cardId as string | number | undefined,
     primaryAction: { label: SAVE_LABEL },

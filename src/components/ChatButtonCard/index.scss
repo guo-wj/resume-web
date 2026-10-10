@@ -1,0 +1,115 @@
+/* 建议按钮卡 — Figma 379:2910 / 379:2927，SSE type: button_card
+ * 状态：默认 · hover 379:2942 · 选中 379:2950 · 禁用 379:2958
+ */
+.chat-button-card {
+  width: min(648px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.chat-button-card__btn {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  background: rgba(28, 93, 95, 0.05);
+  box-shadow: none;
+  box-sizing: border-box;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.chat-button-card__text {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22.75px;
+  color: #1e2a2f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-button-card__arrow {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  display: block;
+  color: #1c5d5f;
+  opacity: 0.55;
+}
+
+/* hover — Figma 379:2942 */
+.chat-button-card__btn:hover:not(:disabled):not(.is-selected) {
+  background: #497d7f;
+  box-shadow: 0 4px 4px 0 rgba(28, 93, 95, 0.2);
+}
+
+.chat-button-card__btn:hover:not(:disabled):not(.is-selected) .chat-button-card__text {
+  color: #fff;
+}
+
+.chat-button-card__btn:hover:not(:disabled):not(.is-selected) .chat-button-card__arrow {
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* 选中 — Figma 379:2950 */
+.chat-button-card__btn.is-selected:not(:disabled) {
+  background: #164a4c;
+  box-shadow: 0 4px 4px 0 rgba(28, 93, 95, 0.3);
+}
+
+.chat-button-card__btn.is-selected:not(:disabled) .chat-button-card__text {
+  color: #fff;
+}
+
+.chat-button-card__btn.is-selected:not(:disabled) .chat-button-card__arrow {
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* 禁用 — Figma 379:2958 */
+.chat-button-card__btn:disabled {
+  cursor: not-allowed;
+  background: #9eb8b9;
+  box-shadow: 0 4px 4px 0 rgba(28, 93, 95, 0.25);
+}
+
+.chat-button-card__btn:disabled .chat-button-card__text {
+  color: #fff;
+}
+
+.chat-button-card__btn:disabled .chat-button-card__arrow {
+  color: #fff;
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+  .chat-button-card {
+    width: 100%;
+  }
+
+  .chat-button-card__btn {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .chat-button-card__text {
+    white-space: normal;
+  }
+}

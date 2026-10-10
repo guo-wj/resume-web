@@ -266,6 +266,7 @@ export type AgentChatAiSegment =
   | { kind: "text"; text: string }
   | { kind: "info_card"; data: unknown }
   | { kind: "mini_resume_card"; data: unknown }
+  | { kind: "button_card"; data: unknown }
   | { kind: "profile_card"; data: unknown }
 
 /** UI 侧消息形态（与 landing chat state 对齐） */
@@ -283,6 +284,7 @@ export interface AgentChatUiMessage {
   profile?: unknown
   infoCard?: unknown
   miniResumeCard?: unknown
+  buttonCard?: unknown
   id?: string
 }
 
@@ -313,6 +315,7 @@ function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
   let infoCard: Record<string, unknown> | null = null
   let profile: Record<string, unknown> | null = null
   let miniResumeCard: Record<string, unknown> | null = null
+  let buttonCard: Record<string, unknown> | null = null
 
   for (const block of blocks || []) {
     if (!block || typeof block !== "object") continue
@@ -361,6 +364,20 @@ function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
       segments.push({ kind: "mini_resume_card", data: raw })
       continue
     }
+    if (type === "button_card") {
+      const raw =
+        block.data && typeof block.data === "object"
+          ? { ...(block.data as Record<string, unknown>) }
+          : { ...(block as Record<string, unknown>) }
+      delete raw.type
+      delete raw.data
+      if (raw.card_id == null && (block as { card_id?: unknown }).card_id != null) {
+        raw.card_id = (block as { card_id?: unknown }).card_id
+      }
+      buttonCard = raw
+      segments.push({ kind: "button_card", data: raw })
+      continue
+    }
     if (type === "profile_card" && block.data && typeof block.data === "object") {
       profile = block.data as Record<string, unknown>
       segments.push({ kind: "profile_card", data: profile })
@@ -372,8 +389,47 @@ function blocksToChatParts(blocks: AgentConversationBlock[] | undefined) {
     infoCard,
     profile,
     miniResumeCard,
+    buttonCard,
     segments,
   }
+}
+
+const CARD_SEGMENT_KINDS = new Set([
+  "info_card",
+  "mini_resume_card",
+  "button_card",
+  "profile_card",
+])
+
+function isCardSegment(seg: AgentChatAiSegment | null | undefined): boolean {
+  return !!seg && CARD_SEGMENT_KINDS.has(seg.kind)
+}
+
+function splitCardSegments(segments: AgentChatAiSegment[]) {
+  const content: AgentChatAiSegment[] = []
+  const cards: AgentChatAiSegment[] = []
+  for (const seg of segments) {
+    if (isCardSegment(seg)) cards.push(seg)
+    else content.push(seg)
+  }
+  return { content, cards }
+}
+
+function flatFieldsFromSegments(segments: AgentChatAiSegment[]) {
+  let text = ""
+  let infoCard: unknown
+  let miniResumeCard: unknown
+  let buttonCard: unknown
+  let profile: unknown
+  for (const s of segments) {
+    if (!s) continue
+    if (s.kind === "text") text += String(s.text || "")
+    else if (s.kind === "info_card") infoCard = s.data
+    else if (s.kind === "mini_resume_card") miniResumeCard = s.data
+    else if (s.kind === "button_card") buttonCard = s.data
+    else if (s.kind === "profile_card") profile = s.data
+  }
+  return { text, infoCard, miniResumeCard, buttonCard, profile }
 }
 
 /** 将会话历史接口数据映射为聊天 UI 消息列表 */
@@ -389,6 +445,29 @@ export function mapConversationHistoryToChat(
         : []
 
   const out: AgentChatUiMessage[] = []
+  /** 历史接口常把卡片 block 挂在 user 消息上；UI 只渲染 AI segments，这里暂存后并入下一条 AI */
+  let pendingCardSegments: AgentChatAiSegment[] = []
+
+  const flushPendingCards = (at: number) => {
+    if (!pendingCardSegments.length) return
+    const segments = pendingCardSegments
+    pendingCardSegments = []
+    const flat = flatFieldsFromSegments(segments)
+    out.push({
+      role: "ai",
+      text: flat.text,
+      at,
+      files: [],
+      voices: [],
+      streaming: false,
+      segments,
+      infoCard: flat.infoCard,
+      profile: flat.profile,
+      miniResumeCard: flat.miniResumeCard,
+      buttonCard: flat.buttonCard,
+    })
+  }
+
   for (const item of list) {
     if (!item || typeof item !== "object") continue
     const role = normalizeConversationRole(item.role)
@@ -397,13 +476,15 @@ export function mapConversationHistoryToChat(
     const fromBlocks = blocksToChatParts(item.blocks)
     let text = fromBlocks.text
     let files = fromBlocks.files
-    const infoCard = fromBlocks.infoCard
-    const profile = fromBlocks.profile
-    const miniResumeCard = fromBlocks.miniResumeCard
+    let infoCard = fromBlocks.infoCard
+    let profile = fromBlocks.profile
+    let miniResumeCard = fromBlocks.miniResumeCard
+    let buttonCard = fromBlocks.buttonCard
     let segments = fromBlocks.segments
+    const at = parseMessageTime(item.created_at ?? item.timestamp)
 
     // 无 blocks 时兼容旧扁平字段
-    if (!text && !files.length && !infoCard && !profile && !miniResumeCard) {
+    if (!text && !files.length && !infoCard && !profile && !miniResumeCard && !buttonCard) {
       text = String(item.content ?? item.message ?? item.text ?? "").trim()
       files = Array.isArray(item.files)
         ? item.files.map((f) => ({
@@ -420,12 +501,43 @@ export function mapConversationHistoryToChat(
       segments = text ? [{ kind: "text", text }] : []
     }
 
-    if (!text && !files.length && !infoCard && !profile && !miniResumeCard) continue
+    if (!text && !files.length && !infoCard && !profile && !miniResumeCard && !buttonCard) continue
+
+    if (role === "user") {
+      const { content, cards } = splitCardSegments(segments)
+      if (cards.length) pendingCardSegments = pendingCardSegments.concat(cards)
+      // user 气泡只保留文本 / 附件；卡片交给后续 AI 消息渲染
+      if (!text && !files.length) continue
+      out.push({
+        id: item.id ? String(item.id) : undefined,
+        role: "user",
+        text,
+        at,
+        files,
+        voices: [],
+        streaming: false,
+        segments: content.length ? content : undefined,
+      })
+      continue
+    }
+
+    if (pendingCardSegments.length) {
+      segments = pendingCardSegments.concat(segments)
+      pendingCardSegments = []
+      const flat = flatFieldsFromSegments(segments)
+      text = flat.text || text
+      infoCard = (flat.infoCard as Record<string, unknown> | null) || infoCard
+      profile = (flat.profile as Record<string, unknown> | null) || profile
+      miniResumeCard =
+        (flat.miniResumeCard as Record<string, unknown> | null) || miniResumeCard
+      buttonCard = (flat.buttonCard as Record<string, unknown> | null) || buttonCard
+    }
+
     out.push({
       id: item.id ? String(item.id) : undefined,
-      role,
+      role: "ai",
       text,
-      at: parseMessageTime(item.created_at ?? item.timestamp),
+      at,
       files,
       voices: [],
       streaming: false,
@@ -433,8 +545,11 @@ export function mapConversationHistoryToChat(
       infoCard: infoCard || undefined,
       profile: profile || undefined,
       miniResumeCard: miniResumeCard || undefined,
+      buttonCard: buttonCard || undefined,
     })
   }
+
+  flushPendingCards(Date.now())
   return out
 }
 

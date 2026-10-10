@@ -85,6 +85,19 @@ export interface ChatInfoStarItem {
   [key: string]: unknown
 }
 
+/** 历史接口常见：履历变更包在 data.change 内 */
+export interface ChatInfoCardChangePayload {
+  written?: boolean
+  hint?: string
+  title?: string
+  title_2?: string
+  basic?: ChatInfoBasicInfo
+  basic_info?: ChatInfoBasicInfo
+  experience?: ChatInfoExperiencePayload[]
+  star?: ChatInfoStarItem[]
+  [key: string]: unknown
+}
+
 /** SSE `info_card` 事件 data 形态 */
 export interface ChatInfoCardPayload {
   title?: string
@@ -99,6 +112,8 @@ export interface ChatInfoCardPayload {
   /** 文档别名，与 basic 同义 */
   basic_info?: ChatInfoBasicInfo
   experience?: ChatInfoExperiencePayload[]
+  /** 历史接口：basic / experience 可能在 change 内 */
+  change?: ChatInfoCardChangePayload
   star?: ChatInfoStarItem[]
   primary_btn?: string
   secondary_btn?: string

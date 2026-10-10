@@ -528,42 +528,6 @@
   color: rgba(0, 0, 0, 0.18);
 }
 
-.magic-landing .chat-page__badge {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6.889px 12.889px;
-  border-radius: 9999px;
-  background: rgba(28, 93, 95, 0.08);
-  border: 0.889px solid rgba(28, 93, 95, 0.15);
-  box-sizing: border-box;
-  color: var(--chat-teal);
-}
-
-.magic-landing .chat-page__badge-icon {
-  width: 11px;
-  height: 11px;
-  overflow: clip;
-  display: block;
-  line-height: 0;
-  flex: 0 0 auto;
-}
-
-.magic-landing .chat-page__badge-icon img {
-  width: 11px;
-  height: 11px;
-  display: block;
-}
-
-.magic-landing .chat-page__badge-text {
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
-  color: var(--chat-teal);
-  white-space: nowrap;
-}
-
 .magic-landing .chat-page__messages {
   flex: 1 1 auto;
   min-height: 0;
@@ -750,7 +714,8 @@
 .magic-landing .chat-bubble__voices.has-prev,
 .magic-landing .chat-profile-card,
 .magic-landing .chat-info-card,
-.magic-landing .chat-mini-resume-card {
+.magic-landing .chat-mini-resume-card,
+.magic-landing .chat-button-card {
   margin-top: 12px;
 }
 
@@ -758,6 +723,7 @@
 .magic-landing .chat-info-card + .chat-text-card,
 .magic-landing .chat-profile-card + .chat-text-card,
 .magic-landing .chat-mini-resume-card + .chat-text-card,
+.magic-landing .chat-button-card + .chat-text-card,
 .magic-landing .chat-text-card + .chat-text-card {
   margin-top: 12px;
 }
@@ -1270,14 +1236,6 @@
     display: none;
   }
 
-  .magic-landing .chat-page__badge-text {
-    display: none;
-  }
-
-  .magic-landing .chat-page__badge {
-    padding: 8px;
-  }
-
   .magic-landing .chat-page__thread,
   .magic-landing .chat-page__composer-inner {
     padding-left: 12px;
@@ -1290,7 +1248,8 @@
 
   .magic-landing .chat-profile-card,
   .magic-landing .chat-info-card,
-  .magic-landing .chat-mini-resume-card {
+  .magic-landing .chat-mini-resume-card,
+  .magic-landing .chat-button-card {
     width: 100%;
   }
 }
