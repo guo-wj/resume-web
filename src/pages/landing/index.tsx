@@ -17,6 +17,21 @@ import chatFileTypeTxt from "@/assets/chat/file-type-txt.svg"
 import chatComposerPlus from "@/assets/chat/composer-plus.svg"
 import chatComposerDash from "@/assets/chat/composer-dash.svg"
 import chatComposerSend from "@/assets/chat/composer-send.svg"
+import landingBg from "@/assets/landing/bg.png"
+import landingBuddyIcon from "@/assets/landing/icon-buddy.svg"
+import landingSurpriseIcon from "@/assets/landing/icon-surprise.svg"
+import landingWorkbenchIcon from "@/assets/landing/icon-workbench.svg"
+import landingLoginIcon from "@/assets/landing/icon-login.svg"
+import landingSendIcon from "@/assets/landing/icon-send.svg"
+import landingUploadIcon from "@/assets/landing/icon-upload.svg"
+import landingPiecesIcon from "@/assets/landing/icon-pieces.svg"
+import landingTitleUnderline from "@/assets/landing/title-underline.svg"
+import authSparkleWhite from "@/assets/landing/auth/icon-sparkle-white.svg"
+import authSparkleTeal from "@/assets/landing/auth/icon-sparkle-teal.svg"
+import authSparkleTealSm from "@/assets/landing/auth/icon-sparkle-teal-sm.svg"
+import authAppleIcon from "@/assets/landing/auth/icon-apple.svg"
+import authCloseIcon from "@/assets/landing/auth/icon-close.svg"
+import authWechatQr from "@/assets/landing/auth/qr-wechat.png"
 import "./index.scss"
 
 const { useState, useRef, useEffect, useCallback } = React
@@ -287,13 +302,13 @@ const PlusMiniIcon = ({ size = 13, color = "currentColor" }) => (
     <path fillRule="evenodd" d="M7.1 7.1V2.5a.9.9 0 0 1 1.8 0V7.1h4.6a.9.9 0 0 1 0 1.8H8.9v4.6a.9.9 0 0 1-1.8 0V8.9H2.5a.9.9 0 0 1 0-1.8H7.1Z" />
   </svg>
 )
-const UploadIcon = ({ size = 22, color = "#7b61ff" }) => (
+const UploadIcon = ({ size = 22, color = "#1c5d5f" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path d="M12 15V4m0 0 4 4m-4-4-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
-const PiecesIcon = ({ size = 22, color = "#1f8a57" }) => (
+const PiecesIcon = ({ size = 22, color = "#ff5f40" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10v6H4V5.5ZM14 4h4.5A1.5 1.5 0 0 1 20 5.5V10h-6V4ZM4 14h6v6H5.5A1.5 1.5 0 0 1 4 18.5V14ZM14 14h6v4.5a1.5 1.5 0 0 1-1.5 1.5H14v-6Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
   </svg>
@@ -310,16 +325,19 @@ const HERO_GOAL_PROMPTS = {
     "简历内容太多，怎么精简到一页？",
     "针对这个岗位 JD，帮我优化简历关键词",
   ],
-  generate: ["0 经验想转产品经理", "实习经历太单薄怎么写", "简历投了没回音"],
+  generate: ["如何突出我的项目经验？", "实习经历太单薄怎么办？", "简历投了没回应"],
 }
 
 const HERO_IDENTITY_LABELS = {
-  student: "大学生",
+  student: "应届生",
   intern: "实习生",
   pro: "职场人",
 }
 
-const HERO_IDENTITY_PREFIX_RE = /^我是(?:大学生|实习生|职场人)/
+/** Figma 424:100 默认示例文案 */
+const HERO_DEFAULT_INPUT = "我是应届毕业生，想找产品经理相关工作"
+
+const HERO_IDENTITY_PREFIX_RE = /^我是(?:应届毕业生|应届生|大学生|实习生|职场人)/
 
 function formatHeroIdentity(identityKey) {
   return `我是${HERO_IDENTITY_LABELS[identityKey]}`
@@ -327,8 +345,13 @@ function formatHeroIdentity(identityKey) {
 
 function applyHeroIdentity(input, identityKey) {
   const prefix = formatHeroIdentity(identityKey)
-  const rest = input.replace(HERO_IDENTITY_PREFIX_RE, "").trim()
-  return rest ? `${prefix} ${rest}` : prefix
+  let rest = input.replace(HERO_IDENTITY_PREFIX_RE, "").trim()
+  rest = rest.replace(/^毕业生[，,]\s*/, "").trim()
+  if (!rest) {
+    return identityKey === "student" ? HERO_DEFAULT_INPUT : prefix
+  }
+  if (/^[，,]/.test(rest)) return `${prefix}${rest}`
+  return `${prefix} ${rest}`
 }
 
 const HERO_FILE_TYPES = [".pdf", ".doc", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg", ".webp"]
@@ -830,7 +853,7 @@ export function LandingApp() {
   const [appleOpen, setAppleOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
 
-  const [heroInput, setHeroInput] = useState(() => formatHeroIdentity("student"))
+  const [heroInput, setHeroInput] = useState(HERO_DEFAULT_INPUT)
   const [heroGoal, setHeroGoal] = useState("generate") // explore | revise | generate
   const [heroIdentity, setHeroIdentity] = useState("student") // student | intern | pro
   const [heroFiles, setHeroFiles] = useState([])
@@ -1428,16 +1451,13 @@ export function LandingApp() {
 
   /* ---------- 微信 / Apple ---------- */
   const wechatScan = () => {
-    if (!agreed) {
-      nudgeAgree()
-      return
-    }
+    // 微信态稿面无协议勾选；扫码成功直接继续（演示）
     proceedAuth()
   }
   const openApple = () => {
-    // 密码登录不展示协议勾选；验证码 / 微信等可注册入口需要先同意
-    const hideAgree = tab === "account" && loginMode === "password"
-    if (!hideAgree && !agreed) {
+    // 仅账号+验证码态展示协议勾选
+    const needAgree = tab === "account" && loginMode === "code"
+    if (needAgree && !agreed) {
       nudgeAgree()
       return
     }
@@ -2149,22 +2169,6 @@ export function LandingApp() {
   const authVisible = modalOpen || isFull
   const isModal = modalOpen ? true : !isFull
 
-  const tabBtnBase =
-    "position:relative;z-index:1;flex:1;padding:11px 0;border-radius:11px;font-size:14.5px;font-weight:700;background:transparent;transition:color .2s;"
-  const tabBtn = (active) => tabBtnBase + (active ? "color:#1B1530;" : "color:#9890AE;")
-  const modeTab = (active) =>
-    "font-size:14px;font-weight:700;padding:6px 0;border:none;outline:none;box-shadow:none;border-bottom:2px solid " +
-    (active ? "#6D5DF6" : "transparent") +
-    ";color:" +
-    (active ? "#1B1530" : "#9890AE") +
-    ";transition:all .2s;background:transparent;"
-  const authWrapStyle = isModal
-    ? "position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(22,17,45,.5);backdrop-filter:blur(6px);"
-    : "position:fixed;inset:0;z-index:500;display:flex;align-items:stretch;justify-content:center;padding:0;background:#EFEAFE;"
-  const authCardStyle = isModal
-    ? "width:min(940px,100%);height:min(620px,calc(100vh - 40px));display:flex;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(40,24,90,.55);animation:popIn .34s cubic-bezier(.2,.8,.2,1);"
-    : "width:100%;height:100%;display:flex;background:#fff;border-radius:0;overflow:hidden;box-shadow:none;"
-
   const stepMethod = step === "method"
   const stepSetpw = step === "setpw"
   const showBack = step === "setpw"
@@ -2174,16 +2178,7 @@ export function LandingApp() {
   const isAccountTab = tab === "account"
   const isWechatTab = tab === "wechat"
   const codeBtnLabel = sendingCode ? "发送中…" : countdown > 0 ? countdown + "s 后重发" : "获取验证码"
-  const codeBtnStyle =
-    "flex:0 0 auto;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;transition:all .2s;" +
-    (countdown > 0 || sendingCode ? "color:#A7A0BC;background:#ECE7F7;" : "color:#6D5DF6;background:#F1EDFC;")
-
-  const checkboxStyle =
-    "flex:0 0 auto;width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;transition:all .15s;border:1.5px solid " +
-    (agreed ? "#6D5DF6" : "#CFC8E0") +
-    ";background:" +
-    (agreed ? "#6D5DF6" : "#fff") +
-    ";"
+  const codeReady = !!(account.trim() && code.trim())
 
   const chatRows = chat.map((m) => {
     const loadingText = (m.loadingText || "").trim()
@@ -2245,18 +2240,29 @@ export function LandingApp() {
       {/* ===================== LANDING ===================== */}
       {showLanding && (
         <div className="ld-150">
+          {/* 整页底色：Figma 424:46，铺满含顶栏/底边，非局部白底 */}
+          <div aria-hidden="true" className="ld-137">
+            <img src={landingBg} alt="" className="ld-bg-img" />
+          </div>
 
-          {/* header */}
+          {/* header — Figma 424:50 */}
           <header className="ld-149">
             <div className="ld-148">
-              <Mascot size={30} />
+              <span className="ld-logo" aria-hidden />
               <span className="ld-147">不写简历</span>
-              <span className="ld-146">求职搭子</span>
-              <E as="button" className="ld-180" onClick={() => navigate("/surprise")}>✦ 惊喜</E>
+              <button type="button" className="ld-nav-pill">
+                <img src={landingBuddyIcon} alt="" width={16} height={16} />
+                求职搭子
+              </button>
+              <E as="button" className="ld-nav-pill" onClick={() => navigate("/surprise")}>
+                <img src={landingSurpriseIcon} alt="" width={16} height={16} />
+                惊喜
+              </E>
             </div>
             {isLoggedIn ? (
               <div className="ld-139">
                 <E as="button" className="ld-workbench" onClick={openWorkbench}>
+                  <img src={landingWorkbenchIcon} alt="" width={16} height={16} />
                   简历工作台
                 </E>
                 <div ref={userMenuRef} className="ld-145">
@@ -2267,7 +2273,7 @@ export function LandingApp() {
                   >
                     <div className="ld-143">{user?.nickname?.slice(0, 1) || "你"}</div>
                     <span className="ld-142">{user?.nickname || "用户"}</span>
-                    <ChevronDownIcon color={userMenuOpen ? "#7b61ff" : "#9890AE"} />
+                    <ChevronDownIcon color={userMenuOpen ? "#1c5d5f" : "#7f9393"} />
                   </button>
                   {userMenuOpen && (
                     <div className="ld-141">
@@ -2286,37 +2292,32 @@ export function LandingApp() {
             ) : (
               <div className="ld-139">
                 <E as="button" className="ld-workbench" onClick={openWorkbench}>
+                  <img src={landingWorkbenchIcon} alt="" width={16} height={16} />
                   简历工作台
                 </E>
-                <E as="button" className="ld-179" onClick={openAuthLogin}>登录</E>
+                <E as="button" className="ld-179" onClick={openAuthLogin}>
+                  <img src={landingLoginIcon} alt="" width={16} height={16} />
+                  登录
+                </E>
                 <E as="button" className="ld-178" onClick={openAuthCreate}>免费注册</E>
               </div>
             )}
           </header>
 
-          {/* home / 落地页 */}
+          {/* home / 落地页 — Figma 424:45 */}
           <main className="ld-138">
-            {/* 装饰色块 */}
-            <div aria-hidden="true" className="ld-137">
-              <span className="ld-136" />
-              <span className="ld-135" />
-              <span className="ld-134" />
-              <span className="ld-133" />
-              <span className="ld-132" />
-              <span className="ld-131" />
-            </div>
-
-            {/* 标题 + 吉祥物 */}
             <div className="ld-130">
-              <div className="ld-129">
-                <Mascot size={98} />
-              </div>
               <h1 className="ld-128">
-                不止简历，<span className="ld-127">解决一切求职卡点</span>
+                <span className="ld-128-plain">不止简历，解决一切</span>
+                <span className="ld-127">求职卡点</span>
+                <img src={landingTitleUnderline} alt="" className="ld-title-underline" />
               </h1>
-              <p className="ld-126">
-                没实习憋不出简历？海投却石沉大海？简历太丑？<br />让「求职搭子」陪你，一个一个搞定 🌱
-              </p>
+              <div className="ld-126-wrap">
+                <p className="ld-126">
+                  告诉我你的目标与困惑，从职业探索到拿下 offer，一步一步陪你完成
+                </p>
+                <p className="ld-126">告诉我你的目标与困惑，从职业探索到拿下 offer</p>
+              </div>
             </div>
 
             {/* 目标胶囊 */}
@@ -2324,11 +2325,13 @@ export function LandingApp() {
               <div className="ld-124">
                 {[
                   { key: "explore", label: "职业探索" },
-                  { key: "revise", label: "简历修改" },
+                  { key: "revise", label: "简历优化" },
                   { key: "generate", label: "生成简历" },
                 ].map((g) => (
                   <button
                     key={g.key}
+                    type="button"
+                    className={"ld-goal-tab" + (heroGoal === g.key ? " is-active" : "")}
                     onClick={() => {
                       if (heroGoal === g.key) return
                       stopHeroVoiceRecording(true)
@@ -2337,15 +2340,13 @@ export function LandingApp() {
                         return []
                       })
                       setHeroGoal(g.key)
-                      setHeroInput(formatHeroIdentity(heroIdentity))
+                      setHeroInput(
+                        heroIdentity === "student"
+                          ? HERO_DEFAULT_INPUT
+                          : formatHeroIdentity(heroIdentity),
+                      )
                       setHeroFiles([])
                     }}
-                    style={css(
-                      "padding:8px 17px;border-radius:9999px;border:0;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;transition:all .18s;" +
-                        (heroGoal === g.key
-                          ? "background:#fff;color:var(--accent-strong);box-shadow:0 2px 8px rgba(123,97,255,.20);"
-                          : "background:transparent;color:var(--ink-2);"),
-                    )}
                   >
                     {g.label}
                   </button>
@@ -2353,12 +2354,12 @@ export function LandingApp() {
               </div>
             </div>
 
-            {/* 友好输入区 */}
+            {/* 输入卡 — Figma 424:94 */}
             <div className="ld-123">
               <div className="ld-122">
                 <div className="ld-121">
                   <span className="ld-120">
-                    <span className="ld-119" />求职搭子在线
+                    <span className="ld-119" />求职助手在线
                   </span>
                 </div>
                 <textarea
@@ -2370,25 +2371,9 @@ export function LandingApp() {
                       heroSubmit()
                     }
                   }}
-                  placeholder="把烦恼丢给搭子就行，比如「0 经验想转产品经理，怎么写简历？」"
+                  placeholder={HERO_DEFAULT_INPUT}
                   className="ld-118"
                 />
-                {heroRecording && (
-                  <div className="ld-117">
-                    <span className="ld-73">
-                      <span className="ld-72" />
-                      录音中 {formatVoiceDuration(heroRecording.duration)}
-                    </span>
-                    <VoiceWaveBar bars={heroRecording.bars} color="#ff6b6b" animate />
-                    <button
-                      type="button"
-                      onClick={() => stopHeroVoiceRecording(false)}
-                      className="ld-116"
-                    >
-                      完成
-                    </button>
-                  </div>
-                )}
                 {(heroFiles.length > 0 || heroVoices.length > 0) && (
                   <div className="ld-115">
                     {heroVoices.map((voice) => (
@@ -2404,57 +2389,25 @@ export function LandingApp() {
                   </div>
                 )}
                 <div className="ld-111">
-                  <span className="ld-108">我是</span>
-                  {[
-                    { key: "student", label: "大学生" },
-                    { key: "intern", label: "实习生" },
-                    { key: "pro", label: "职场人" },
-                  ].map((it) => (
-                    <button
-                      key={it.key}
-                      onClick={() => {
-                        setHeroIdentity(it.key)
-                        setHeroInput((v) => applyHeroIdentity(v, it.key))
-                      }}
-                      style={css(
-                        "padding:5px 13px;border-radius:9999px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;transition:all .16s;" +
-                          (heroIdentity === it.key
-                            ? "background:var(--accent-tint);color:var(--accent-strong);border:1px solid var(--accent);"
-                            : "background:transparent;color:var(--ink-2);border:1px solid var(--border-strong);"),
-                      )}
-                    >
-                      {it.label}
-                    </button>
-                  ))}
-                  <span className="ld-110" />
-                  <E
-                    as="button"
-                    s={
-                      "width:36px;height:36px;border-radius:99px;border:0;cursor:pointer;display:grid;place-items:center;" +
-                      (heroRecording
-                        ? "background:#ffe3e3;box-shadow:0 0 0 4px rgba(255,77,79,.14);"
-                        : "background:#f3f0ff;")
-                    }
-                    h={heroRecording ? "background:#ffd6d6;" : "background:var(--accent-tint);"}
-                    title={heroRecording ? "点击结束录音" : "语音说给搭子听"}
-                    onClick={toggleHeroVoiceRecord}
-                  >
-                    <MicIcon color={heroRecording ? "#ff4d4f" : "#7b61ff"} />
-                  </E>
-                  <span className="upload-tip">
-                    <E
-                      as="button"
-                      className="ld-177"
-                      aria-label="添加材料"
-                      title={isLoggedIn ? undefined : "登录后可上传材料"}
-                      onClick={openHeroFilePicker}
-                    >
-                      <ClipIcon />
-                    </E>
-                    <span className="upload-tip__bubble" role="tooltip">
-                      {!isLoggedIn ? "点击后先登录，再上传材料" : HERO_FILE_UPLOAD_TIP}
-                    </span>
-                  </span>
+                  <div className="ld-id-row">
+                    {[
+                      { key: "student", label: "应届生" },
+                      { key: "intern", label: "实习生" },
+                      { key: "pro", label: "职场人" },
+                    ].map((it) => (
+                      <button
+                        key={it.key}
+                        type="button"
+                        className={"ld-id-chip" + (heroIdentity === it.key ? " is-active" : "")}
+                        onClick={() => {
+                          setHeroIdentity(it.key)
+                          setHeroInput((v) => applyHeroIdentity(v, it.key))
+                        }}
+                      >
+                        {it.label}
+                      </button>
+                    ))}
+                  </div>
                   <RequireAuthAction returnTo="heroSubmit" shouldRun={canHeroSend} onAuthorized={heroSubmitCore}>
                     <E
                       as="button"
@@ -2467,35 +2420,47 @@ export function LandingApp() {
                       disabled={heroSendDisabled}
                       aria-disabled={heroSendDisabled}
                     >
-                      <ArrowUpIcon />
+                      <img src={landingSendIcon} alt="" width={18} height={18} />
                     </E>
                   </RequireAuthAction>
                 </div>
               </div>
             </div>
 
-            {/* 提示词参考 */}
+            {/* 提示词 — Figma 424:112：首行标签+2芯片，次行居中 1 芯片 */}
             <div className="ld-109">
-              <span className="ld-108">大家都在问</span>
-              {HERO_GOAL_PROMPTS[heroGoal].map((p) => (
-                <E
-                  key={p}
-                  as="button"
-                  className="ld-175"
-                  onClick={() => addPrompt(p)}
-                >
-                  {p}
-                  <PlusMiniIcon />
-                </E>
-              ))}
+              <div className="ld-109-row">
+                <span className="ld-108">大家都在问</span>
+                {HERO_GOAL_PROMPTS[heroGoal].slice(0, 2).map((p) => (
+                  <E
+                    key={p}
+                    as="button"
+                    className="ld-175"
+                    onClick={() => addPrompt(p)}
+                  >
+                    <span>{p}</span>
+                    <span className="ld-175-plus">+</span>
+                  </E>
+                ))}
+              </div>
+              {HERO_GOAL_PROMPTS[heroGoal].length > 2 ? (
+                <div className="ld-109-row is-center">
+                  {HERO_GOAL_PROMPTS[heroGoal].slice(2).map((p) => (
+                    <E
+                      key={p}
+                      as="button"
+                      className="ld-175"
+                      onClick={() => addPrompt(p)}
+                    >
+                      <span>{p}</span>
+                      <span className="ld-175-plus">+</span>
+                    </E>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
-            {/* 快捷启动 / 入口二、三 */}
-            <div className="ld-107">
-              <span className="ld-105" />
-              <span className="ld-106">手上有材料？一步到位</span>
-              <span className="ld-105" />
-            </div>
+            {/* 双卡入口 — Figma 424:123，无中间分割文案 */}
             <div className="ld-104">
               <input
                 ref={resumeUploadInputRef}
@@ -2506,11 +2471,11 @@ export function LandingApp() {
               />
               <E as="button" className="ld-174" onClick={openResumeUploadPicker}>
                   <span className="ld-103">
-                    <UploadIcon />
+                    <img src={landingUploadIcon} alt="" width={22} height={22} />
                   </span>
                   <span className="ld-101">
-                    <span className="ld-100">已有简历，直接上传</span>
-                    <span className="ld-99">搭子秒读、诊断打分，告诉你哪儿能更好</span>
+                    <span className="ld-100">已有简历，直接优化</span>
+                    <span className="ld-99">上传现有简历，快速获得针对性建议</span>
                   </span>
                 </E>
               <input
@@ -2523,11 +2488,11 @@ export function LandingApp() {
               />
               <E as="button" className="ld-173" onClick={openMaterialUploadPicker}>
                   <span className="ld-102">
-                    <PiecesIcon />
+                    <img src={landingPiecesIcon} alt="" width={22} height={22} />
                   </span>
                   <span className="ld-101">
                     <span className="ld-100">只有零散材料，帮我拼</span>
-                    <span className="ld-99">丢进项目 / 作品 / JD，自动拼出简历骨架</span>
+                    <span className="ld-99">导入项目与经历，自动梳理成简历框架</span>
                   </span>
                 </E>
             </div>
@@ -2570,7 +2535,10 @@ export function LandingApp() {
             className="chat-scroll ld-94 chat-page__messages"
           >
             <div className="chat-page__thread">
-              {chatRows.map((m, i) => (
+              {chatRows.map((m, i) => {
+                const isLastMessage = i === chatRows.length - 1
+                const cardActionsDisabled = !isLastMessage || chatStreaming
+                return (
                 <div key={i} className={m.rowClass}>
                   <div className={m.bubbleClass}>
                     {m.loading ? (
@@ -2597,6 +2565,7 @@ export function LandingApp() {
                                 <ChatMiniResumeCard
                                   key={`seg-mini-${segIdx}`}
                                   data={buildChatMiniResumeCardData(seg.data) || undefined}
+                                  disabled={cardActionsDisabled}
                                   onAction={() => {
                                     navigate("/surprise")
                                   }}
@@ -2608,6 +2577,7 @@ export function LandingApp() {
                                 <ChatInfoCard
                                   key={`seg-info-${segIdx}`}
                                   data={buildChatInfoCardData(seg.data) || undefined}
+                                  disabled={cardActionsDisabled}
                                   sessionId={() =>
                                     String(
                                       chatSessionIdRef.current ||
@@ -2662,7 +2632,7 @@ export function LandingApp() {
                                 <ChatButtonCard
                                   key={`seg-btn-${segIdx}`}
                                   data={buildChatButtonCardData(seg.data) || undefined}
-                                  disabled={chatStreaming}
+                                  disabled={cardActionsDisabled}
                                   onButtonClick={(button) => {
                                     sendSuggestedPrompt(button.text)
                                   }}
@@ -2699,7 +2669,8 @@ export function LandingApp() {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
 
               {chatStage === "generating" && (
                 <div className="ld-91">
@@ -2831,191 +2802,339 @@ export function LandingApp() {
         </div>
       )}
 
-      {/* ===================== AUTH (modal or fullscreen) ===================== */}
+      {/* ===================== AUTH — Figma 424:247 / 424:424 / 424:601 ===================== */}
       {authVisible && (
-        <div style={css(authWrapStyle)} onClick={onBackdrop}>
-          <div style={css(authCardStyle)} onClick={stopProp}>
-            {/* LEFT brand panel */}
-            <div className="ld-63">
-              <div className="ld-62" />
-              <div className="ld-61" />
-              <div className="ld-60" />
-              <div className="ld-59">
-                <div className="ld-58">
-                  <div className="ld-57" />
+        <div
+          className={"auth-modal-root" + (isModal ? " is-modal" : " is-full")}
+          onClick={onBackdrop}
+        >
+          <div className="auth-modal" onClick={stopProp}>
+            {/* LEFT — Sidebar */}
+            <aside className="auth-modal__side" aria-hidden={false}>
+              <div className="auth-modal__side-deco auth-modal__side-deco--ring" />
+              <div className="auth-modal__side-deco auth-modal__side-deco--blob" />
+              <div className="auth-modal__brand">
+                <span className="auth-modal__brand-mark">
+                  <img src={authSparkleWhite} alt="" width={20} height={20} />
+                </span>
+                <span className="auth-modal__brand-name">不写简历</span>
+              </div>
+              <div className="auth-modal__side-copy">
+                <p className="auth-modal__eyebrow">AI 求职搭子</p>
+                <h2 className="auth-modal__side-title">
+                  几分钟，
+                  <br />
+                  解决你的
+                  <br />
+                  求职卡点。
+                </h2>
+                <p className="auth-modal__side-desc">
+                  登录即继续，让每一次选择都有清晰的下一步。
+                </p>
+              </div>
+              <div className="auth-modal__quote">
+                <span className="auth-modal__quote-mark">
+                  <img src={authSparkleTealSm} alt="" width={16} height={16} />
+                </span>
+                <span className="auth-modal__quote-text">
+                  “把复杂的求职问题，变成一件件小事。”
+                </span>
+              </div>
+            </aside>
+
+            {/* RIGHT — Form */}
+            <section className="auth-modal__panel">
+              {(showBack || showHome) && (
+                <div className="auth-modal__nav-row">
+                  {showBack && (
+                    <E as="button" className="auth-modal__text-nav" onClick={backToMethod}>
+                      ‹ 返回
+                    </E>
+                  )}
+                  {showHome && (
+                    <E as="button" className="auth-modal__text-nav" onClick={gotoLanding}>
+                      ‹ 返回首页
+                    </E>
+                  )}
                 </div>
-                <span className="ld-56">Magic Resume</span>
-              </div>
-              <div className="ld-55">
-                <div className="ld-54">几分钟，<br />搞定一份<br />打动 HR 的简历。</div>
-                <p className="ld-53">登录即注册 —— 无需繁琐步骤，直接开始你的求职之旅。</p>
-              </div>
-              <div className="ld-52">
-                <div className="ld-51">★</div>
-                <span className="ld-50">“10 分钟做完简历，第二天就约了面试。”</span>
-              </div>
-            </div>
+              )}
+              {showClose && (
+                <E as="button" className="auth-modal__close" onClick={closeAuth} aria-label="关闭">
+                  <img src={authCloseIcon} alt="" width={20} height={20} />
+                </E>
+              )}
 
-            {/* RIGHT content */}
-            <div className="ld-49">
-              {/* top control */}
-              <div className="ld-48">
-                {showBack && (
-                  <E as="button" className="ld-168" onClick={backToMethod}>‹ 返回</E>
-                )}
-                {showHome && (
-                  <E as="button" className="ld-168" onClick={gotoLanding}>‹ 返回首页</E>
-                )}
-                <div className="ld-47" />
-                {showClose && (
-                  <E as="button" className="ld-167" onClick={closeAuth}>✕</E>
-                )}
-              </div>
-
-              {/* ===== METHOD STEP ===== */}
               {stepMethod && (
-                <div className="ld-46">
-                  <h2 className="ld-18">欢迎来到 Magic Resume ✦</h2>
-                  <p className="ld-17">登录即注册，丝滑开始 —— 首次登录将自动为你创建账号。</p>
-
-                  {/* segmented tabs */}
-                  <div className="ld-45">
-                    <div style={css("position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);background:#fff;border-radius:11px;box-shadow:0 4px 12px -6px rgba(40,24,90,.35);transition:left .28s cubic-bezier(.4,0,.2,1);left:" + (isAccountTab ? "4px" : "50%") + ";")} />
-                    <button style={css(tabBtn(isAccountTab))} onClick={setTabAccount}>账密登录</button>
-                    <button style={css(tabBtn(isWechatTab))} onClick={setTabWechat}>微信登录</button>
+                <div className="auth-modal__body">
+                  <div className="auth-modal__head">
+                    <h2 className="auth-modal__title">
+                      登录不写简历
+                      <img
+                        className="auth-modal__title-icon"
+                        src={authSparkleTeal}
+                        alt=""
+                        width={20}
+                        height={20}
+                      />
+                    </h2>
+                    <p className="auth-modal__sub">登录即注册，首次登录将自动创建账号</p>
                   </div>
 
-                  {/* ACCOUNT tab */}
+                  <div className="auth-modal__seg" role="tablist">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={isAccountTab}
+                      className={"auth-modal__seg-btn" + (isAccountTab ? " is-active" : "")}
+                      onClick={setTabAccount}
+                    >
+                      账号登录
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={isWechatTab}
+                      className={"auth-modal__seg-btn" + (isWechatTab ? " is-active" : "")}
+                      onClick={setTabWechat}
+                    >
+                      微信登录
+                    </button>
+                  </div>
+
                   {isAccountTab && (
-                    <div className="ld-44">
-                      {/* login-mode switch */}
-                      <div className="ld-43">
-                        <button className="mode-tab" style={css(modeTab(loginMode === "code"))} onClick={setModeCode}>验证码登录</button>
-                        <button className="mode-tab" style={css(modeTab(loginMode === "password"))} onClick={setModePassword}>密码登录</button>
+                    <div className="auth-modal__account">
+                      <div className="auth-modal__modes">
+                        <button
+                          type="button"
+                          className={"auth-modal__mode" + (loginMode === "code" ? " is-active" : "")}
+                          onClick={setModeCode}
+                        >
+                          验证码登录
+                        </button>
+                        <button
+                          type="button"
+                          className={
+                            "auth-modal__mode" + (loginMode === "password" ? " is-active" : "")
+                          }
+                          onClick={setModePassword}
+                        >
+                          密码登录
+                        </button>
                       </div>
 
-                      <div className={accountError ? "auth-field error" : "auth-field"} className="ld-42">
-                        <input value={account} onChange={onAccountChange} onBlur={onAccountBlur} placeholder="请输入手机号 / 邮箱" className="ld-13" />
+                      <div className={"auth-modal__field" + (accountError ? " is-error" : "")}>
+                        <input
+                          value={account}
+                          onChange={onAccountChange}
+                          onBlur={onAccountBlur}
+                          placeholder="请输入手机号 / 邮箱"
+                          className="auth-modal__input"
+                        />
                       </div>
-                      {accountError && (
-                        <div className="ld-12">{accountError}</div>
-                      )}
+                      {accountError && <div className="auth-modal__error">{accountError}</div>}
 
-                      {/* CODE mode */}
                       {loginMode === "code" && (
-                        <div className="ld-39">
-                          <div className="auth-field ld-38" >
-                            <input value={code} onChange={onCodeChange} placeholder="输入验证码" inputMode="numeric" className="ld-41" />
-                            <button style={css(codeBtnStyle)} onClick={sendCode}>{codeBtnLabel}</button>
+                        <>
+                          <div className="auth-modal__field auth-modal__field--code">
+                            <input
+                              value={code}
+                              onChange={onCodeChange}
+                              placeholder="请输入验证码"
+                              inputMode="numeric"
+                              className="auth-modal__input"
+                            />
+                            <button
+                              type="button"
+                              className={
+                                "auth-modal__code-btn" +
+                                (countdown > 0 || sendingCode ? " is-wait" : "")
+                              }
+                              onClick={sendCode}
+                            >
+                              {codeBtnLabel}
+                            </button>
                           </div>
                           {codeSent && (
-                            <div className="ld-40">验证码已发送，请查收</div>
+                            <div className="auth-modal__hint">验证码已发送，请查收</div>
                           )}
-                          <E as="button" s={"width:100%;margin-top:18px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitAccount}>{loggingIn ? "登录中…" : "登录 / 注册"}</E>
-                        </div>
+
+                          <div
+                            className={
+                              "auth-modal__agree" + (agreeShake ? " is-shaking" : "")
+                            }
+                          >
+                            <button
+                              type="button"
+                              className={
+                                "auth-modal__check" + (agreed ? " is-on" : "")
+                              }
+                              onClick={toggleAgree}
+                              aria-checked={agreed}
+                              role="checkbox"
+                            >
+                              {agreed ? "✓" : ""}
+                            </button>
+                            <div className="auth-modal__agree-text">
+                              我已阅读并同意
+                              <button
+                                type="button"
+                                className="legal-link auth-modal__legal"
+                                onClick={(e) => openLegal(e, "terms")}
+                              >
+                                《用户协议》
+                              </button>
+                              和
+                              <button
+                                type="button"
+                                className="legal-link auth-modal__legal"
+                                onClick={(e) => openLegal(e, "privacy")}
+                              >
+                                《隐私政策》
+                              </button>
+                            </div>
+                          </div>
+
+                          <E
+                            as="button"
+                            className={
+                              "auth-modal__submit" +
+                              (!codeReady || loggingIn ? " is-dim" : "")
+                            }
+                            onClick={submitAccount}
+                          >
+                            {loggingIn ? "登录中…" : "登录 / 注册"}
+                            <span aria-hidden> →</span>
+                          </E>
+                        </>
                       )}
 
-                      {/* PASSWORD mode */}
                       {loginMode === "password" && (
-                        <div className="ld-39">
-                          <div className="auth-field ld-38" >
-                            <input value={loginPw} onChange={onLoginPw} onKeyDown={onLoginPwKey} type={showLoginPw ? "text" : "password"} placeholder="请输入登录密码" className="ld-13" />
-                            <button className="ld-15" onClick={toggleShowLoginPw}>{showLoginPw ? "隐藏" : "显示"}</button>
+                        <>
+                          <div className="auth-modal__field auth-modal__field--code">
+                            <input
+                              value={loginPw}
+                              onChange={onLoginPw}
+                              onKeyDown={onLoginPwKey}
+                              type={showLoginPw ? "text" : "password"}
+                              placeholder="请输入登录密码"
+                              className="auth-modal__input"
+                            />
+                            <button
+                              type="button"
+                              className="auth-modal__code-btn"
+                              onClick={toggleShowLoginPw}
+                            >
+                              {showLoginPw ? "隐藏" : "显示"}
+                            </button>
                           </div>
                           {loginPwError && (
-                            <div className="ld-12">
-                              {loginPwError}
-                            </div>
+                            <div className="auth-modal__error">{loginPwError}</div>
                           )}
                           {pwNeedSwitch && (
-                            <E as="button" className="ld-166" onClick={switchToCodeFromPw}>切换验证码登录 →</E>
+                            <E
+                              as="button"
+                              className="auth-modal__link-btn"
+                              onClick={switchToCodeFromPw}
+                            >
+                              切换验证码登录 →
+                            </E>
                           )}
-                          <div className="ld-37">
-                            <E as="button" className="ld-165" onClick={forgotPw}>忘记密码？</E>
+                          <div className="auth-modal__forgot-row">
+                            <E as="button" className="auth-modal__forgot" onClick={forgotPw}>
+                              忘记密码？
+                            </E>
                           </div>
-                          <E as="button" s={"width:100%;margin-top:10px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);transition:background .2s;" + (loggingIn ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={submitPassword}>{loggingIn ? "登录中…" : "登录"}</E>
-                        </div>
+                          <E
+                            as="button"
+                            className={
+                              "auth-modal__submit" + (loggingIn ? " is-dim" : "")
+                            }
+                            onClick={submitPassword}
+                          >
+                            {loggingIn ? "登录中…" : "登录"}
+                            <span aria-hidden> →</span>
+                          </E>
+                        </>
                       )}
                     </div>
                   )}
 
-                  {/* WECHAT tab */}
                   {isWechatTab && (
-                    <div className="ld-36">
-                      <div className="ld-35">
-                        <div className="ld-34">
-                          {QR_CELLS.map((c, i) => (
-                            <div key={i} style={css(c.style)} />
-                          ))}
-                        </div>
-                        <div className="ld-33" />
-                        <div className="ld-32" />
-                        <div className="ld-31" />
-                        <div className="ld-30" />
-                        <div className="ld-29" />
-                        <div className="ld-28" />
-                        <div className="ld-27">
-                          <div className="ld-26" />
-                        </div>
-                      </div>
-                      <div className="ld-25">打开微信扫一扫，立即登录 / 注册</div>
-                      <E as="button" className="ld-164" onClick={wechatScan}>模拟扫码成功 →</E>
+                    <div className="auth-modal__wechat">
+                      <button
+                        type="button"
+                        className="auth-modal__qr"
+                        onClick={wechatScan}
+                        title="模拟扫码成功"
+                      >
+                        <img src={authWechatQr} alt="微信登录二维码" width={180} height={180} />
+                      </button>
+                      <p className="auth-modal__wechat-tip">
+                        打开微信扫一扫，立即登录 / 注册
+                      </p>
                     </div>
                   )}
 
-                  {/* quick login (apple) */}
-                  <div className="ld-24">
-                    <div className="ld-23">
-                      <div className="ld-10" />其他方式<div className="ld-10" />
-                    </div>
-                    <div className="ld-22">
-                      <E as="button" className="ld-163" onClick={openApple}>
-                        <AppleIcon />
-                      </E>
-                    </div>
+                  <div className="auth-modal__others">
+                    <div className="auth-modal__others-line" />
+                    <span className="auth-modal__others-label">其他登录方式</span>
+                    <div className="auth-modal__others-line" />
                   </div>
-
-                  {/* 协议勾选：密码登录隐藏；验证码 / 微信等可注册入口展示 */}
-                  {!(isAccountTab && loginMode === "password") && (
-                    <div className={agreeShake ? "ld-agree-row is-shaking" : "ld-agree-row"}>
-                      <button style={css(checkboxStyle)} onClick={toggleAgree}>{agreed ? "✓" : ""}</button>
-                      <div className="ld-21">
-                        我已阅读并同意 Magic Resume
-                        <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "terms")}>《用户协议》</button>
-                        和
-                        <button type="button" className="legal-link ld-20"  onClick={(e) => openLegal(e, "privacy")}>《隐私政策》</button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="auth-modal__apple-row">
+                    <E as="button" className="auth-modal__apple" onClick={openApple} aria-label="Apple 登录">
+                      <img src={authAppleIcon} alt="" width={24} height={24} />
+                    </E>
+                  </div>
                 </div>
               )}
 
-              {/* ===== SET PASSWORD STEP ===== */}
               {stepSetpw && (
-                <div className="ld-19">
-                  <h2 className="ld-18">设置登录密码</h2>
-                  <p className="ld-17">方便下次用密码快速登录 —— 也可以稍后再说。</p>
-
-                  <div className="auth-field ld-16" >
-                    <input value={pw1} onChange={onPw1} type={showPw ? "text" : "password"} placeholder="设置新密码（至少 8 位）" className="ld-13" />
-                    <button className="ld-15" onClick={toggleShowPw}>{showPw ? "隐藏" : "显示"}</button>
+                <div className="auth-modal__body auth-modal__body--setpw">
+                  <div className="auth-modal__head">
+                    <h2 className="auth-modal__title">设置登录密码</h2>
+                    <p className="auth-modal__sub">方便下次用密码快速登录 —— 也可以稍后再说。</p>
                   </div>
-                  <div className="auth-field ld-14" >
-                    <input value={pw2} onChange={onPw2} type={showPw ? "text" : "password"} placeholder="确认新密码" className="ld-13" />
+                  <div className="auth-modal__field auth-modal__field--code">
+                    <input
+                      value={pw1}
+                      onChange={onPw1}
+                      type={showPw ? "text" : "password"}
+                      placeholder="设置新密码（至少 8 位）"
+                      className="auth-modal__input"
+                    />
+                    <button type="button" className="auth-modal__code-btn" onClick={toggleShowPw}>
+                      {showPw ? "隐藏" : "显示"}
+                    </button>
                   </div>
-                  {pwError && (
-                    <div className="ld-12">{pwError}</div>
-                  )}
-
-                  <E as="button" s={"width:100%;margin-top:20px;background:#6D5DF6;color:#fff;font-weight:800;font-size:16px;padding:15px;border-radius:14px;box-shadow:0 14px 30px -12px rgba(109,93,246,.85);" + (settingPw ? "opacity:.7;pointer-events:none;" : "")} h="background:#5B4BE8;" onClick={confirmPw}>{settingPw ? "提交中…" : "确认并进入"}</E>
-
-                  <div className="ld-11">
-                    <div className="ld-10" />或<div className="ld-10" />
+                  <div className="auth-modal__field">
+                    <input
+                      value={pw2}
+                      onChange={onPw2}
+                      type={showPw ? "text" : "password"}
+                      placeholder="确认新密码"
+                      className="auth-modal__input"
+                    />
                   </div>
-                  <E as="button" className="ld-162" onClick={skipPw}>稍后在个人中心设置，先进去逛逛 →</E>
+                  {pwError && <div className="auth-modal__error">{pwError}</div>}
+                  <E
+                    as="button"
+                    className={"auth-modal__submit" + (settingPw ? " is-dim" : "")}
+                    onClick={confirmPw}
+                  >
+                    {settingPw ? "提交中…" : "确认并进入"}
+                    <span aria-hidden> →</span>
+                  </E>
+                  <div className="auth-modal__others">
+                    <div className="auth-modal__others-line" />
+                    <span className="auth-modal__others-label">或</span>
+                    <div className="auth-modal__others-line" />
+                  </div>
+                  <E as="button" className="auth-modal__skip" onClick={skipPw}>
+                    稍后在个人中心设置，先进去逛逛 →
+                  </E>
                 </div>
               )}
-            </div>
+            </section>
           </div>
         </div>
       )}

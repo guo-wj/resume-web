@@ -181,12 +181,18 @@
   flex: 0 0 auto;
 }
 
-.chat-mini-resume-card__action:hover {
+.chat-mini-resume-card__action:hover:not(:disabled) {
   opacity: 0.94;
 }
 
-.chat-mini-resume-card__action:active {
+.chat-mini-resume-card__action:active:not(:disabled) {
   transform: scale(0.99);
+}
+
+.chat-mini-resume-card__action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 @media (max-width: 480px) {

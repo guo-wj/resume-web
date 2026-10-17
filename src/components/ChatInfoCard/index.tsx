@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { ApiError, updateConversationCard } from "@/api"
-import type { UpdateConversationCardResult } from "@/api"
+import type { UpdateConversationCardBody, UpdateConversationCardResult } from "@/api"
 import headIcon from "@/assets/chat/info-scan.svg"
 import sectionProfileIcon from "@/assets/chat/info-section-profile.svg"
 import sectionExperienceIcon from "@/assets/chat/info-section-experience.svg"
@@ -90,6 +90,8 @@ export { CHAT_INFO_CARD_MOCK } from "./mock"
 export interface ChatInfoCardProps {
   data?: ChatInfoCardData
   className?: string
+  /** 历史卡片禁用「修改 / 保存」；仅最后一条消息可操作 */
+  disabled?: boolean
   /** 当前会话 id；也可传函数在点击时再取（避免 ref 未同步） */
   sessionId?: string | (() => string)
   /** 保存成功后回调（含接口回写结果） */
@@ -224,6 +226,7 @@ function experienceToPayload(item: ChatInfoExperience): ChatInfoExperiencePayloa
 export function ChatInfoCard({
   data,
   className,
+  disabled,
   sessionId,
   onSaved,
   onSaveError,
@@ -240,37 +243,33 @@ export function ChatInfoCard({
     if (!data) return
     const next = (data.fields || []).filter((f) => String(f.value || "").trim())
     setFields(next)
-    setDraft(fieldsToMap(BASIC_FIELD_DEFS.map((def) => ({
-      ...def,
-      value: next.find((f) => f.key === def.key)?.value || "",
-    }))))
+    setDraft(fieldsToMap(next))
     setOpenMap({ 0: true })
     setEditing(false)
     setSaving(false)
   }, [snapshot])
 
+  useEffect(() => {
+    if (disabled && editing && !saving) setEditing(false)
+  }, [disabled, editing, saving])
+
   if (!data) return null
 
+  /** 只展示 / 编辑当前卡片已有字段，不展开成全集 */
   const displayFields = fields.filter((f) => String(f.value || "").trim())
-  const editFields: ChatInfoField[] = BASIC_FIELD_DEFS.map((def) => ({
-    ...def,
-    value: draft[def.key] ?? "",
+  const editFields: ChatInfoField[] = displayFields.map((f) => ({
+    ...f,
+    value: draft[f.key] ?? f.value ?? "",
   }))
   const experiences = data.experiences || []
   const rows = editing ? editFields : displayFields
+  const actionsDisabled = !!disabled || saving
 
   if (!displayFields.length && !experiences.length && !editing) return null
 
   const startEdit = () => {
-    if (saving) return
-    setDraft(
-      fieldsToMap(
-        BASIC_FIELD_DEFS.map((def) => ({
-          ...def,
-          value: fields.find((f) => f.key === def.key)?.value || "",
-        })),
-      ),
-    )
+    if (actionsDisabled) return
+    setDraft(fieldsToMap(displayFields))
     setEditing(true)
     onEdit?.()
   }
@@ -281,22 +280,22 @@ export function ChatInfoCard({
   }
 
   const confirm = async () => {
-    if (saving) return
+    if (actionsDisabled) return
 
     const nextFields = editFields
       .map((f) => ({ ...f, value: String(draft[f.key] ?? "").trim() }))
       .filter((f) => f.value)
-    const highest = strOrNull(draft.highest_education)
-    const body = {
-      name: strOrNull(draft.name),
-      phone: strOrNull(draft.phone),
-      email: strOrNull(draft.email),
-      target_industry: strOrNull(draft.target_industry),
-      target_role: strOrNull(draft.target_role),
-      highest_education: highest,
-      education: highest,
-      school: strOrNull(draft.school),
-      major: strOrNull(draft.major),
+    /** 仅提交当前可编辑字段，避免把未展示项写成 null */
+    const body: Record<string, string | null> = {}
+    for (const f of editFields) {
+      const key = f.key
+      if (key === "highest_education") {
+        const highest = strOrNull(draft.highest_education)
+        body.highest_education = highest
+        body.education = highest
+      } else {
+        body[key] = strOrNull(draft[key])
+      }
     }
 
     const sid = String(
@@ -315,7 +314,7 @@ export function ChatInfoCard({
 
     setSaving(true)
     try {
-      const result = await updateConversationCard(sid, cardId, body)
+      const result = await updateConversationCard(sid, cardId, body as UpdateConversationCardBody)
       if (!result) throw new Error("保存失败：接口无返回")
       const merged = mergeSavedPayload(data, result, draft)
       const basic = asRecord(merged.basic)
@@ -400,7 +399,7 @@ export function ChatInfoCard({
               type="button"
               className="chat-info-card__btn chat-info-card__btn--edit"
               onClick={cancelEdit}
-              disabled={saving}
+              disabled={actionsDisabled}
             >
               {CANCEL_LABEL}
             </button>
@@ -409,7 +408,7 @@ export function ChatInfoCard({
               type="button"
               className="chat-info-card__btn chat-info-card__btn--edit"
               onClick={startEdit}
-              disabled={saving}
+              disabled={actionsDisabled}
             >
               {EDIT_LABEL}
             </button>
@@ -419,7 +418,7 @@ export function ChatInfoCard({
               type="button"
               className="chat-info-card__btn chat-info-card__btn--confirm"
               onClick={() => void confirm()}
-              disabled={saving}
+              disabled={actionsDisabled}
             >
               {saving ? "保存中…" : SAVE_LABEL}
             </button>

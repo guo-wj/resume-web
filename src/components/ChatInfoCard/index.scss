@@ -116,6 +116,12 @@
   border-bottom: 1px solid rgba(28, 93, 95, 0.07);
 }
 
+/* 两列网格：最后一行下方没有更多字段时，去掉底部分隔线 */
+.chat-info-card__field:last-child,
+.chat-info-card__field:nth-last-child(2):nth-child(odd) {
+  border-bottom: none;
+}
+
 .chat-info-card__field-icon {
   width: 32px;
   height: 32px;
@@ -387,6 +393,15 @@
   .chat-info-card__grid {
     grid-template-columns: minmax(0, 1fr);
     column-gap: 0;
+  }
+
+  /* 单列时只去掉最后一项底线 */
+  .chat-info-card__field:nth-last-child(2):nth-child(odd) {
+    border-bottom: 1px solid rgba(28, 93, 95, 0.07);
+  }
+
+  .chat-info-card__field:last-child {
+    border-bottom: none;
   }
 
   .chat-info-card__content {

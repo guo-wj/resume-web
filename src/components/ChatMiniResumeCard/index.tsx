@@ -19,6 +19,8 @@ export { CHAT_MINI_RESUME_CARD_MOCK } from "./mock"
 export interface ChatMiniResumeCardProps {
   data?: ChatMiniResumeCardData
   className?: string
+  /** 历史卡片禁用 action；仅最后一条消息可操作 */
+  disabled?: boolean
   /** 点击「生成完整简历」等 action 按钮 */
   onAction?: (action: ChatMiniResumeAction, data: ChatMiniResumeCardData) => void
 }
@@ -29,7 +31,7 @@ function nameInitial(name: string) {
 }
 
 /** 迷你简历卡 — Figma 379:2815，SSE type: mini_resume_card */
-export function ChatMiniResumeCard({ data, className, onAction }: ChatMiniResumeCardProps) {
+export function ChatMiniResumeCard({ data, className, disabled, onAction }: ChatMiniResumeCardProps) {
   if (!data) return null
   const name = String(data.name || "").trim()
   const targetJob = String(data.targetJob || "").trim()
@@ -80,7 +82,11 @@ export function ChatMiniResumeCard({ data, className, onAction }: ChatMiniResume
         <button
           type="button"
           className="chat-mini-resume-card__action"
-          onClick={() => onAction?.(data.action, data)}
+          disabled={disabled}
+          onClick={() => {
+            if (disabled) return
+            onAction?.(data.action, data)
+          }}
         >
           <img src={actionIcon} alt="" width={16} height={16} />
           <span>{actionLabel}</span>
