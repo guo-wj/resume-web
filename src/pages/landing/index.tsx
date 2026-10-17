@@ -264,56 +264,6 @@ const ChevronDownIcon = ({ size = 14, color = "#9890AE" }) => (
   </svg>
 )
 
-/* ---- 「求职搭子」首页图标 & 吉祥物（还原自 index.html 原型） ---- */
-const Mascot = ({ size = 98 }) => (
-  <svg width={size} height={size} viewBox="0 0 104 104" fill="none">
-    <path d="M48 21 C 43 7, 60 5, 52 20" stroke="#2fae70" strokeWidth="5" strokeLinecap="round" fill="none" />
-    <rect x="16" y="22" width="72" height="60" rx="22" fill="#4fd08a" />
-    <path d="M34 74 L23 94 L50 78 Z" fill="#4fd08a" />
-    <ellipse cx="42" cy="49" rx="9.5" ry="11" fill="#fff" />
-    <ellipse cx="66" cy="49" rx="9.5" ry="11" fill="#fff" />
-    <circle cx="44.5" cy="51" r="4.8" fill="#123524" />
-    <circle cx="68.5" cy="51" r="4.8" fill="#123524" />
-    <circle cx="46" cy="49" r="1.7" fill="#fff" />
-    <circle cx="70" cy="49" r="1.7" fill="#fff" />
-    <path d="M46 65 Q52 72 61 65" stroke="#123524" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-    <ellipse cx="34" cy="60" rx="4.5" ry="3" fill="#ff9db8" opacity=".7" />
-    <ellipse cx="75" cy="60" rx="4.5" ry="3" fill="#ff9db8" opacity=".7" />
-  </svg>
-)
-const ArrowUpIcon = ({ size = 18, color = "#fff" }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill={color}>
-    <path fillRule="evenodd" d="M7.2 3.83 4.3 6.74a.9.9 0 1 1-1.27-1.27l4.34-4.35a.9.9 0 0 1 1.27 0l4.34 4.35a.9.9 0 1 1-1.27 1.27L8.8 3.83v9.47a.8.8 0 0 1-1.6 0V3.83Z" />
-  </svg>
-)
-const MicIcon = ({ size = 17, color = "#7b61ff" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <rect x="9" y="2" width="6" height="12" rx="3" fill={color} />
-    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke={color} strokeWidth="2" strokeLinecap="round" />
-  </svg>
-)
-const ClipIcon = ({ size = 17, color = "#7b61ff" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.6 1.6 0 0 1-2.3-2.3l7.3-7.3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-const PlusMiniIcon = ({ size = 13, color = "currentColor" }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill={color}>
-    <path fillRule="evenodd" d="M7.1 7.1V2.5a.9.9 0 0 1 1.8 0V7.1h4.6a.9.9 0 0 1 0 1.8H8.9v4.6a.9.9 0 0 1-1.8 0V8.9H2.5a.9.9 0 0 1 0-1.8H7.1Z" />
-  </svg>
-)
-const UploadIcon = ({ size = 22, color = "#1c5d5f" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path d="M12 15V4m0 0 4 4m-4-4-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-const PiecesIcon = ({ size = 22, color = "#ff5f40" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10v6H4V5.5ZM14 4h4.5A1.5 1.5 0 0 1 20 5.5V10h-6V4ZM4 14h6v6H5.5A1.5 1.5 0 0 1 4 18.5V14ZM14 14h6v4.5a1.5 1.5 0 0 1-1.5 1.5H14v-6Z" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
-  </svg>
-)
-
 const HERO_GOAL_PROMPTS = {
   explore: [
     "我想转行做产品经理，需要具备哪些核心技能？",
@@ -781,27 +731,6 @@ function LegalModal({ docKey, onClose }) {
     </div>
   )
 }
-
-/* 21x21 演示二维码点阵 */
-function buildQr() {
-  const N = 21
-  const cells = []
-  const inFinder = (r, c) =>
-    (r < 7 && c < 7) || (r < 7 && c >= N - 7) || (r >= N - 7 && c < 7)
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      let on = false
-      if (!inFinder(r, c)) on = (r * c + r * 5 + c * 3 + (r ^ c)) % 7 < 3
-      cells.push({
-        style:
-          "width:100%;height:100%;border-radius:1px;background:" +
-          (on ? "#1B1530" : "transparent"),
-      })
-    }
-  }
-  return cells
-}
-const QR_CELLS = buildQr()
 
 export function LandingApp() {
   const navigate = useNavigate()
