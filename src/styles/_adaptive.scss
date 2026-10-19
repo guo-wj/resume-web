@@ -1,12 +1,17 @@
 // PC 自适应（设计稿 1920×1097，关注区间 1280–1920）
 //
+// 全局（main.tsx → initAdaptive）：只改 html.fontSize，全站共用，不是按页面单独配。
+//
 // 约定：
-// - 视觉页四周页边距写死 40px（真实 px），不进 rem
+// - 视觉页（landing 首页 / surprise / workbench / dashboard 等）：四周页边距写死 40px；
+//   尺寸用 r(设计稿 px)；禁止 transform:scale；不做断点改布局
+// - 聊天等产品密度页：列宽/字号用固定 px（如 --chat-col: 680px），不要跟 rem 缩放，
+//   否则非 1920 宽会被整体「缩小一圈」；可用媒体查询做窄屏收束
 // - html.fontSize = min(视口宽 − 80, 1840) / 1840 × 100
 //   · 1920：1rem = 100px（内容区 1:1）
 //   · 1440：1rem ≈ 73.91px（内容落在固定 40 边距内）
 //   · >1920：保持 100px，不再放大
-// - 视觉页用 r(设计稿 px)；禁止 transform:scale；不做断点改布局
+
 
 @use "sass:math";
 
