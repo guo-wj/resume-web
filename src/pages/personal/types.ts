@@ -34,12 +34,19 @@ export interface DisplayPlan {
   onClick: () => void
 }
 
+export type BindingSection = "login" | "security"
+
 export interface BindingRow {
+  id: string
   label: string
   value: string
+  /** 主值前的状态文案，如「已绑定」 */
+  valuePrefix?: string
   action: string
   strong: boolean
   onClick: () => void
+  icon: string
+  section: BindingSection
 }
 
 export interface BindModalState {
@@ -111,10 +118,6 @@ export interface UseSubscriptionTabParams extends TabHookBase {
 }
 
 export type UseBillsTabParams = TabHookBase
-
-export interface PersonalCenterProps {
-  onClose?: () => void
-}
 
 export interface SidebarProps {
   page: PersonalPageId

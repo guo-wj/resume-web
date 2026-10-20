@@ -1,9 +1,9 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 .ui-sectionTitle {
   font-size: r(16);
-  font-weight: 800;
-  letter-spacing: r(-0.2);
+  font-weight: 500;
+  letter-spacing: 0;
   padding-bottom: r(13);
   border-bottom: 1px solid $pc-border;
 }
@@ -15,16 +15,16 @@
 }
 
 .ui-legendDot {
-  width: r(11);
-  height: r(11);
-  border-radius: r(4);
+  width: r(10);
+  height: r(10);
+  border-radius: r(2);
   flex: 0 0 auto;
 }
 
 .ui-legendName {
-  font-size: r(14);
-  color: #4a4360;
-  font-weight: 500;
+  font-size: r(12);
+  color: #1f2e30;
+  font-weight: 400;
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -33,9 +33,9 @@
 }
 
 .ui-legendValue {
-  font-size: r(14);
-  font-weight: 600;
-  color: #6b6483;
+  font-size: r(12);
+  font-weight: 500;
+  color: $pc-text-muted;
   white-space: nowrap;
   flex: 0 0 auto;
 }
@@ -49,9 +49,9 @@
   background: $pc-text;
   color: $pc-white;
   font-size: r(14);
-  font-weight: 600;
+  font-weight: 500;
   padding: r(13) r(22);
   border-radius: r(14);
-  box-shadow: 0 r(18) r(40) r(-16) rgba(0, 0, 0, 0.5);
+  box-shadow: 0 r(18) r(40) r(-16) rgba(28, 93, 95, 0.35);
   animation: pcPopIn 0.3s ease both;
 }

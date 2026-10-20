@@ -1,19 +1,19 @@
 @forward "adaptive";
 
-// 全局设计 token
-$pc-text: #1b1530;
-$pc-text-muted: #7a7390;
-$pc-text-soft: #9890ae;
-$pc-text-faint: #b7b0c8;
-$pc-border: #ece7fa;
-$pc-border-soft: #f1edfb;
-$pc-bg: #faf9fe;
-$pc-bg-input: #f4f2fb;
-$pc-primary: #6d5df6;
-$pc-primary-hover: #5b4be8;
-$pc-success: #5a8a1a;
+// 全局设计 token（与 workbench / 账户设置 Figma 青绿体系对齐）
+$pc-text: #1f2e30;
+$pc-text-muted: #7f9393;
+$pc-text-soft: #7f9393;
+$pc-text-faint: rgba(0, 0, 0, 0.38);
+$pc-border: rgba(28, 93, 95, 0.1);
+$pc-border-soft: rgba(28, 93, 95, 0.07);
+$pc-bg: #f6faf9;
+$pc-bg-input: rgba(28, 93, 95, 0.06);
+$pc-primary: #1c5d5f;
+$pc-primary-hover: #174849;
+$pc-success: #24a666;
 $pc-danger: #e5484d;
 $pc-white: #fff;
-$pc-sidebar-bg: #faf9fe;
-$pc-chip-bg: #f0ecfb;
-$pc-font: "Plus Jakarta Sans", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+$pc-sidebar-bg: #fff;
+$pc-chip-bg: rgba(46, 110, 110, 0.1);
+$pc-font: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;

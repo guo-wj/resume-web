@@ -82,6 +82,13 @@ export const APP_ROUTES: AppRoute[] = [
     description: "惊喜页 · 简历优化界面原型",
     nav: false,
   },
+  {
+    path: "/personal",
+    name: "personal",
+    component: "PersonalCenterApp",
+    description: "账户设置 · 个人主页 / 订阅 / 账单",
+    nav: false,
+  },
 ]
 
 /** 工作台侧边栏导航 */

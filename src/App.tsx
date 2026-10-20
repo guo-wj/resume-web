@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom"
 import { DashboardApp } from "@/pages/dashboard"
 import { LandingApp } from "@/pages/landing"
+import { PersonalCenter } from "@/pages/personal"
 import { ResumeEditApp } from "@/pages/resume-edit"
 import { SurpriseApp } from "@/pages/surprise"
 import { APP_ROUTES } from "@/config/routes"
@@ -25,6 +26,7 @@ const routeElements = {
   DashboardApp: <DashboardApp />,
   ResumeEditApp: <ResumeEditApp />,
   SurpriseApp: <SurpriseApp />,
+  PersonalCenterApp: <PersonalCenter />,
 } as const
 
 export function App() {

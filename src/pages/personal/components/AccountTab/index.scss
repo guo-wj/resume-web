@@ -1,41 +1,89 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 .accountTab-root {
-  animation: pcFadeUp 0.4s ease both;
+  width: 100%;
+}
+
+.accountTab-header {
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
 }
 
 .accountTab-pageTitle {
-  font-size: r(32);
-  font-weight: 800;
-  letter-spacing: r(-0.6);
   margin: 0;
+  font-size: r(28);
+  font-weight: 500;
+  line-height: r(36);
+  color: #1f2e30;
 }
 
 .accountTab-pageDesc {
-  font-size: r(15);
+  margin: 0;
+  font-size: r(14);
+  font-weight: 400;
+  line-height: r(20);
   color: $pc-text-muted;
-  margin: r(10) 0 0;
+}
+
+.accountTab-sections {
+  display: flex;
+  flex-direction: column;
+  gap: r(24);
+  margin-top: r(32);
+}
+
+.accountTab-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid $pc-border;
+  border-radius: r(16);
+  box-shadow: 0 r(2) r(24) 0 rgba(28, 93, 95, 0.08);
+  overflow: hidden;
+}
+
+.accountTab-cardHeader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: r(72);
+  padding: r(16) r(24);
+  background: $pc-white;
+  border-bottom: 1px solid $pc-border-soft;
+}
+
+.accountTab-cardTitle {
+  margin: 0;
+  font-size: r(16);
+  font-weight: 500;
+  line-height: r(20);
+  color: #1f3333;
+}
+
+.accountTab-cardDesc {
+  margin: r(4) 0 0;
+  font-size: r(12);
+  font-weight: 400;
+  line-height: r(16);
+  color: $pc-text-muted;
 }
 
 .accountTab-profileRow {
-  margin-top: r(20);
   display: flex;
   align-items: center;
   gap: r(16);
+  padding: r(20) r(24);
 }
 
 .accountTab-avatar {
-  width: r(56);
-  height: r(56);
+  width: r(48);
+  height: r(48);
   border-radius: 50%;
   flex: 0 0 auto;
-  background: linear-gradient(135deg, $pc-primary, #8b6ffb);
-  color: $pc-white;
+  background: rgba(28, 93, 95, 0.13);
+  color: $pc-text;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: r(22);
-  font-weight: 800;
   overflow: hidden;
 }
 
@@ -45,73 +93,152 @@
   object-fit: cover;
 }
 
+.accountTab-avatarEmoji {
+  font-size: r(22);
+  line-height: 1;
+}
+
 .accountTab-profileInfo {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(2);
 }
 
 .accountTab-displayName {
-  font-size: r(18);
-  font-weight: 700;
+  font-size: r(16);
+  font-weight: 500;
+  line-height: r(24);
+  color: #1a1f36;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .accountTab-displayAccount {
-  font-size: r(13.5);
-  color: $pc-text-soft;
-  margin-top: r(3);
+  font-size: r(13);
+  font-weight: 400;
+  line-height: r(20);
+  color: #9ca3af;
 }
 
-.accountTab-card {
-  margin-top: r(18);
-  background: $pc-white;
-  border: 1px solid $pc-border;
-  border-radius: r(18);
-  overflow: hidden;
-}
-
-.accountTab-row {
+.accountTab-divider {
   display: flex;
   align-items: center;
-  gap: r(14);
-  padding: r(18) r(22);
+  gap: r(10);
+  padding: r(20) r(24) r(4);
+}
+
+.accountTab-dividerLineShort {
+  width: r(12);
+  height: 1px;
+  background: rgba(28, 93, 95, 0.2);
+  flex: 0 0 auto;
+}
+
+.accountTab-dividerLine {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(28, 93, 95, 0.12);
+  min-width: r(12);
+}
+
+.accountTab-dividerText {
+  font-size: r(12);
+  font-weight: 500;
+  line-height: r(18);
+  color: #608e8f;
+  white-space: nowrap;
+}
+
+.accountTab-fieldRow {
+  display: flex;
+  align-items: center;
+  gap: r(12);
+  height: r(64);
+  padding: 0 r(24);
   border-bottom: 1px solid $pc-border-soft;
 }
 
-.accountTab-rowLast {
+.accountTab-fieldRowLast {
   border-bottom: none;
+  margin-bottom: r(8);
 }
 
-.accountTab-rowLabel {
-  flex: 1;
-  min-width: 0;
-}
-
-.accountTab-rowTitle {
-  font-size: r(15);
-  font-weight: 600;
-  color: $pc-text;
-}
-
-.accountTab-rowValue {
-  font-size: r(13);
-  color: $pc-text-soft;
-  margin-top: r(4);
-}
-
-.accountTab-rowAction {
+.accountTab-fieldIcon {
+  width: r(32);
+  height: r(32);
+  border-radius: r(8);
+  background: rgba(28, 93, 95, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
-  font-size: r(14);
+
+  img {
+    width: r(16);
+    height: r(16);
+    display: block;
+  }
 }
 
-.accountTab-rowActionStrong {
-  font-weight: 700;
+.accountTab-fieldBody {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
+}
+
+.accountTab-fieldLabel {
+  font-size: r(12);
+  font-weight: 400;
+  line-height: r(16);
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.accountTab-fieldValue {
+  font-size: r(14);
+  font-weight: 500;
+  line-height: r(20);
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accountTab-fieldRow[data-id="password"] .accountTab-fieldValue {
+  letter-spacing: r(3);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.accountTab-fieldPrefix {
+  font-size: r(12);
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-right: r(8);
+}
+
+.accountTab-fieldHint {
+  font-size: r(14);
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.38);
+}
+
+.accountTab-fieldAction {
+  flex: 0 0 auto;
+  padding: r(4) r(8);
+  border-radius: r(6);
+  font-size: r(14);
+  font-weight: 500;
+  line-height: r(21);
+}
+
+.accountTab-fieldActionStrong {
   color: $pc-primary;
 }
 
-.accountTab-rowActionMuted {
-  font-weight: 400;
-  color: $pc-text-soft;
+.accountTab-fieldActionMuted {
+  color: rgba(28, 93, 95, 0.5);
 }

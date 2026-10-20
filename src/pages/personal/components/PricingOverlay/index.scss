@@ -1,9 +1,9 @@
 @use 'variables' as *;
 
 .pricingOverlay-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 80;
   background: $pc-bg;
   overflow-y: auto;
   animation: pcFadeIn 0.25s ease both;
@@ -17,7 +17,7 @@
   height: r(38);
   border-radius: 50%;
   background: $pc-chip-bg;
-  color: #6b6483;
+  color: #7f9393;
   font-size: r(18);
   display: flex;
   align-items: center;
@@ -57,7 +57,7 @@
 
 .pricingOverlay-cycleToggle {
   display: flex;
-  background: #efeafe;
+  background: rgba(46, 110, 110, 0.1);
   border-radius: r(13);
   padding: r(4);
 }
@@ -182,7 +182,7 @@
 
 .pricingOverlay-planBtnCurrent {
   background: #f2effb;
-  color: #6b6483;
+  color: #7f9393;
   font-weight: 700;
   cursor: default;
 }
@@ -298,7 +298,7 @@
 .pricingOverlay-faqPara {
   font-size: r(14.5);
   line-height: 1.75;
-  color: #6b6483;
+  color: #7f9393;
 }
 
 .pricingOverlay-faqParaLabel {

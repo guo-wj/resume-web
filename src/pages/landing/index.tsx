@@ -3,7 +3,6 @@ import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ApiError, loginByPassword, logout, request, setUserPassword, streamAgentChat, buildAgentChatMessage, createAgentSession, getConversationHistory, mapConversationHistoryToChat, chatSessionUrl, parseChatSessionIdFromPath, uploadFile } from "@/api"
 import { registerUnauthorizedLoginHandler } from "@/api/unauthorized"
-import { PersonalCenter } from "@/pages/personal"
 import { AuthGateProvider, RequireAuthAction, ChatTextCard, ChatProfileCard, buildChatProfileCardData, ChatInfoCard, buildChatInfoCardData, ChatMiniResumeCard, buildChatMiniResumeCardData, ChatButtonCard, buildChatButtonCardData, ChatLoadingStatus, CHAT_LOADING_STATUS_DEFAULT_TEXT } from "@/components"
 import { useAuth, getAuthSession, getAccessToken } from "@/store"
 import chatBackArrow from "@/assets/chat/back-arrow.svg"
@@ -778,7 +777,6 @@ export function LandingApp() {
 
   const [loggingIn, setLoggingIn] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const [personalOpen, setPersonalOpen] = useState(false)
   const [appleOpen, setAppleOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState("")
 
@@ -2067,7 +2065,7 @@ export function LandingApp() {
 
   const openPersonalCenter = () => {
     setUserMenuOpen(false)
-    setPersonalOpen(true)
+    navigate("/personal")
   }
 
   const handleLogout = async () => {
@@ -3089,8 +3087,6 @@ export function LandingApp() {
 
       {/* ===================== LEGAL MODAL ===================== */}
       <LegalModal docKey={legalDoc} onClose={closeLegal} />
-
-      {personalOpen && <PersonalCenter onClose={() => setPersonalOpen(false)} />}
 
       {/* ===================== TOAST ===================== */}
       {toastMsg && (

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { PersonalCenter } from "@/pages/personal"
 import logoAi from "@/assets/workbench/logo-ai.svg"
 import scoreStar from "@/assets/workbench/score-star.svg"
 import navResume from "@/assets/workbench/nav-resume.svg"
@@ -88,8 +87,6 @@ export function DashboardApp() {
   const navigate = useNavigate()
   const [nav, setNav] = useState<WorkbenchNavId>("resume")
   const [activeIndex, setActiveIndex] = useState(0)
-  const [personalOpen, setPersonalOpen] = useState(false)
-
   const resumes = WORKBENCH_RESUMES
   const active = resumes[activeIndex] || resumes[0]
   const score = active?.score ?? 0
@@ -136,7 +133,7 @@ export function DashboardApp() {
           <button
             type="button"
             className="workbench__nav-item"
-            onClick={() => setPersonalOpen(true)}
+            onClick={() => navigate("/personal")}
           >
             <img className="workbench__nav-icon" src={navUser} alt="" />
             <span>个人中心</span>
@@ -267,7 +264,6 @@ export function DashboardApp() {
         )}
       </main>
 
-      {personalOpen ? <PersonalCenter onClose={() => setPersonalOpen(false)} /> : null}
     </div>
   )
 }

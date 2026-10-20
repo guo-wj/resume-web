@@ -3,7 +3,7 @@
 .personalModals-inputWrap {
   margin-top: r(20);
   background: $pc-bg-input;
-  border: r(1.5) solid #ece7f7;
+  border: r(1.5) solid rgba(28, 93, 95, 0.12);
   border-radius: r(13);
   padding: 0 r(16);
   display: flex;
@@ -12,7 +12,7 @@
 
 .personalModals-prefix {
   font-size: r(14);
-  color: #6b6483;
+  color: #7f9393;
   font-weight: 700;
   margin-right: r(10);
 }
@@ -25,7 +25,7 @@
 
 .personalModals-codeWrap {
   background: $pc-bg-input;
-  border: r(1.5) solid #ece7f7;
+  border: r(1.5) solid rgba(28, 93, 95, 0.12);
   border-radius: r(13);
   padding: 0 r(6) 0 r(16);
   display: flex;
@@ -49,13 +49,13 @@
 }
 
 .personalModals-codeBtnDisabled {
-  color: #a7a0bc;
-  background: #ece7f7;
+  color: rgba(0, 0, 0, 0.38);
+  background: rgba(28, 93, 95, 0.12);
 }
 
 .personalModals-codeBtnActive {
   color: $pc-primary;
-  background: #f1edfc;
+  background: rgba(46, 110, 110, 0.1);
 }
 
 .personalModals-qrBox {
@@ -64,7 +64,7 @@
   height: r(170);
   margin: r(20) auto 0;
   background: $pc-white;
-  border: 1px solid #ece7f7;
+  border: 1px solid rgba(28, 93, 95, 0.12);
   border-radius: r(16);
   padding: r(12);
   display: flex;
@@ -179,7 +179,7 @@
   width: r(148);
   height: r(148);
   border-radius: r(14);
-  border: 1px solid #ece7f7;
+  border: 1px solid rgba(28, 93, 95, 0.12);
 }
 
 .personalModals-payQrBox {
@@ -187,7 +187,7 @@
   width: r(148);
   height: r(148);
   background: $pc-white;
-  border: 1px solid #ece7f7;
+  border: 1px solid rgba(28, 93, 95, 0.12);
   border-radius: r(14);
   padding: r(10);
 }
@@ -240,7 +240,7 @@
 
 .personalModals-cancelBody {
   font-size: r(14);
-  color: #6b6483;
+  color: #7f9393;
   margin: r(12) 0 0;
   line-height: 1.6;
 }
@@ -282,7 +282,7 @@
   height: r(30);
   border-radius: 50%;
   background: #f2effb;
-  color: #6b6483;
+  color: #7f9393;
   font-size: r(15);
   display: flex;
   align-items: center;
@@ -361,7 +361,7 @@
 .personalModals-noteField {
   flex: 1;
   background: $pc-bg-input;
-  border: r(1.5) solid #ece7f7;
+  border: r(1.5) solid rgba(28, 93, 95, 0.12);
   border-radius: r(12);
   padding: r(11) r(16);
   position: relative;
@@ -391,7 +391,7 @@
 .personalModals-invoiceCancelBtn {
   font-size: r(15);
   font-weight: 700;
-  color: #6b6483;
+  color: #7f9393;
   background: #f2effb;
   padding: r(12) r(26);
   border-radius: r(12);

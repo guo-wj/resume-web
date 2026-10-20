@@ -1,186 +1,350 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 .subscriptionTab-root {
-  animation: pcFadeUp 0.4s ease both;
+  width: 100%;
+}
+
+.subscriptionTab-header {
+  display: flex;
+  flex-direction: column;
+  gap: r(4);
 }
 
 .subscriptionTab-pageTitle {
-  font-size: r(32);
-  font-weight: 800;
-  letter-spacing: r(-0.6);
   margin: 0;
+  font-size: r(28);
+  font-weight: 500;
+  line-height: r(36);
+  color: #1f2e30;
 }
 
 .subscriptionTab-pageDesc {
-  font-size: r(15);
+  margin: 0;
+  font-size: r(14);
+  font-weight: 400;
+  line-height: r(20);
   color: $pc-text-muted;
-  margin: r(10) 0 0;
 }
 
-.subscriptionTab-planCard {
-  margin-top: r(12);
-  background: linear-gradient(135deg, $pc-primary, #8b6ffb);
-  border-radius: r(18);
-  padding: r(22) r(24);
-  color: $pc-white;
+.subscriptionTab-sections {
   display: flex;
-  align-items: center;
-  gap: r(16);
-  position: relative;
+  flex-direction: column;
+  gap: r(24);
+  margin-top: r(32);
+}
+
+.subscriptionTab-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid $pc-border;
+  border-radius: r(16);
+  box-shadow: 0 r(2) r(24) 0 rgba(28, 93, 95, 0.08);
   overflow: hidden;
 }
 
-.subscriptionTab-planGlow {
-  position: absolute;
-  top: r(-30);
-  right: r(-10);
-  width: r(140);
-  height: r(140);
-  border-radius: 50%;
-  background: rgba(203, 243, 94, 0.28);
+.subscriptionTab-cardHeader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: r(72);
+  padding: r(16) r(24);
+  background: $pc-white;
+  border-bottom: 1px solid $pc-border-soft;
 }
 
-.subscriptionTab-planContent {
+.subscriptionTab-cardTitle {
+  margin: 0;
+  font-size: r(16);
+  font-weight: 500;
+  line-height: r(20);
+  color: #1f3333;
+}
+
+.subscriptionTab-cardDesc {
+  margin: r(4) 0 0;
+  font-size: r(12);
+  font-weight: 400;
+  line-height: r(16);
+  color: $pc-text-muted;
+}
+
+.subscriptionTab-planWrap {
+  padding: r(24);
+}
+
+.subscriptionTab-planCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: r(16);
+  padding: r(24);
+  min-height: r(180);
+  color: $pc-white;
+  background: linear-gradient(165deg, #1c5d5f 0%, #0e3535 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: r(24);
+}
+
+.subscriptionTab-planGlowA,
+.subscriptionTab-planGlowB {
+  position: absolute;
+  border-radius: 50%;
+  background: $pc-white;
+  pointer-events: none;
+}
+
+.subscriptionTab-planGlowA {
+  width: r(160);
+  height: r(160);
+  right: r(-40);
+  top: r(-40);
+  opacity: 0.05;
+}
+
+.subscriptionTab-planGlowB {
+  width: r(100);
+  height: r(100);
+  right: r(-20);
+  bottom: r(-20);
+  opacity: 0.04;
+}
+
+.subscriptionTab-planTop {
   position: relative;
   z-index: 1;
-  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: r(16);
 }
 
-.subscriptionTab-planHeader {
+.subscriptionTab-planMeta {
+  display: flex;
+  flex-direction: column;
+  gap: r(6);
+  min-width: 0;
+}
+
+.subscriptionTab-planNameRow {
   display: flex;
   align-items: center;
-  gap: r(10);
+  gap: r(8);
+}
+
+.subscriptionTab-planSpark {
+  font-size: r(22);
+  line-height: 1;
+  color: #ffa666;
 }
 
 .subscriptionTab-planName {
-  font-size: r(22);
-  font-weight: 800;
-}
-
-.subscriptionTab-planBadge {
-  font-size: r(11);
-  font-weight: 800;
-  background: rgba(255, 255, 255, 0.22);
-  padding: r(3) r(10);
-  border-radius: r(999);
+  font-size: r(20);
+  font-weight: 500;
+  line-height: r(28);
+  color: $pc-white;
 }
 
 .subscriptionTab-planRenew {
   font-size: r(13);
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: r(6);
+  font-weight: 400;
+  line-height: r(18);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.subscriptionTab-planBadge {
+  flex: 0 0 auto;
+  font-size: r(12);
+  font-weight: 500;
+  line-height: r(18);
+  color: $pc-white;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: r(999);
+  padding: r(4) r(10);
+}
+
+.subscriptionTab-planBottom {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: r(16);
+  padding-top: r(8);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.subscriptionTab-remainLabel {
+  font-size: r(11);
+  font-weight: 400;
+  line-height: r(16);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.subscriptionTab-remainValue {
+  margin-top: r(2);
+  font-size: r(24);
+  font-weight: 500;
+  line-height: r(32);
+  color: $pc-white;
 }
 
 .subscriptionTab-upgradeBtn {
-  position: relative;
-  z-index: 1;
-  font-size: r(13.5);
-  font-weight: 800;
+  flex: 0 0 auto;
+  font-size: r(14);
+  font-weight: 500;
+  line-height: r(21);
   color: $pc-primary;
   background: $pc-white;
-  padding: r(10) r(18);
-  border-radius: r(11);
-  flex: 0 0 auto;
+  padding: r(8) r(20);
+  border-radius: r(8);
 }
 
-.subscriptionTab-usageCard {
-  margin-top: r(12);
-  background: $pc-white;
-  border: 1px solid $pc-border;
-  border-radius: r(18);
-  padding: r(22);
-}
-
-.subscriptionTab-usageHeader {
+.subscriptionTab-usageBody {
+  padding: r(16) r(24) r(24);
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: r(20);
 }
 
-.subscriptionTab-usageLabel {
+.subscriptionTab-loading {
   font-size: r(14);
-  color: $pc-text-muted;
-  font-weight: 500;
+  color: $pc-text-soft;
+  padding: r(8) 0;
 }
 
-.subscriptionTab-usageTotal {
-  font-size: r(14);
-  color: $pc-text-muted;
-  font-weight: 500;
-}
-
-.subscriptionTab-usageTotalBold {
-  font-size: r(20);
-  color: $pc-text;
-  font-weight: 700;
+.subscriptionTab-usageChart {
+  display: flex;
+  flex-direction: column;
+  gap: r(8);
 }
 
 .subscriptionTab-usageBar {
-  margin-top: r(14);
   display: flex;
-  height: r(18);
-  border-radius: r(6);
+  height: r(32);
+  border-radius: r(8);
   overflow: hidden;
-  background: #f0ecfb;
-  gap: r(2);
+  gap: 1px;
+  background: transparent;
 }
 
 .subscriptionTab-usageBarSegment {
   height: 100%;
+  min-width: 0;
   transform-origin: left;
   animation: pcGrow 0.5s ease both;
 }
 
-.subscriptionTab-usageBarRemainder {
-  height: 100%;
-  background: #e0daf0;
+.subscriptionTab-usagePercents {
+  display: flex;
+  height: r(14);
+}
+
+.subscriptionTab-usagePercent {
+  font-size: r(10);
+  line-height: r(14);
+  color: rgba(0, 0, 0, 0.25);
+  text-align: right;
+  padding-right: 1px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .subscriptionTab-legendGrid {
-  margin-top: r(18);
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: r(11) r(24);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: r(10) r(24);
 }
 
-.subscriptionTab-detailCard {
-  margin-top: r(16);
-  background: $pc-white;
-  border: 1px solid $pc-border;
-  border-radius: r(16);
+.subscriptionTab-legendItem {
+  display: flex;
+  align-items: center;
+  gap: r(8);
+  min-width: 0;
+}
+
+.subscriptionTab-legendDot {
+  width: r(10);
+  height: r(10);
+  border-radius: r(2);
+  flex: 0 0 auto;
+}
+
+.subscriptionTab-legendName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: r(12);
+  font-weight: 400;
+  line-height: r(18);
+  color: #1f2e30;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subscriptionTab-legendValue {
+  flex: 0 0 auto;
+  font-size: r(12);
+  font-weight: 500;
+  line-height: r(18);
+  color: $pc-text-muted;
+}
+
+.subscriptionTab-usageFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: r(16);
+  border-top: 1px solid $pc-border;
+}
+
+.subscriptionTab-usageFooterLabel {
+  font-size: r(13);
+  font-weight: 400;
+  line-height: r(20);
+  color: $pc-text-muted;
+}
+
+.subscriptionTab-usageFooterValue {
+  font-size: r(16);
+  font-weight: 500;
+  line-height: r(24);
+  color: $pc-primary;
+}
+
+.subscriptionTab-detailTable {
+  width: 100%;
 }
 
 .subscriptionTab-detailHead {
   display: flex;
-  padding: r(14) r(20);
-  background: $pc-bg;
-  font-size: r(13);
+  align-items: center;
+  min-height: r(42);
+  padding: r(12) r(24);
+  background: rgba(28, 93, 95, 0.04);
+  border-bottom: 1px solid rgba(28, 93, 95, 0.08);
+  font-size: r(14);
   font-weight: 500;
-  color: $pc-text-soft;
+  line-height: r(18);
+  color: $pc-text-muted;
 }
 
 .subscriptionTab-detailColName {
-  flex: 1;
+  flex: 1.35;
   min-width: 0;
 }
 
-.subscriptionTab-detailColStatus {
-  flex: 0 0 r(90);
-}
-
+.subscriptionTab-detailColStatus,
 .subscriptionTab-detailColAmount {
-  flex: 0 0 r(90);
-  text-align: right;
+  flex: 0 0 r(120);
 }
 
 .subscriptionTab-detailColDate {
-  flex: 0 0 r(138);
-  text-align: right;
+  flex: 0 0 r(140);
 }
 
 .subscriptionTab-detailLoading {
-  padding: r(24) r(20);
+  padding: r(24);
   font-size: r(14);
   color: $pc-text-soft;
 }
@@ -188,8 +352,9 @@
 .subscriptionTab-detailRow {
   display: flex;
   align-items: center;
-  padding: r(15) r(20);
-  border-bottom: 1px solid #f4f0fb;
+  min-height: r(55);
+  padding: r(14) r(24);
+  border-bottom: 1px solid rgba(28, 93, 95, 0.06);
 }
 
 .subscriptionTab-detailRowLast {
@@ -197,10 +362,12 @@
 }
 
 .subscriptionTab-detailName {
-  flex: 1;
+  flex: 1.35;
   min-width: 0;
   font-size: r(14);
-  color: $pc-text;
+  font-weight: 500;
+  line-height: r(20);
+  color: #1f2e30;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -208,39 +375,43 @@
 }
 
 .subscriptionTab-detailStatus {
-  flex: 0 0 r(90);
+  flex: 0 0 r(120);
 }
 
 .subscriptionTab-statusBadge {
+  display: inline-flex;
+  align-items: center;
   font-size: r(12);
-  font-weight: 500;
-  padding: r(3) r(9);
+  font-weight: 400;
+  line-height: r(18);
+  padding: r(3) r(8);
   border-radius: r(999);
 }
 
 .subscriptionTab-statusGot {
-  color: $pc-success;
-  background: #eefad2;
+  color: $pc-primary;
+  background: rgba(28, 93, 95, 0.1);
 }
 
 .subscriptionTab-statusUsed {
-  color: $pc-primary;
-  background: #efeafe;
+  color: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .subscriptionTab-detailAmount {
-  flex: 0 0 r(90);
-  text-align: right;
+  flex: 0 0 r(120);
   font-size: r(14);
-  color: $pc-text;
+  font-weight: 500;
+  line-height: r(20);
+  color: rgba(0, 0, 0, 0.55);
 }
 
 .subscriptionTab-detailDate {
-  flex: 0 0 r(138);
-  text-align: right;
-  font-size: r(14);
-  font-weight: 500;
-  color: $pc-text-soft;
+  flex: 0 0 r(140);
+  font-size: r(13);
+  font-weight: 400;
+  line-height: r(18);
+  color: $pc-text-muted;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

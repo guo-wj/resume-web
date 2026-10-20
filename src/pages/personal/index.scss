@@ -1,4 +1,8 @@
-@use 'variables' as *;
+/* 账户设置页 · Figma 436:17 / 436:387 / 436:155
+ * 视觉页：四周页边距固定 40px；尺寸走根 rem（r()）；禁止 transform:scale；不做断点改布局
+ */
+
+@use "variables" as *;
 
 .pc-root {
   * {
@@ -38,17 +42,17 @@
   }
 
   ::placeholder {
-    color: #a7a0bc;
+    color: rgba(0, 0, 0, 0.38);
   }
 }
 
 .pc-scroll {
   &::-webkit-scrollbar {
-    width: r(9);
+    width: r(8);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d8d2ec;
+    background: rgba(28, 93, 95, 0.18);
     border-radius: r(6);
     border: r(2) solid transparent;
     background-clip: padding-box;
@@ -114,12 +118,12 @@
   transition: background 0.15s;
 
   &:hover {
-    background: $pc-bg;
+    background: rgba(28, 93, 95, 0.03);
   }
 }
 
 .pc-hover:hover {
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
 .pc-primary:hover {
@@ -127,15 +131,15 @@
 }
 
 .pc-soft:hover {
-  background: #e7e1f8 !important;
+  background: rgba(46, 110, 110, 0.14) !important;
 }
 
 .pc-chip:hover {
-  background: #e5def6 !important;
+  background: rgba(46, 110, 110, 0.16) !important;
 }
 
 .pc-nav:hover {
-  background: #f2effb;
+  background: rgba(28, 74, 77, 0.06);
 }
 
 .pc-nav:focus,
@@ -148,7 +152,7 @@
 
 .pc-root button.pc-nav-active,
 .pc-root button.pc-nav-active:hover {
-  background: #efeafe;
+  background: rgba(46, 110, 110, 0.1);
 }
 
 .pc-back:hover {
@@ -164,64 +168,60 @@
 }
 
 .pc-upbtn:hover {
-  background: #f1edfc !important;
+  background: rgba(246, 250, 249, 0.96) !important;
 }
 
 .fadeUp {
   animation: pcFadeUp 0.4s ease both;
 }
 
-.personalCenter-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: r(26);
-  background: radial-gradient(r(900) r(500) at 80% -10%, #efe9fe, rgba(239, 233, 254, 0)),
-    rgba(28, 18, 64, 0.55);
-  backdrop-filter: blur(r(4));
-  animation: pcFadeIn 0.2s ease both;
-}
-
-.personalCenter-panel {
-  width: min(r(1280), 100%);
-  height: min(r(840), calc(100vh - r(52)));
-  display: flex;
-  background: $pc-white;
-  border-radius: r(20);
-  overflow: hidden;
-  box-shadow: 0 r(40) r(100) r(-34) rgba(40, 24, 90, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+/* —— 全页壳 —— */
+.personalPage {
   position: relative;
-  animation: pcPopIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.personalCenter-closeBtn {
-  position: absolute;
-  top: r(20);
-  right: r(22);
-  width: r(36);
-  height: r(36);
-  border-radius: 50%;
-  background: $pc-chip-bg;
-  color: #6b6483;
-  font-size: r(17);
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
+  overflow: hidden;
+  background: #fff;
+}
+
+.personalPage-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: r(2836);
+    height: r(1456);
+    max-width: none;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+    object-fit: cover;
+  }
+}
+
+.personalPage-main {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
   justify-content: center;
-  z-index: 60;
-}
-
-.personalCenter-contentScroll {
-  flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
-  background: $pc-white;
 }
 
-.personalCenter-contentInner {
-  max-width: r(820);
-  margin: 0 auto;
-  padding: r(52) r(56) r(72);
+.personalPage-content {
+  width: r(720);
+  max-width: 100%;
+  padding: $page-pad 0 r(40);
+  animation: pcFadeUp 0.35s ease both;
 }

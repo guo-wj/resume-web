@@ -1,67 +1,64 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 .sidebar-root {
-  flex: 0 0 r(264);
+  position: relative;
+  z-index: 2;
+  flex: 0 0 r(248);
+  width: r(248);
+  min-height: 100vh;
+  min-height: 100dvh;
   background: $pc-sidebar-bg;
-  border-right: 1px solid $pc-border;
+  border-radius: 0 r(16) r(16) 0;
+  box-shadow: r(4) r(4) r(10) rgba(28, 93, 95, 0.05);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  padding: r(16) r(16) r(24);
+  align-self: stretch;
 }
 
 .sidebar-header {
-  padding: r(30) r(24) r(18);
-}
-
-.sidebar-title {
-  font-size: r(19);
-  font-weight: 800;
-  letter-spacing: r(-0.3);
+  padding: 0 r(0) r(22);
+  font-size: r(16);
+  font-weight: 400;
+  color: #1e2a2f;
+  line-height: normal;
 }
 
 .sidebar-nav {
-  padding: r(2) r(16);
   display: flex;
   flex-direction: column;
-  gap: r(3);
+  gap: r(8);
+  flex: 1 1 auto;
 }
 
 .sidebar-navBtn {
   display: flex;
   align-items: center;
-  gap: r(12);
+  gap: r(16);
   width: 100%;
-  padding: r(12) r(14);
-  border-radius: r(12);
-  font-size: r(14.5);
-  transition: all 0.15s;
+  height: r(48);
+  padding: 0 r(16);
+  border-radius: r(8);
+  font-size: r(16);
+  font-weight: 500;
+  transition: background 0.15s ease;
 }
 
 .sidebar-navBtnActive {
-  font-weight: 700;
-  color: $pc-primary;
+  color: #1e2a2f;
+  background: rgba(46, 110, 110, 0.1);
 }
 
 .sidebar-navBtnInactive {
-  font-weight: 600;
-  color: #4a4360;
+  color: #1f2e30;
+  background: transparent;
 }
 
 .sidebar-navIcon {
-  width: r(20);
-  height: r(20);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: r(16);
+  height: r(16);
   flex: 0 0 auto;
-}
-
-.sidebar-navIconActive {
-  color: $pc-primary;
-}
-
-.sidebar-navIconInactive {
-  color: $pc-text-soft;
+  display: block;
 }
 
 .sidebar-navLabel {
@@ -71,16 +68,22 @@
 
 .sidebar-footer {
   margin-top: auto;
-  padding: r(16);
+  padding-top: r(16);
 }
 
 .sidebar-backBtn {
   display: flex;
   align-items: center;
   gap: r(8);
-  font-size: r(13);
-  font-weight: 600;
-  color: $pc-text-soft;
-  padding: r(11) r(12);
-  width: 100%;
+  font-size: r(16);
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.38);
+  padding: r(4) 0;
+  width: auto;
+
+  img {
+    width: r(16);
+    height: r(16);
+    display: block;
+  }
 }

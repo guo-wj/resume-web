@@ -32,7 +32,17 @@ function pickList(raw: unknown, ...keys: string[]): unknown[] {
   return []
 }
 
-export const FEATURE_COLORS = ["#7C5CFD", "#A78BFA", "#C77BFF", "#FF9E8A", "#3BB89A"]
+export const FEATURE_COLORS = [
+  "#1c5d5f",
+  "#2e8b8e",
+  "#3aa3a6",
+  "#4dbcbf",
+  "#60cdd0",
+  "#78d9db",
+  "#93e4e6",
+  "#aeedef",
+  "#c9f4f5",
+]
 
 export interface CreditOverview {
   usedTotal: number
@@ -102,7 +112,7 @@ export function normalizeCreditOverview(raw: unknown): CreditOverview {
 }
 
 /** 功能消耗 Top N → 个人中心「用量」分类条 */
-export function normalizeCreditTopFeatures(raw: unknown, limit = 5): CreditFeatureUsage[] {
+export function normalizeCreditTopFeatures(raw: unknown, limit = 9): CreditFeatureUsage[] {
   const list = pickList(raw, "top_features", "topFeatures", "features", "items", "list", "data")
 
   return list.slice(0, limit).map((item, index) => {

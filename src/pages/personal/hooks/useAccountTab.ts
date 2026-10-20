@@ -10,6 +10,10 @@ import {
   sendBindCode,
   setUserPassword,
 } from "@/api"
+import icoPhone from "@/assets/personal/ico-phone.svg"
+import icoMail from "@/assets/personal/ico-mail.svg"
+import icoWechat from "@/assets/personal/ico-wechat.svg"
+import icoApple from "@/assets/personal/ico-apple.svg"
 import { getAccountCache } from "@/store"
 import { useAuth } from "@/store"
 import type { BindingRow, UseAccountTabParams } from "../types"
@@ -92,7 +96,13 @@ export function useAccountTab({ showToast, modal, setModal, closeModal }: UseAcc
 
   const openBindPhone = () => { closeModal(); setModal("bindPhone") }
   const openBindEmail = () => { closeModal(); setModal("bindEmail") }
-  const openBindWechat = () => setModal("bindWechat")
+  const openBindWechat = () => {
+    if (wechatBinding.bound) {
+      showToast("解绑功能暂未开放")
+      return
+    }
+    setModal("bindWechat")
+  }
   const openBindApple = () => showToast("Apple ID 绑定暂未开放")
 
   const openPassword = () => {
@@ -227,10 +237,47 @@ export function useAccountTab({ showToast, modal, setModal, closeModal }: UseAcc
   }, [modal, loadAccount, showToast, closeModal])
 
   const bindings: BindingRow[] = [
-    { label: "手机号", value: phoneBinding.bound ? (phoneBinding.value || "已绑定") : "未绑定", action: phoneBinding.bound ? "修改" : "绑定", strong: !phoneBinding.bound, onClick: openBindPhone },
-    { label: "邮箱", value: emailBinding.bound ? (emailBinding.value || "已绑定") : "未绑定", action: emailBinding.bound ? "修改" : "绑定", strong: !emailBinding.bound, onClick: openBindEmail },
-    { label: "微信", value: wechatBinding.bound ? (wechatBinding.value || "已绑定") : "未绑定", action: wechatBinding.bound ? "已绑定" : "绑定", strong: !wechatBinding.bound, onClick: openBindWechat },
-    { label: "Apple ID", value: appleBinding.bound ? (appleBinding.value || "已绑定") : "未绑定", action: appleBinding.bound ? "已绑定" : "绑定", strong: !appleBinding.bound, onClick: openBindApple },
+    {
+      id: "phone",
+      label: "手机号",
+      value: phoneBinding.bound ? (phoneBinding.value || "已绑定") : "未绑定",
+      action: phoneBinding.bound ? "修改" : "绑定",
+      strong: !phoneBinding.bound,
+      onClick: openBindPhone,
+      icon: icoPhone,
+      section: "login",
+    },
+    {
+      id: "email",
+      label: "邮箱",
+      value: emailBinding.bound ? (emailBinding.value || "已绑定") : "未绑定",
+      action: emailBinding.bound ? "修改" : "绑定",
+      strong: !emailBinding.bound,
+      onClick: openBindEmail,
+      icon: icoMail,
+      section: "login",
+    },
+    {
+      id: "wechat",
+      label: "微信",
+      value: wechatBinding.bound ? (wechatBinding.value || "") : "未绑定",
+      valuePrefix: wechatBinding.bound ? "已绑定" : undefined,
+      action: wechatBinding.bound ? "解绑" : "绑定",
+      strong: !wechatBinding.bound,
+      onClick: openBindWechat,
+      icon: icoWechat,
+      section: "login",
+    },
+    {
+      id: "apple",
+      label: "Apple ID",
+      value: appleBinding.bound ? (appleBinding.value || "已绑定") : "未绑定",
+      action: appleBinding.bound ? "解绑" : "绑定",
+      strong: !appleBinding.bound,
+      onClick: openBindApple,
+      icon: icoApple,
+      section: "security",
+    },
   ]
 
   const resetAccountModalFields = useCallback(() => {
